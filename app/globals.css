@@ -1,63 +1,84 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* The app is dark-only: <html class="dark">, and these are the only theme values. */
 :root {
-  --background: #000000;
-  --surface: #111111;
-  --surface-2: #1c1c1c;
-  --line: #2a2a2a;
-  --foreground: #f5f5f5;
-  --muted: #8f8f8f;
-  --accent: #4cc9f0;
-  --ok: #4ade80;
   color-scheme: dark;
+  --background: #000000;
+  --foreground: #f5f5f5;
+  --card: #111111;
+  --card-foreground: #f5f5f5;
+  --popover: #111111;
+  --popover-foreground: #f5f5f5;
+  --primary: #f5f5f5;
+  --primary-foreground: #000000;
+  --secondary: #1c1c1c;
+  --secondary-foreground: #f5f5f5;
+  --muted: #1c1c1c;
+  --muted-foreground: #8f8f8f;
+  --accent: #1c1c1c;
+  --accent-foreground: #f5f5f5;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #4cc9f0;
+  --radius: 0.75rem;
+  /* App-specific: cyan highlight and the "done" green. */
+  --brand: #4cc9f0;
+  --ok: #4ade80;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-line: var(--line);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
   --color-ok: var(--ok);
-  --font-sans: var(--font-open-sans), var(--font-noto-thai), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: var(--font-open-sans), var(--font-kanit), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-heading: var(--font-sans);
+  /* Keep Tailwind's default radius steps; the app's rounded-2xl/3xl cards depend on them. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
 }
 
-html {
-  -webkit-tap-highlight-color: transparent;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-}
-
-/* 16px inputs stop iOS from zooming in on focus. */
-@utility field {
-  @apply w-full rounded-2xl border border-line bg-surface px-4 py-3.5 text-base text-foreground outline-none transition placeholder:text-muted/70 focus:border-foreground/60;
-}
-
-@utility btn {
-  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
-}
-
-@utility btn-primary {
-  @apply btn bg-foreground text-background;
-}
-
-@utility btn-secondary {
-  @apply btn bg-surface-2 text-foreground;
-}
-
-@utility btn-danger {
-  @apply btn bg-red-500/10 text-red-400;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
 }
 
 @utility pb-safe {

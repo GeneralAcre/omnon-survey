@@ -3,6 +3,14 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { setLang, setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
@@ -11,12 +19,11 @@ import { IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from
 import AreaHero from "./AreaHero";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
-import Sheet from "./Sheet";
 
 // Leaflet touches `window`, so the map only loads in the browser.
 const PlacesMap = dynamic(() => import("./PlacesMap"), {
   ssr: false,
-  loading: () => <div className="h-[62dvh] animate-pulse rounded-3xl bg-surface" />,
+  loading: () => <div className="h-[62dvh] animate-pulse rounded-3xl bg-card" />,
 });
 
 type Filter = "all" | "mine" | "1" | "2" | "3";
@@ -25,19 +32,19 @@ type View = "list" | "photos" | "map";
 export default function RecordList() {
   const { t, L, lang } = useT();
   const user = useUser()!;
-  const [toasts, setToasts] = useState<SurveyRecord[]>([]);
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const onArrive = useCallback(
     (arrived: SurveyRecord[]) => {
       const others = arrived.filter((r) => r.createdBy.name !== user.name);
       if (!others.length) return;
       const ids = others.map((r) => r.id);
-      setToasts((list) => [...others, ...list].slice(0, 3));
+      others.slice(0, 3).forEach((r) =>
+        toast.custom(() => <ArrivalToast r={r} justAdded={t("justAdded")} />, { id: r.id, duration: 7000 }),
+      );
       setFresh((set) => new Set([...set, ...ids]));
-      setTimeout(() => setToasts((list) => list.filter((r) => !ids.includes(r.id))), 7000);
       setTimeout(() => setFresh((set) => new Set([...set].filter((id) => !ids.includes(id)))), 20000);
     },
-    [user.name],
+    [user.name, t],
   );
   const { records, error, reload } = useRecords({ live: true, onArrive });
   const [filter, setFilter] = useState<Filter>("all");
@@ -81,11 +88,11 @@ export default function RecordList() {
   const me = groupColor(user.group);
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 pb-32">
+    <main id="survey-records" className="mx-auto w-full max-w-2xl flex-1 scroll-mt-4 pb-32">
       <div className="px-4 pt-[max(env(safe-area-inset-top),0.75rem)] sm:pt-[max(env(safe-area-inset-top),1rem)]">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">Khlong Om Non</p>
+            <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non</p>
             <h1 className="flex items-center gap-2 text-2xl font-bold">
               {t("records")}
               <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 text-[11px] font-semibold text-ok">
@@ -94,9 +101,10 @@ export default function RecordList() {
               </span>
             </h1>
           </div>
-          <button
+          <Button
+            variant="outline"
             onClick={() => setMenu(true)}
-            className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-3 pl-1.5"
+            className="h-auto gap-2 rounded-full bg-card py-1.5 pr-3 pl-1.5 font-normal"
             aria-label={t("switchUser")}
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
@@ -104,7 +112,7 @@ export default function RecordList() {
             </span>
             <span className="max-w-[7rem] truncate text-sm">{user.name}</span>
             <GroupBadge group={user.group} />
-          </button>
+          </Button>
         </div>
 
         <div className="mt-3 sm:mt-4">
@@ -113,62 +121,75 @@ export default function RecordList() {
       </div>
 
       <div className="sticky top-0 z-20 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-xl">
-        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1">
+        <ToggleGroup
+          aria-label={t("viewList")}
+          value={[view]}
+          onValueChange={(v) => v[0] && setView(v[0] as View)}
+          spacing={1}
+          className="grid w-full grid-cols-3 rounded-2xl bg-card p-1"
+        >
           {views.map((v) => (
-            <button
+            <ToggleGroupItem
               key={v.id}
-              onClick={() => setView(v.id)}
-              className={`min-h-11 rounded-xl px-1 py-2 text-sm font-semibold transition ${view === v.id ? "bg-foreground text-background" : "text-muted"}`}
+              value={v.id}
+              className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-foreground aria-pressed:text-background hover:aria-pressed:bg-foreground"
             >
               {v.label}
-              <span className={`ml-1 font-normal ${view === v.id ? "text-background/50" : "text-muted/70"}`}>{records ? v.n : ""}</span>
-            </button>
+              <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-background/50">{records ? v.n : ""}</span>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
 
-        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
+        <ToggleGroup
+          value={[filter]}
+          onValueChange={(v) => v[0] && setFilter(v[0] as Filter)}
+          className="no-scrollbar -mx-4 mt-3 flex w-auto gap-2 overflow-x-auto px-4"
+        >
           {chips.map((c) => {
             const active = filter === c.id;
             const col = c.group ? groupColor(c.group) : null;
             return (
-              <button
+              <ToggleGroupItem
                 key={c.id}
-                onClick={() => setFilter(c.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
-                  active && !col ? "bg-foreground text-background" : active ? "" : "bg-surface-2 text-foreground"
-                }`}
+                value={c.id}
+                className={cn(
+                  "h-auto gap-1.5 rounded-full px-4 py-2",
+                  active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary text-foreground",
+                )}
                 style={active && col ? { background: col.bg, color: col.fg } : undefined}
               >
                 {col && !active && <span className="h-2.5 w-2.5 rounded-full" style={{ background: col.bg }} />}
                 {c.label}
                 <span className="opacity-60">{records ? count(c.id) : ""}</span>
-              </button>
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
 
         {view !== "map" && (
           <div className="relative mt-3">
-            <IconSearch className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-muted" />
-            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="field py-3 pl-11" />
+            <IconSearch className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="h-12 rounded-2xl bg-card pr-4 pl-11" />
           </div>
         )}
       </div>
 
       <div className="px-4">
         {error && (
-          <div className="mt-2 flex items-center justify-between rounded-2xl bg-red-500/10 p-4 text-sm text-red-300">
-            {t("loadError")}
-            <button onClick={reload} className="font-semibold underline">
-              {t("retry")}
-            </button>
-          </div>
+          <Alert variant="destructive" className="mt-2 rounded-2xl">
+            <AlertDescription>{t("loadError")}</AlertDescription>
+            <AlertAction>
+              <Button variant="link" size="sm" onClick={reload} className="text-destructive">
+                {t("retry")}
+              </Button>
+            </AlertAction>
+          </Alert>
         )}
-        {records === null && !error && <p className="py-16 text-center text-muted">{t("loading")}</p>}
+        {records === null && !error && <p className="py-16 text-center text-muted-foreground">{t("loading")}</p>}
 
         {records && view === "list" && (
           <>
-            {visible.length === 0 && <p className="py-16 text-center text-muted">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
+            {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
             <ul className="mt-1 space-y-2">
               {visible.map((r) => (
                 <li key={r.id}>
@@ -184,79 +205,83 @@ export default function RecordList() {
 
       <Link
         href="/new"
-        className="fixed right-5 bottom-[max(env(safe-area-inset-bottom),1.25rem)] z-30 flex h-16 items-center gap-2 rounded-full bg-foreground pr-6 pl-5 font-semibold text-background shadow-[0_8px_30px_rgba(0,0,0,0.6)] active:scale-95"
+        className={cn(
+          buttonVariants({ size: "xl" }),
+          "fixed right-5 bottom-[max(env(safe-area-inset-bottom),1.25rem)] z-30 h-16 pr-6 pl-5 text-base shadow-[0_8px_30px_rgba(0,0,0,0.6)] active:scale-95",
+        )}
       >
-        <IconPlus className="h-6 w-6" />
+        <IconPlus />
         {t("newRecord")}
       </Link>
 
-      <Sheet open={menu} onClose={() => setMenu(false)}>
-        <div className="flex items-center gap-3 pb-4">
+      <Drawer open={menu} onOpenChange={setMenu} showSwipeHandle>
+        <DrawerContent className="px-5 pb-safe sm:mx-auto sm:max-w-md">
+        <DrawerTitle className="sr-only">{t("switchUser")}</DrawerTitle>
+        <div className="flex items-center gap-3 pt-2 pb-4">
           <span className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold" style={{ background: me.bg, color: me.fg }}>
             {user.name.slice(0, 1).toUpperCase()}
           </span>
           <div>
             <p className="font-semibold">{user.name}</p>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-muted-foreground">
               {L(groupOf(user.group)!.label)} · {L(groupOf(user.group)!.zone)}
             </p>
           </div>
         </div>
-        <div className="divide-y divide-line border-t border-line">
-          <MenuItem onClick={() => { setMenu(false); setUser(null); }} icon={<IconUser />}>{t("switchUser")}</MenuItem>
-          <MenuItem onClick={() => setLang(lang === "en" ? "th" : "en")} icon={<span className="w-5 text-center text-sm">ก</span>}>
-            {t("language")}
-          </MenuItem>
-          <MenuItem onClick={() => { setMenu(false); setExporting(true); }} icon={<IconDownload />}>{t("export")}</MenuItem>
-          <Link href="/about" className="flex min-h-14 items-center gap-3 text-[15px]">
-            <IconImage /> {t("about")}
-          </Link>
-        </div>
-      </Sheet>
-
-      {toasts.length > 0 && (
-        <div className="pointer-events-none fixed inset-x-0 top-[max(env(safe-area-inset-top),0.75rem)] z-40 mx-auto flex max-w-md flex-col gap-2 px-4">
-          {toasts.map((r) => {
-            const c = groupColor(r.group);
-            const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
-            return (
-              <Link
-                key={r.id}
-                href={`/r/${r.id}`}
-                className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-line bg-surface-2/95 p-2 pr-4 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur"
-                style={{ borderLeft: `4px solid ${c.bg}` }}
-              >
-                <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-surface">
-                  {cover && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photoUrl(cover.file, "thumb")} alt="" className="h-full w-full object-cover" />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5 text-sm font-semibold">
-                    {r.plotNo} <GroupBadge group={r.group} />
-                  </span>
-                  <span className="block truncate text-xs text-muted">
-                    {r.createdBy.name} · {t("justAdded")}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+        <Separator />
+        <MenuItem onClick={() => { setMenu(false); setUser(null); }} icon={<IconUser />}>{t("switchUser")}</MenuItem>
+        <Separator />
+        <MenuItem onClick={() => setLang(lang === "en" ? "th" : "en")} icon={<span className="w-5 text-center text-sm">ก</span>}>
+          {t("language")}
+        </MenuItem>
+        <Separator />
+        <MenuItem onClick={() => { setMenu(false); setExporting(true); }} icon={<IconDownload />}>{t("export")}</MenuItem>
+        <Separator />
+        <Link href="/about" className="flex min-h-14 items-center gap-3 text-[15px]">
+          <IconImage /> {t("about")}
+        </Link>
+        </DrawerContent>
+      </Drawer>
 
       <ExportSheet open={exporting} onClose={() => setExporting(false)} defaultGroup={user.group} />
     </main>
   );
 }
 
+// Pops in (via sonner) when another surveyor adds a building.
+function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) {
+  const c = groupColor(r.group);
+  const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
+  return (
+    <Link
+      href={`/r/${r.id}`}
+      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-secondary/95 p-2 pr-4 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur"
+      style={{ borderLeft: `4px solid ${c.bg}` }}
+    >
+      <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-card">
+        {cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoUrl(cover.file, "thumb")} alt="" className="h-full w-full object-cover" />
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          {r.plotNo} <GroupBadge group={r.group} />
+        </span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {r.createdBy.name} · {justAdded}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 function MenuItem({ onClick, icon, children }: { onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className="flex min-h-14 w-full items-center gap-3 text-left text-[15px]">
+    <Button variant="ghost" onClick={onClick} className="h-auto min-h-14 w-full justify-start gap-3 rounded-none px-0 text-[15px] font-normal hover:bg-transparent">
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -269,17 +294,17 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
   return (
     <Link
       href={`/r/${r.id}`}
-      className={`relative flex gap-3 overflow-hidden rounded-2xl bg-surface p-2.5 pl-3.5 transition-shadow duration-700 active:bg-surface-2 ${highlight ? "ring-2" : ""}`}
+      className={`relative flex gap-3 overflow-hidden rounded-2xl bg-card p-2.5 pl-3.5 transition-shadow duration-700 active:bg-secondary ${highlight ? "ring-2" : ""}`}
       style={highlight ? ({ "--tw-ring-color": groupColor(r.group).bg } as React.CSSProperties) : undefined}
     >
       <span className="absolute inset-y-0 left-0 w-1" style={{ background: c.bg }} />
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-2">
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photoUrl(cover.file, "thumb")} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted">
-            <IconImage className="h-6 w-6" />
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+            <IconImage className="size-6" />
           </div>
         )}
       </div>
@@ -287,7 +312,7 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
         <div className="flex items-center gap-2">
           <span className="truncate text-lg font-bold">{r.plotNo}</span>
           <GroupBadge group={r.group} />
-          {r.lat != null && <IconPin className="h-4 w-4 shrink-0 text-muted" />}
+          {r.lat != null && <IconPin className="size-4 shrink-0 text-muted-foreground" />}
         </div>
         <p className="truncate text-sm text-foreground/80">{[type, fn].filter(Boolean).join(" · ") || t("notSet")}</p>
         <div className="mt-1.5 flex items-center gap-2">
@@ -296,13 +321,13 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
               <span
                 key={s.key}
                 className="h-1.5 w-2.5 rounded-full"
-                style={{ background: r.images[s.key]?.photos.length ? c.bg : "var(--line)" }}
+                style={{ background: r.images[s.key]?.photos.length ? c.bg : "var(--border)" }}
               />
             ))}
           </div>
-          <span className="text-xs text-muted">{allPhotos(r).length} 📷</span>
+          <span className="text-xs text-muted-foreground">{allPhotos(r).length} 📷</span>
         </div>
-        <p className="mt-1 truncate text-xs text-muted">
+        <p className="mt-1 truncate text-xs text-muted-foreground">
           {t("by")} {r.updatedBy.name} · {timeAgo(r.updatedAt, lang)}
         </p>
       </div>
@@ -320,36 +345,49 @@ function ExportSheet({ open, onClose, defaultGroup }: { open: boolean; onClose: 
     { href: `/api/export?format=json&${q}`, title: t("exportJson"), sub: "" },
   ];
   return (
-    <Sheet open={open} onClose={onClose}>
-      <h2 className="text-xl font-bold">{t("exportTitle")}</h2>
-      <p className="mt-4 text-sm text-muted">{t("exportScope")}</p>
-      <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
+    <Drawer open={open} onOpenChange={(o) => !o && onClose()} showSwipeHandle>
+      <DrawerContent className="px-5 pb-safe sm:mx-auto sm:max-w-md">
+      <DrawerHeader className="px-0 pt-2 text-left">
+        <DrawerTitle className="text-xl font-bold">{t("exportTitle")}</DrawerTitle>
+        <DrawerDescription className="mt-3">{t("exportScope")}</DrawerDescription>
+      </DrawerHeader>
+      {/* "all" stands in for the empty group, which means every group. */}
+      <ToggleGroup
+        aria-label={t("exportScope")}
+        value={[group || "all"]}
+        onValueChange={(v) => v[0] && setGroup(v[0] === "all" ? "" : v[0])}
+        className="no-scrollbar mt-2 w-full gap-2 overflow-x-auto"
+      >
         {[{ id: "", label: t("all") }, ...GROUPS.map((g) => ({ id: g.id, label: `G${g.id}` }))].map((g) => {
           const col = g.id ? groupColor(g.id) : null;
           const active = group === g.id;
           return (
-            <button
+            <ToggleGroupItem
               key={g.id}
-              onClick={() => setGroup(g.id)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${active && !col ? "bg-foreground text-background" : active ? "" : "bg-surface-2"}`}
+              value={g.id || "all"}
+              className={cn(
+                "h-auto rounded-full px-4 py-2 font-semibold",
+                active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary",
+              )}
               style={active && col ? { background: col.bg, color: col.fg } : undefined}
             >
               {g.label}
-            </button>
+            </ToggleGroupItem>
           );
         })}
-      </div>
+      </ToggleGroup>
       <div className="mt-4 space-y-2 pb-2">
         {items.map((i) => (
-          <a key={i.title} href={i.href} download className="flex items-center gap-3 rounded-2xl bg-surface-2 p-4 active:opacity-80">
-            <IconDownload className="h-5 w-5 shrink-0 text-accent" />
+          <a key={i.title} href={i.href} download className="flex items-center gap-3 rounded-2xl bg-secondary p-4 active:opacity-80">
+            <IconDownload className="size-5 shrink-0 text-brand" />
             <span>
               <span className="block font-semibold">{i.title}</span>
-              {i.sub && <span className="block text-sm text-muted">{i.sub}</span>}
+              {i.sub && <span className="block text-sm text-muted-foreground">{i.sub}</span>}
             </span>
           </a>
         ))}
       </div>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 }

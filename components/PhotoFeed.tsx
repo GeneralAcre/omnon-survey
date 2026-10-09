@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { IMAGE_SLOTS, groupColor, type SurveyRecord } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { useT } from "./app-state";
@@ -33,7 +34,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
     [records, L],
   );
 
-  if (items.length === 0) return <p className="py-16 text-center text-muted">{t("noPhotos")}</p>;
+  if (items.length === 0) return <p className="py-16 text-center text-muted-foreground">{t("noPhotos")}</p>;
 
   return (
     <>
@@ -41,7 +42,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
         {items.slice(0, limit).map((p, i) => {
           const c = groupColor(p.group);
           return (
-            <button key={p.file} onClick={() => setOpen(i)} className="relative aspect-square overflow-hidden rounded-lg bg-surface">
+            <button key={p.file} onClick={() => setOpen(i)} className="relative aspect-square overflow-hidden rounded-lg bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photoUrl(p.file, "thumb")} alt="" loading="lazy" className="h-full w-full object-cover" />
               <span className="absolute inset-x-0 top-0 h-1" style={{ background: c.bg }} />
@@ -57,9 +58,9 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
         })}
       </div>
       {items.length > limit && (
-        <button onClick={() => setLimit((n) => n + PAGE)} className="btn-secondary mt-4 w-full">
+        <Button variant="secondary" size="xl" onClick={() => setLimit((n) => n + PAGE)} className="mt-4 w-full">
           {t("showMore")} ({items.length - limit})
-        </button>
+        </Button>
       )}
       {open !== null && <Lightbox items={items} index={open} onClose={() => setOpen(null)} />}
     </>

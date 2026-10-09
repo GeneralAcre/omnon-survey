@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { buttonVariants } from "@/components/ui/button";
 import { useT, useUser } from "./app-state";
 import { useRecord } from "./data";
 import { GroupBadge } from "./GroupBadge";
@@ -12,12 +13,12 @@ export default function EditRecord() {
   const { t } = useT();
   const user = useUser()!;
   const { record } = useRecord(id);
-  if (record === undefined) return <main className="flex flex-1 items-center justify-center text-muted">{t("loading")}</main>;
+  if (record === undefined) return <main className="flex flex-1 items-center justify-center text-muted-foreground">{t("loading")}</main>;
   if (record === null)
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 text-muted">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 text-muted-foreground">
         {t("notFound")}
-        <Link href="/" className="btn-secondary">
+        <Link href="/" className={buttonVariants({ variant: "secondary", size: "xl" })}>
           {t("backToList")}
         </Link>
       </main>
@@ -25,10 +26,10 @@ export default function EditRecord() {
   // Other groups' buildings are view-only (the server enforces this too).
   if (record.group !== user.group)
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-muted">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-muted-foreground">
         <GroupBadge group={record.group} className="text-sm" />
         {t("viewOnly").replace("{n}", record.group)}
-        <Link href={`/r/${record.id}`} className="btn-secondary">
+        <Link href={`/r/${record.id}`} className={buttonVariants({ variant: "secondary", size: "xl" })}>
           {t("back")}
         </Link>
       </main>

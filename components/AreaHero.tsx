@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { GROUPS } from "@/lib/schema";
+import { Button } from "@/components/ui/button";
 import { useT } from "./app-state";
+import FullscreenDialog from "./FullscreenDialog";
 import { IconX } from "./Icons";
 
 // The workshop zone map, with each zone tied to its group colour.
@@ -12,7 +14,7 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="relative block w-full overflow-hidden rounded-3xl border border-line text-left">
+      <button onClick={() => setOpen(true)} className="relative block w-full overflow-hidden rounded-3xl border border-border text-left">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/area.png" alt={t("studyArea")} className="aspect-[2.15/1] w-full object-cover sm:aspect-[3/2]" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent px-2.5 pt-7 pb-2.5 sm:px-3 sm:pt-10 sm:pb-3">
@@ -37,13 +39,13 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black" onClick={() => setOpen(false)}>
+        <FullscreenDialog title={t("studyArea")} onClose={() => setOpen(false)}>
           <div className="flex justify-end px-2 pt-[max(env(safe-area-inset-top),0.5rem)]">
-            <button aria-label={t("close")} className="flex h-11 w-11 items-center justify-center rounded-full">
+            <Button variant="ghost" size="icon-xl" aria-label={t("close")} onClick={() => setOpen(false)}>
               <IconX />
-            </button>
+            </Button>
           </div>
-          <div className="flex min-h-0 flex-1 items-center overflow-auto" style={{ touchAction: "pinch-zoom pan-x pan-y" }}>
+          <div className="flex min-h-0 flex-1 items-center overflow-auto" onClick={() => setOpen(false)} style={{ touchAction: "pinch-zoom pan-x pan-y" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/area.png" alt={t("studyArea")} className="w-full" />
           </div>
@@ -56,7 +58,7 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
               </div>
             ))}
           </div>
-        </div>
+        </FullscreenDialog>
       )}
     </>
   );

@@ -3,7 +3,9 @@ import { safeSegment } from "@/lib/zip";
 
 // GET /api/photos/<file>?size=thumb            → small preview
 // GET /api/photos/<file>?download=<nice-name>  → full image as an attachment
-// With R2 this redirects to a signed R2 URL; locally it serves the bytes.
+// GET /api/photos/<file>?proxy=1               → always serve the bytes from this origin
+// With R2 this redirects to a signed R2 URL (unless proxy=1); locally it serves the bytes.
+// proxy exists because canvases can only read pixels of same-origin images (colour picking).
 export async function GET(request: Request, { params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
   const url = new URL(request.url);
@@ -12,7 +14,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ name
   const download = url.searchParams.get("download");
   const filename = download !== null ? `${safeSegment(download.replace(/\.[a-z0-9]+$/i, "")) || name}.${ext}` : undefined;
 
-  const redirect = await photoRedirect(name, size, filename);
+  const redirect = url.searchParams.has("proxy") ? null : await photoRedirect(name, size, filename);
   if (redirect) {
     return new Response(null, {
       status: 302,

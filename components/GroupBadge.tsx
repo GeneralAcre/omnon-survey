@@ -1,15 +1,14 @@
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { groupColor } from "@/lib/schema";
 
 // Small coloured "G1" pill used everywhere a group is shown.
 export function GroupBadge({ group, className = "" }: { group: string; className?: string }) {
   const c = groupColor(group);
   return (
-    <span
-      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${className}`}
-      style={{ background: c.bg, color: c.fg }}
-    >
+    <Badge className={cn("h-auto px-2 py-0.5 text-[11px] font-bold", className)} style={{ background: c.bg, color: c.fg }}>
       G{group}
-    </span>
+    </Badge>
   );
 }
 

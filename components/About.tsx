@@ -69,21 +69,21 @@ export default function About() {
       </header>
 
       <section className="px-5 pt-6 pb-10">
-        <p className="text-xs font-semibold tracking-widest text-accent uppercase">Workshop Prompt</p>
+        <p className="text-xs font-semibold tracking-widest text-brand uppercase">Workshop Prompt</p>
         <h1 className="mt-3 text-4xl font-bold leading-tight">Fluid Heritage</h1>
         <p className="mt-1 text-xl text-foreground/80">Adaptive Futures for Khlong Om Non</p>
-        <p className="mt-4 text-sm text-muted">Adaptation · Continuity · Interdisciplinary</p>
-        <p className="mt-4 text-sm text-muted">Xi&apos;an University of Architecture and Technology × Faculty of Architecture, Chulalongkorn University</p>
+        <p className="mt-4 text-sm text-muted-foreground">Adaptation · Continuity · Interdisciplinary</p>
+        <p className="mt-4 text-sm text-muted-foreground">Xi&apos;an University of Architecture and Technology × Faculty of Architecture, Chulalongkorn University</p>
       </section>
 
       <section className="px-5">
-        <ol className="relative space-y-6 border-l border-line pl-5">
+        <ol className="relative space-y-6 border-l border-border pl-5">
           {TIMELINE.map((e) => (
             <li key={e.title.en} className="relative">
-              <span className="absolute top-1.5 -left-[25px] h-2.5 w-2.5 rounded-full bg-accent" />
-              <p className="text-xs font-semibold text-accent">{L(e.when)}</p>
+              <span className="absolute top-1.5 -left-[25px] h-2.5 w-2.5 rounded-full bg-brand" />
+              <p className="text-xs font-semibold text-brand">{L(e.when)}</p>
               <h2 className="mt-0.5 font-bold">{L(e.title)}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted">{L(e.body)}</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{L(e.body)}</p>
             </li>
           ))}
         </ol>
@@ -91,11 +91,11 @@ export default function About() {
 
       <section className="mt-10 space-y-2 px-4">
         {GROUPS.map((g) => (
-          <div key={g.id} className="flex items-center gap-4 rounded-2xl bg-surface p-4">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 font-bold">{g.id}</span>
+          <div key={g.id} className="flex items-center gap-4 rounded-2xl bg-card p-4">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold">{g.id}</span>
             <span>
               <span className="block font-semibold">{L(g.label)}</span>
-              <span className="block text-sm text-muted">{L(g.zone)}</span>
+              <span className="block text-sm text-muted-foreground">{L(g.zone)}</span>
             </span>
           </div>
         ))}
@@ -105,7 +105,7 @@ export default function About() {
         <h2 className="font-bold">{t("stepPhotos")}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {IMAGE_SLOTS.map((s) => (
-            <span key={s.key} className="rounded-full bg-surface-2 px-3 py-1.5 text-sm">
+            <span key={s.key} className="rounded-full bg-secondary px-3 py-1.5 text-sm">
               {L(s.label)}
             </span>
           ))}

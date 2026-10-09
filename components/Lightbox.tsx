@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { GroupBadge } from "./GroupBadge";
 import { timeAgo, useT } from "./app-state";
+import FullscreenDialog from "./FullscreenDialog";
 import { downloadUrl, photoUrl } from "./images";
 import { IconBack, IconDownload, IconNext, IconX } from "./Icons";
 
@@ -16,33 +19,26 @@ export default function Lightbox({ items, index, onClose }: { items: LightboxIte
   const item = items[i];
   const go = (d: number) => setI((n) => (n + d + items.length) % items.length);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft") setI((n) => (n - 1 + items.length) % items.length);
-      if (e.key === "ArrowRight") setI((n) => (n + 1) % items.length);
-    };
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [items.length, onClose]);
-
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
+    <FullscreenDialog
+      title={item.title}
+      onClose={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowLeft") go(-1);
+        if (e.key === "ArrowRight") go(1);
+      }}
+    >
       <div className="flex items-center gap-2 px-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2">
-        <button onClick={onClose} aria-label={t("close")} className="flex h-11 w-11 items-center justify-center rounded-full">
+        <Button variant="ghost" size="icon-xl" onClick={onClose} aria-label={t("close")}>
           <IconX />
-        </button>
+        </Button>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 truncate text-sm font-semibold"><GroupBadge group={item.group} />{item.title}</p>
-          <p className="truncate text-xs text-muted">
+          <p className="truncate text-xs text-muted-foreground">
             {t("takenBy")} {item.by} · {timeAgo(item.at, lang)}
           </p>
         </div>
-        <span className="px-2 text-xs text-muted">
+        <span className="px-2 text-xs text-muted-foreground">
           {i + 1}/{items.length}
         </span>
       </div>
@@ -60,25 +56,29 @@ export default function Lightbox({ items, index, onClose }: { items: LightboxIte
         <img key={item.file} src={photoUrl(item.file)} alt={item.title} className="max-h-full max-w-full object-contain" />
         {items.length > 1 && (
           <>
-            <button onClick={() => go(-1)} aria-label="Previous" className="absolute left-2 hidden h-11 w-11 items-center justify-center rounded-full bg-white/10 sm:flex">
+            <Button variant="secondary" size="icon-xl" onClick={() => go(-1)} aria-label="Previous" className="absolute left-2 hidden bg-white/10 sm:inline-flex">
               <IconBack />
-            </button>
-            <button onClick={() => go(1)} aria-label="Next" className="absolute right-2 hidden h-11 w-11 items-center justify-center rounded-full bg-white/10 sm:flex">
-              <IconNext className="h-6 w-6" />
-            </button>
+            </Button>
+            <Button variant="secondary" size="icon-xl" onClick={() => go(1)} aria-label="Next" className="absolute right-2 hidden bg-white/10 sm:inline-flex">
+              <IconNext />
+            </Button>
           </>
         )}
       </div>
       <div className="flex gap-2 px-4 pt-3 pb-safe">
         {item.href && (
-          <Link href={item.href} className="btn-primary flex-1">
+          <Link href={item.href} className={cn(buttonVariants({ size: "xl" }), "flex-1")}>
             {t("openBuilding")}
           </Link>
         )}
-        <a href={downloadUrl(item.file, item.downloadName)} download={item.downloadName} className="btn-secondary flex-1">
+        <a
+          href={downloadUrl(item.file, item.downloadName)}
+          download={item.downloadName}
+          className={cn(buttonVariants({ variant: "secondary", size: "xl" }), "flex-1")}
+        >
           <IconDownload /> {t("download")}
         </a>
       </div>
-    </div>
+    </FullscreenDialog>
   );
 }

@@ -1,6 +1,10 @@
 export const photoUrl = (file: string, size: "full" | "thumb" = "full") =>
   `/api/photos/${file}${size === "thumb" ? "?size=thumb" : ""}`;
 
+// Same-origin bytes, so a canvas may read the pixels (R2 redirects would taint it).
+export const pixelUrl = (file: string, size: "full" | "thumb" = "full") =>
+  `/api/photos/${file}?proxy=1${size === "thumb" ? "&size=thumb" : ""}`;
+
 export const downloadUrl = (file: string, niceName: string) =>
   `/api/photos/${file}?download=${encodeURIComponent(niceName)}`;
 

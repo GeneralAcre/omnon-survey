@@ -62,10 +62,10 @@ export default function PlacesMap({ records, noPlaceLabel }: { records: SurveyRe
   const missing = records.filter((r) => r.lat == null).length;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-line">
-      <div ref={el} className="h-[62dvh] w-full bg-surface" />
+    <div className="relative overflow-hidden rounded-3xl border border-border">
+      <div ref={el} className="h-[62dvh] w-full bg-card" />
       {missing > 0 && (
-        <div className="pointer-events-none absolute top-3 left-3 z-[400] rounded-full bg-black/70 px-3 py-1.5 text-xs text-muted backdrop-blur">
+        <div className="pointer-events-none absolute top-3 left-3 z-[400] rounded-full bg-black/70 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur">
           {missing} {noPlaceLabel}
         </div>
       )}

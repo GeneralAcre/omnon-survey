@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { IMAGE_SLOTS, allPhotos, functionLabel, groupOf, shotsDone, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
+import { cn } from "@/lib/utils";
 import { timeAgo, useT, useUser } from "./app-state";
 import { removeRecord, useRecord } from "./data";
 import { photoUrl } from "./images";
 import { IconBack, IconCamera, IconDownload, IconPin, IconTrash } from "./Icons";
+import ConfirmDialog from "./ConfirmDialog";
 import Lightbox, { type LightboxItem } from "./Lightbox";
 import { GroupBadge } from "./GroupBadge";
 
@@ -20,16 +25,17 @@ export default function RecordDetail() {
   const { record, error, reload } = useRecord(id);
   const [open, setOpen] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   if (record === undefined) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-3 text-muted">
+      <main className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
         {error ? (
           <>
             {t("loadError")}
-            <button onClick={reload} className="btn-secondary">
+            <Button variant="secondary" size="xl" onClick={reload}>
               {t("retry")}
-            </button>
+            </Button>
           </>
         ) : (
           t("loading")
@@ -39,9 +45,9 @@ export default function RecordDetail() {
   }
   if (record === null) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-muted">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-muted-foreground">
         {t("notFound")}
-        <Link href="/" className="btn-secondary">
+        <Link href="/" className={buttonVariants({ variant: "secondary", size: "xl" })}>
           {t("backToList")}
         </Link>
       </main>
@@ -62,13 +68,12 @@ export default function RecordDetail() {
   const canEdit = record.group === user.group;
 
   async function del() {
-    if (!confirm(t("confirmDelete"))) return;
     setDeleting(true);
     try {
       await removeRecord(record!.id, user);
       router.replace("/");
     } catch (e) {
-      alert((e as Error).message);
+      toast.error((e as Error).message);
       setDeleting(false);
     }
   }
@@ -78,12 +83,12 @@ export default function RecordDetail() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 pb-32">
       <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/85 px-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 backdrop-blur-xl">
-        <Link href="/" aria-label={t("backToList")} className="flex h-11 w-11 items-center justify-center rounded-full active:bg-surface-2">
+        <Link href="/" aria-label={t("backToList")} className={buttonVariants({ variant: "ghost", size: "icon-xl" })}>
           <IconBack />
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="flex items-center gap-2 truncate text-lg font-bold">{record.plotNo} <GroupBadge group={record.group} /></h1>
-          <p className="truncate text-xs text-muted">
+          <p className="truncate text-xs text-muted-foreground">
             {L(g.label)} · {L(g.zone)}
           </p>
         </div>
@@ -107,29 +112,29 @@ export default function RecordDetail() {
             href={record.mapLink}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 rounded-2xl bg-surface p-4 active:bg-surface-2"
+            className="flex items-center gap-3 rounded-2xl bg-card p-4 active:bg-secondary"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand">
               <IconPin />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{t("openMaps")}</span>
-              <span className="block truncate text-xs text-muted">
+              <span className="block truncate text-xs text-muted-foreground">
                 {record.lat != null ? `${record.lat}, ${record.lng}` : record.mapLink}
               </span>
             </span>
-            <span className="text-muted">↗</span>
+            <span className="text-muted-foreground">↗</span>
           </a>
         )}
 
         {(record.colors.length > 0 || record.notes) && (
-          <div className="rounded-2xl bg-surface p-4">
+          <div className="rounded-2xl bg-card p-4">
             {record.colors.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {record.colors.map((c) => (
-                  <span key={c} className="flex items-center gap-1.5 rounded-full bg-surface-2 py-1 pr-2.5 pl-1">
+                  <span key={c} className="flex items-center gap-1.5 rounded-full bg-secondary py-1 pr-2.5 pl-1">
                     <span className="h-5 w-5 rounded-full border border-white/10" style={{ background: c }} />
-                    <span className="font-mono text-xs text-muted">{c}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{c}</span>
                   </span>
                 ))}
               </div>
@@ -140,11 +145,11 @@ export default function RecordDetail() {
 
         <div className="flex items-center justify-between pt-3">
           <h2 className="text-lg font-bold">
-            {t("stepPhotos")} <span className="text-sm font-normal text-muted">{shotsDone(record)}/{IMAGE_SLOTS.length}</span>
+            {t("stepPhotos")} <span className="text-sm font-normal text-muted-foreground">{shotsDone(record)}/{IMAGE_SLOTS.length}</span>
           </h2>
           {items.length > 0 && (
-            <a href={`/api/export/photos?id=${record.id}`} download className="flex items-center gap-1.5 text-sm text-accent">
-              <IconDownload className="h-4 w-4" /> ZIP
+            <a href={`/api/export/photos?id=${record.id}`} download className="flex items-center gap-1.5 text-sm text-brand">
+              <IconDownload className="size-4" /> ZIP
             </a>
           )}
         </div>
@@ -153,12 +158,12 @@ export default function RecordDetail() {
           const photos = record.images[s.key].photos;
           const note = record.images[s.key].note;
           return (
-            <section key={s.key} className="rounded-2xl bg-surface p-3">
+            <section key={s.key} className="rounded-2xl bg-card p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="font-semibold">{L(s.label)}</h3>
-                {photos.length === 0 && <span className="text-xs text-muted">{t("notTaken")}</span>}
+                {photos.length === 0 && <span className="text-xs text-muted-foreground">{t("notTaken")}</span>}
               </div>
-              {note && <p className="mt-1 text-sm text-muted">{note}</p>}
+              {note && <p className="mt-1 text-sm text-muted-foreground">{note}</p>}
               {photos.length > 0 && (
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                   {photos.map((p) => {
@@ -168,7 +173,7 @@ export default function RecordDetail() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={photoUrl(p.file, "thumb")} alt="" loading="lazy" className="h-full w-full object-cover" />
                         <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">
-                          <IconCamera className="h-3 w-3 shrink-0" />
+                          <IconCamera className="size-3 shrink-0" />
                           <span className="truncate">{p.by}</span>
                         </span>
                       </button>
@@ -180,15 +185,15 @@ export default function RecordDetail() {
           );
         })}
 
-        <section className="rounded-2xl bg-surface p-4 text-sm">
+        <section className="rounded-2xl bg-card p-4 text-sm">
           <Row label={t("filledBy")} value={`${record.createdBy.name} · G${record.createdBy.group}`} sub={timeAgo(record.createdAt, lang)} />
           <Row label={t("editedBy")} value={`${record.updatedBy.name} · G${record.updatedBy.group}`} sub={timeAgo(record.updatedAt, lang)} />
           {contributors.length > 0 && (
-            <div className="border-t border-line py-3">
-              <p className="text-muted">{t("takenBy")}</p>
+            <div className="border-t border-border py-3">
+              <p className="text-muted-foreground">{t("takenBy")}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {contributors.map(([name, grp]) => (
-                  <span key={name} className="rounded-full bg-surface-2 px-3 py-1">
+                  <span key={name} className="rounded-full bg-secondary px-3 py-1">
                     {name} <GroupBadge group={grp} className="ml-1" />
                   </span>
                 ))}
@@ -196,39 +201,42 @@ export default function RecordDetail() {
             </div>
           )}
           {record.history?.length > 1 && (
-            <details className="border-t border-line pt-3">
-              <summary className="cursor-pointer text-muted">
+            <Collapsible className="border-t border-border pt-3">
+              <CollapsibleTrigger className="group/history flex cursor-pointer items-center gap-1 text-muted-foreground">
+                <span className="text-xs transition-transform group-data-[panel-open]/history:rotate-90">▸</span>
                 {t("history")} ({record.history.length})
-              </summary>
-              <ul className="mt-2 space-y-1.5">
-                {[...record.history].reverse().map((h, i) => (
-                  <li key={i} className="flex justify-between gap-3">
-                    <span>
-                      {h.by} <span className="text-muted">G{h.group} · {t(h.action)}</span>
-                    </span>
-                    <span className="shrink-0 text-muted">{timeAgo(h.at, lang)}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="mt-2 space-y-1.5">
+                  {[...record.history].reverse().map((h, i) => (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span>
+                        {h.by} <span className="text-muted-foreground">G{h.group} · {t(h.action)}</span>
+                      </span>
+                      <span className="shrink-0 text-muted-foreground">{timeAgo(h.at, lang)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </section>
 
         {canEdit && (
-          <button onClick={del} disabled={deleting} className="btn-danger w-full">
+          <Button variant="destructive" size="xl" onClick={() => setConfirming(true)} disabled={deleting} className="w-full">
             <IconTrash /> {t("delete")}
-          </button>
+          </Button>
         )}
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6 pb-safe">
         <div className="mx-auto max-w-2xl">
           {canEdit ? (
-            <Link href={`/r/${record.id}/edit`} className="btn-primary w-full">
+            <Link href={`/r/${record.id}/edit`} className={cn(buttonVariants({ size: "xl" }), "w-full")}>
               {t("edit")}
             </Link>
           ) : (
-            <div className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-surface-2 px-4 text-center text-sm text-muted">
+            <div className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-secondary px-4 text-center text-sm text-muted-foreground">
               <GroupBadge group={record.group} />
               {t("viewOnly").replace("{n}", record.group)}
             </div>
@@ -236,6 +244,7 @@ export default function RecordDetail() {
         </div>
       </div>
 
+      <ConfirmDialog open={confirming} onOpenChange={setConfirming} title={t("confirmDelete")} confirmLabel={t("delete")} onConfirm={del} />
       {open !== null && items[open] && <Lightbox items={items} index={open} onClose={() => setOpen(null)} />}
     </main>
   );
@@ -243,8 +252,8 @@ export default function RecordDetail() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-surface p-4">
-      <p className="text-xs text-muted">{label}</p>
+    <div className="rounded-2xl bg-card p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 font-semibold leading-snug">{value}</p>
     </div>
   );
@@ -252,11 +261,11 @@ function Info({ label, value }: { label: string; value: string }) {
 
 function Row({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-line py-3 first:pt-0">
-      <span className="text-muted">{label}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-border py-3 first:pt-0">
+      <span className="text-muted-foreground">{label}</span>
       <span className="text-right">
         <span className="block font-medium">{value}</span>
-        <span className="block text-xs text-muted">{sub}</span>
+        <span className="block text-xs text-muted-foreground">{sub}</span>
       </span>
     </div>
   );

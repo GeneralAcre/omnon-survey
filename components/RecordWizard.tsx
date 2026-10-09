@@ -20,12 +20,19 @@ import {
   type SurveyInput,
   type SurveyRecord,
 } from "@/lib/schema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label as FieldLabel } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { useT, useUser } from "./app-state";
+import ConfirmDialog from "./ConfirmDialog";
 import { saveRecord, useRecords } from "./data";
-import { photoUrl, prepare, uploadPrepared } from "./images";
+import { photoUrl, pixelUrl, prepare, uploadPrepared } from "./images";
 import { queue } from "./photo-queue";
 import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPalette, IconPin, IconPlus, IconX } from "./Icons";
-import ColorSampler from "./ColorSampler";
+import ColorSampler, { MainColours } from "./ColorSampler";
 
 const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "stepColors", "stepReview"] as const;
 
@@ -75,8 +82,10 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const [draftRestored, setDraftRestored] = useState(false);
   const [justSaved, setJustSaved] = useState<{ id: string; plotNo: string; photos: number } | null>(null);
   const [sampling, setSampling] = useState<string | null>(null);
+  const [colourFrom, setColourFrom] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState("");
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const dirty = useRef(false);
   const stepRef = useRef(0);
   const restored = useRef(false);
@@ -127,6 +136,16 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     dirty.current = true;
     setData((d) => {
       const next = { ...d, images: { ...d.images, [key]: fn(d.images[key]) } };
+      persist(next);
+      return next;
+    });
+  }
+
+  // Functional so several colours added in one tap ("Add all") don't overwrite each other.
+  function setColors(fn: (colors: string[]) => string[]) {
+    dirty.current = true;
+    setData((d) => {
+      const next = { ...d, colors: fn(d.colors).slice(0, 12) };
       persist(next);
       return next;
     });
@@ -234,7 +253,11 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   }
 
   function leave() {
-    if ((dirty.current || pending.length) && !confirm(t("discard"))) return;
+    if (dirty.current || pending.length) setConfirmLeave(true);
+    else exit();
+  }
+
+  function exit() {
     resetLocal();
     router.push(record ? `/r/${record.id}` : "/");
   }
@@ -301,24 +324,27 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const canNext = step !== 0 || (data.plotNo.trim() && data.group);
   const isLast = step === STEPS.length - 1;
   const optionalStep = step === 1 || step === 2;
+  // Colour-scheme shots first, then every other photo of the building.
+  const colourPhotos = [...data.images.colorScheme.photos, ...allPhotos(data).filter((p) => p.slot !== "colorScheme")];
+  const colourFile = colourPhotos.find((p) => p.file === colourFrom)?.file ?? colourPhotos[0]?.file;
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background">
       {/* Top bar */}
-      <header className="border-b border-line px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
+      <header className="border-b border-border px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
-          <button onClick={leave} aria-label={t("close")} className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full active:bg-surface-2">
+          <Button variant="ghost" size="icon-xl" onClick={leave} aria-label={t("close")} className="-ml-2">
             <IconX />
-          </button>
+          </Button>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {step + 1}/{STEPS.length} · {record ? `${t("edit")} ${record.plotNo}` : t("newRecord")}
             </p>
             <h1 className="truncate text-lg font-bold">{t(STEPS[step])}</h1>
           </div>
           {pending.length > 0 && (
-            <span className="flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
-              <span className={`h-2 w-2 rounded-full ${waitingCount ? "bg-yellow-400" : "animate-pulse bg-accent"}`} />
+            <span className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">
+              <span className={`h-2 w-2 rounded-full ${waitingCount ? "bg-yellow-400" : "animate-pulse bg-brand"}`} />
               {pending.length}
             </span>
           )}
@@ -329,7 +355,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               key={s}
               aria-label={t(s)}
               onClick={() => data.plotNo.trim() && data.group && setStep(i)}
-              className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-foreground" : "bg-line"}`}
+              className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-foreground" : "bg-border"}`}
             />
           ))}
         </div>
@@ -339,7 +365,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       <div ref={scroller} className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-5">
           {justSaved && step === 0 && (
-            <div className="mb-5 flex items-center gap-3 rounded-2xl bg-ok/15 p-4">
+            <Alert className="mb-5 flex items-center gap-3 rounded-2xl border-none bg-ok/15 p-4">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ok text-background">
                 <IconCheck />
               </span>
@@ -347,31 +373,31 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 <p className="font-semibold text-ok">
                   {t("saved")} · {justSaved.plotNo}
                 </p>
-                <p className="text-sm text-muted">
+                <p className="text-sm text-muted-foreground">
                   {justSaved.photos} {t("photos")} · {t("nextBuilding")}
                 </p>
               </div>
               <Link href={`/r/${justSaved.id}`} className="shrink-0 text-sm font-semibold underline">
                 {t("viewIt")}
               </Link>
-            </div>
+            </Alert>
           )}
           {draftRestored && step === 0 && (
-            <div className="mb-4 flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3 text-sm">
+            <div className="mb-4 flex items-center justify-between rounded-2xl bg-secondary px-4 py-3 text-sm">
               <span>{t("draftRestored")}</span>
-              <button onClick={startOver} className="font-semibold text-accent">
+              <Button variant="link" onClick={startOver} className="h-auto p-0 font-semibold text-brand">
                 {t("discardDraft")}
-              </button>
+              </Button>
             </div>
           )}
 
           {step === 0 && (
             <div className="space-y-7">
               <div>
-                <label htmlFor="plot" className="text-sm font-medium text-muted">
+                <FieldLabel htmlFor="plot" className="text-muted-foreground">
                   {t("plotNo")}
-                </label>
-                <input
+                </FieldLabel>
+                <Input
                   id="plot"
                   value={data.plotNo}
                   onChange={(e) => update({ plotNo: e.target.value })}
@@ -380,34 +406,37 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   autoCapitalize="characters"
                   enterKeyHint="next"
                   onKeyDown={(e) => e.key === "Enter" && canNext && setStep(1)}
-                  className="field mt-2 py-5 text-3xl font-bold tracking-wide"
+                  className="mt-2 h-auto rounded-2xl bg-card px-4 py-4 text-3xl font-bold tracking-wide md:text-3xl"
                 />
-                <p className="mt-2 text-sm text-muted">{t("plotHint")}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t("plotHint")}</p>
                 {duplicate && (
-                  <div className="mt-3 flex items-start gap-2 rounded-2xl bg-accent/10 p-3 text-sm text-accent">
-                    <IconAlert className="mt-0.5 h-5 w-5 shrink-0" />
-                    <span>
-                      {t("duplicate")}{" "}
-                      <Link href={`/r/${duplicate.id}`} className="font-semibold underline">
-                        {t("openExisting")}
-                      </Link>
-                    </span>
-                  </div>
+                  <Alert className="mt-3 rounded-2xl border-none bg-brand/10 text-brand">
+                    <IconAlert className="size-5" />
+                    <AlertDescription className="text-brand">
+                      <span>
+                        {t("duplicate")}{" "}
+                        <Link href={`/r/${duplicate.id}`} className="font-semibold">
+                          {t("openExisting")}
+                        </Link>
+                      </span>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
 
               <div>
-                <p className="text-sm font-medium text-muted">{t("location")}</p>
-                <button
+                <p className="text-sm font-medium text-muted-foreground">{t("location")}</p>
+                <Button
+                  variant="secondary"
+                  size="xl"
                   onClick={useMyLocation}
                   disabled={locating}
-                  className="mt-2 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-surface-2 font-semibold active:scale-[0.99] disabled:opacity-60"
+                  className="mt-2 min-h-14 w-full rounded-2xl"
                 >
                   <IconPin />
                   {locating ? t("locating") : t("useMyLocation")}
-                </button>
-                <input
-                  value={data.mapLink}
+                </Button>
+                <Input                  value={data.mapLink}
                   onChange={(e) => {
                     const v = e.target.value;
                     const c = coordsFromLink(v);
@@ -416,26 +445,26 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   placeholder={t("pasteMapLink")}
                   inputMode="url"
                   autoComplete="off"
-                  className="field mt-2 text-sm"
+                  className="mt-2 h-12 rounded-2xl bg-card px-4 md:text-sm"
                 />
-                {locError && <p className="mt-2 text-sm text-accent">{locError}</p>}
+                {locError && <p className="mt-2 text-sm text-brand">{locError}</p>}
                 <div className="mt-2 flex items-center justify-between gap-3 text-sm">
                   {data.mapLink ? (
                     <>
-                      <span className="truncate text-muted">
+                      <span className="truncate text-muted-foreground">
                         {data.lat !== null ? `${data.lat}, ${data.lng}` : t("linkSaved")}
                       </span>
                       <a
                         href={/^https?:\/\//i.test(data.mapLink) ? data.mapLink : data.lat !== null ? mapsLink(data.lat, data.lng!) : "#"}
                         target="_blank"
                         rel="noreferrer"
-                        className="shrink-0 font-semibold text-accent"
+                        className="shrink-0 font-semibold text-brand"
                       >
                         {t("openMaps")} ↗
                       </a>
                     </>
                   ) : (
-                    <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" className="text-muted underline">
+                    <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" className="text-muted-foreground underline">
                       {t("findOnMaps")}
                     </a>
                   )}
@@ -443,7 +472,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-muted">{t("group")}</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("group")}</p>
                 {/* Buildings belong to the surveyor's group (option B), so this is fixed. */}
                 {(() => {
                   const g = groupOf(record?.group ?? user.group)!;
@@ -456,7 +485,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                     </div>
                   );
                 })()}
-                <p className="mt-2 text-xs text-muted">{t("groupOwns")}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{t("groupOwns")}</p>
               </div>
             </div>
           )}
@@ -489,7 +518,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
           {step === 3 && (
             <div className="space-y-3">
-              <p className="text-sm text-muted">
+              <p className="text-sm text-muted-foreground">
                 {shotsDone(data)}/{IMAGE_SLOTS.length} {t("shots")} · {t("multiHint")}
               </p>
               {IMAGE_SLOTS.map((s, i) => (
@@ -517,20 +546,41 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 <h2 className="flex items-center gap-2 font-semibold">
                   <IconPalette /> {L(IMAGE_SLOTS[7].label)}
                 </h2>
-                {allPhotos(data).length > 0 ? (
+                {colourPhotos.length > 0 && colourFile ? (
                   <>
-                    <p className="mt-1 text-sm text-muted">{t("pickFromPhoto")}</p>
-                    <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
-                      {[...data.images.colorScheme.photos, ...allPhotos(data).filter((p) => p.slot !== "colorScheme")].map((p) => (
-                        <button key={p.file} onClick={() => setSampling(p.file)} className="h-20 w-20 shrink-0 overflow-hidden rounded-xl">
+                    <p className="mt-1 text-sm text-muted-foreground">{t("pickFromPhoto")}</p>
+                    <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 py-1">
+                      {colourPhotos.map((p) => (
+                        <button
+                          key={p.file}
+                          onClick={() => setColourFrom(p.file)}
+                          aria-pressed={p.file === colourFile}
+                          className={cn(
+                            "ml-1 h-20 w-20 shrink-0 overflow-hidden rounded-xl transition",
+                            p.file === colourFile ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : "opacity-60",
+                          )}
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={photoUrl(p.file, "thumb")} alt="" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
+                    <div className="mt-4 rounded-2xl bg-card p-3">
+                      <MainColours
+                        src={pixelUrl(colourFile, "thumb")}
+                        colors={data.colors}
+                        onAdd={(hexes) => setColors((cs) => [...cs, ...hexes.filter((h) => !cs.includes(h))])}
+                        onRemove={(hex) => setColors((cs) => cs.filter((c) => c !== hex))}
+                        // An empty scheme is filled straight away; unwanted colours can be deleted below.
+                        onFound={(swatches) => setColors((cs) => (cs.length ? cs : swatches.map((s) => s.hex)))}
+                      />
+                      <Button variant="link" onClick={() => setSampling(colourFile)} className="mt-2 h-auto p-0 text-sm text-brand">
+                        {t("pickByHand")}
+                      </Button>
+                    </div>
                   </>
                 ) : (
-                  <p className="mt-1 text-sm text-muted">{t("colorsNoPhoto")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t("colorsNoPhoto")}</p>
                 )}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   {data.colors.map((c) => (
@@ -541,12 +591,12 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                       style={{ background: c }}
                       aria-label={`Remove ${c}`}
                     >
-                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-surface-2 text-foreground">
-                        <IconX className="h-3 w-3" />
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-foreground">
+                        <IconX className="size-3" />
                       </span>
                     </button>
                   ))}
-                  <label className="flex h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-line px-3 text-sm text-muted">
+                  <label className="flex h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-3 text-sm text-muted-foreground">
                     <input
                       type="color"
                       className="h-0 w-0 opacity-0"
@@ -557,16 +607,16 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 </div>
               </section>
               <section>
-                <label htmlFor="notes" className="font-semibold">
+                <FieldLabel htmlFor="notes" className="text-base font-semibold">
                   {t("notes")}
-                </label>
-                <textarea
+                </FieldLabel>
+                <Textarea
                   id="notes"
                   value={data.notes}
                   onChange={(e) => update({ notes: e.target.value })}
                   placeholder={t("notesHint")}
                   rows={5}
-                  className="field mt-2"
+                  className="mt-2 min-h-32 rounded-2xl bg-card px-4 py-3"
                 />
               </section>
             </div>
@@ -577,9 +627,9 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               <ReviewRow label={t("plotNo")} value={`${data.plotNo} · ${L(groupOf(data.group)!.label)}`} onEdit={() => setStep(0)} />
               <ReviewRow label={t("stepType")} value={typeLabel(data, lang)} onEdit={() => setStep(1)} empty={t("notSet")} />
               <ReviewRow label={t("stepFunction")} value={functionLabel(data, lang)} onEdit={() => setStep(2)} empty={t("notSet")} />
-              <button onClick={() => setStep(3)} className="w-full rounded-2xl bg-surface p-4 text-left">
+              <button onClick={() => setStep(3)} className="w-full rounded-2xl bg-card p-4 text-left">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted">{t("stepPhotos")}</span>
+                  <span className="text-sm text-muted-foreground">{t("stepPhotos")}</span>
                   <span className="text-sm font-semibold">
                     {shotsDone(data)}/{IMAGE_SLOTS.length}
                   </span>
@@ -588,12 +638,12 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   {IMAGE_SLOTS.map((s) => {
                     const p = data.images[s.key].photos[0];
                     return (
-                      <div key={s.key} className="relative aspect-square overflow-hidden rounded-lg bg-surface-2">
+                      <div key={s.key} className="relative aspect-square overflow-hidden rounded-lg bg-secondary">
                         {p ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={photoUrl(p.file, "thumb")} alt="" className="h-full w-full object-cover" />
                         ) : (
-                          <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-[10px] text-muted">
+                          <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-[10px] text-muted-foreground">
                             {L(s.label)}
                           </span>
                         )}
@@ -602,8 +652,8 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   })}
                 </div>
               </button>
-              <button onClick={() => setStep(4)} className="w-full rounded-2xl bg-surface p-4 text-left">
-                <span className="text-sm text-muted">{t("stepColors")}</span>
+              <button onClick={() => setStep(4)} className="w-full rounded-2xl bg-card p-4 text-left">
+                <span className="text-sm text-muted-foreground">{t("stepColors")}</span>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {data.colors.map((c) => (
                     <span key={c} className="h-6 w-6 rounded-md" style={{ background: c }} />
@@ -611,7 +661,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 </div>
                 {data.notes && <p className="mt-2 line-clamp-3 text-sm whitespace-pre-line">{data.notes}</p>}
               </button>
-              <p className="pt-2 text-center text-xs text-muted">
+              <p className="pt-2 text-center text-xs text-muted-foreground">
                 {t("filledBy")} {user.name} · {L(groupOf(user.group)!.label)}
               </p>
             </div>
@@ -620,7 +670,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       </div>
 
       {/* Bottom actions */}
-      <footer className="border-t border-line bg-background px-4 pt-3 pb-safe">
+      <footer className="border-t border-border bg-background px-4 pt-3 pb-safe">
         <div className="mx-auto max-w-2xl">
           {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
           {pending.some((p) => p.status === "failed") && <p className="mb-2 text-sm text-red-400">{t("badPhotoFooter")}</p>}
@@ -631,19 +681,20 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
           )}
           <div className="flex gap-2">
             {step > 0 && (
-              <button onClick={() => setStep(step - 1)} className="btn-secondary w-14 px-0" aria-label={t("back")}>
+              <Button variant="secondary" size="xl" onClick={() => setStep(step - 1)} className="pr-6 pl-4">
                 <IconBack />
-              </button>
+                {t("back")}
+              </Button>
             )}
             {isLast ? (
-              <button onClick={save} disabled={saving || pending.length > 0} className="btn-primary flex-1">
+              <Button size="xl" onClick={save} disabled={saving || pending.length > 0} className="flex-1">
                 {saving ? t("saving") : uploading > 0 ? t("waitUploads") : waitingCount > 0 ? t("waitSignal") : t("save")}
-              </button>
+              </Button>
             ) : (
-              <button onClick={() => setStep(step + 1)} disabled={!canNext} className="btn-primary flex-1">
+              <Button size="xl" onClick={() => setStep(step + 1)} disabled={!canNext} className="flex-1">
                 {optionalStep && !(step === 1 ? data.buildingType : data.function) ? t("skip") : t("next")}
                 <IconNext />
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -652,10 +703,15 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
       <input ref={galleryInput} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
 
+      <ConfirmDialog open={confirmLeave} onOpenChange={setConfirmLeave} title={t("discard")} confirmLabel={t("leave")} onConfirm={exit} />
+
       {sampling && (
         <ColorSampler
-          src={photoUrl(sampling)}
-          onPick={(c) => setData((d) => (d.colors.includes(c) ? d : { ...d, colors: [...d.colors, c].slice(0, 12) }))}
+          src={pixelUrl(sampling)}
+          paletteSrc={pixelUrl(sampling, "thumb")}
+          colors={data.colors}
+          onAdd={(hexes) => setColors((cs) => [...cs, ...hexes.filter((h) => !cs.includes(h))])}
+          onRemove={(hex) => setColors((cs) => cs.filter((c) => c !== hex))}
           onClose={() => setSampling(null)}
         />
       )}
@@ -681,19 +737,22 @@ function Choices({
     <div>
       <div className="grid grid-cols-2 gap-2">
         {options.map((o) => (
-          <button
+          <Button
             key={o.id}
+            variant={value === o.id ? "default" : "outline"}
+            aria-pressed={value === o.id}
             onClick={() => onPick(o.id)}
-            className={`flex min-h-20 items-end rounded-2xl border p-3.5 text-left text-[15px] leading-snug font-medium transition active:scale-[0.98] ${
-              value === o.id ? "border-foreground bg-foreground text-background" : "border-line bg-surface"
-            }`}
+            className={cn(
+              "h-auto min-h-20 items-end justify-start rounded-2xl p-3.5 text-left text-[15px] leading-snug whitespace-normal active:scale-[0.98]",
+              value === o.id ? "border-foreground hover:bg-foreground" : "bg-card dark:bg-card",
+            )}
           >
             {L(o.label)}
-          </button>
+          </Button>
         ))}
       </div>
       {value === "other" && (
-        <input autoFocus className="field mt-3" placeholder={t("describe")} value={other} onChange={(e) => onOther(e.target.value)} />
+        <Input autoFocus className="mt-3 h-12 rounded-2xl bg-card px-4" placeholder={t("describe")} value={other} onChange={(e) => onOther(e.target.value)} />
       )}
     </div>
   );
@@ -726,22 +785,23 @@ function ShotCard({
 }) {
   const { t, L } = useT();
   const [showNote, setShowNote] = useState(!!slot.note);
+  const [discarding, setDiscarding] = useState<Pending | null>(null);
   const has = slot.photos.length > 0;
   const empty = !has && pending.length === 0;
 
   return (
-    <div className={`rounded-2xl border p-3 transition ${has ? "border-ok/30 bg-surface" : "border-line bg-surface"}`}>
+    <div className={`rounded-2xl border p-3 transition ${has ? "border-ok/30 bg-card" : "border-border bg-card"}`}>
       <div className="flex items-center gap-3">
         <span
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-            has ? "bg-ok text-background" : "bg-surface-2 text-muted"
+            has ? "bg-ok text-background" : "bg-secondary text-muted-foreground"
           }`}
         >
-          {has ? <IconCheck className="h-4 w-4" /> : index}
+          {has ? <IconCheck className="size-4" /> : index}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{L(label)}</p>
-          <p className="truncate text-xs text-muted">{L(hint)}</p>
+          <p className="truncate text-xs text-muted-foreground">{L(hint)}</p>
         </div>
         {has && (
           <span className="shrink-0 rounded-full bg-ok/15 px-2.5 py-1 text-xs font-semibold text-ok">
@@ -752,14 +812,14 @@ function ShotCard({
 
       {empty ? (
         <div className="mt-3 flex gap-2">
-          <button onClick={onCamera} className="flex h-24 flex-1 flex-col items-center justify-center gap-1 rounded-xl bg-surface-2 text-sm font-medium active:scale-[0.98]">
-            <IconCamera className="h-7 w-7" />
+          <Button variant="secondary" onClick={onCamera} className="h-24 flex-1 flex-col gap-1 rounded-xl text-sm active:scale-[0.98]">
+            <IconCamera className="size-7" />
             {t("takePhoto")}
-          </button>
-          <button onClick={onGallery} className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-xl border border-line text-xs text-muted active:scale-[0.98]">
-            <IconImage className="h-6 w-6" />
+          </Button>
+          <Button variant="outline" onClick={onGallery} className="h-24 w-24 flex-col gap-1 rounded-xl bg-transparent text-xs text-muted-foreground active:scale-[0.98]">
+            <IconImage className="size-6" />
             {t("gallery")}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="no-scrollbar -mx-3 mt-3 flex gap-2 overflow-x-auto px-3">
@@ -772,7 +832,7 @@ function ShotCard({
                 aria-label="Remove"
                 className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70"
               >
-                <IconX className="h-4 w-4" />
+                <IconX className="size-4" />
               </button>
               <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">{p.by}</span>
             </div>
@@ -797,7 +857,7 @@ function ShotCard({
                       </button>
                     </>
                   )}
-                  <button onClick={() => { if (confirm(t("confirmDiscardPhoto"))) onDiscard(p); }} className="text-[10px] text-muted underline">
+                  <button onClick={() => setDiscarding(p)} className="text-[10px] text-muted-foreground underline">
                     {t("delete")}
                   </button>
                 </div>
@@ -806,17 +866,17 @@ function ShotCard({
           ))}
           <button
             onClick={onCamera}
-            className="flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-surface-2 text-xs font-semibold active:scale-[0.98]"
+            className="flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-secondary text-xs font-semibold active:scale-[0.98]"
           >
             <span className="relative">
-              <IconCamera className="h-7 w-7" />
-              <IconPlus className="absolute -top-1.5 -right-2.5 h-4 w-4 rounded-full bg-foreground p-0.5 text-background" />
+              <IconCamera className="size-7" />
+              <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-foreground p-0.5 text-background" />
             </span>
             {t("takeAnother")}
           </button>
           <button
             onClick={onGallery}
-            className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line text-xs text-muted active:scale-[0.98]"
+            className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-xs text-muted-foreground active:scale-[0.98]"
           >
             <IconImage />
             {t("gallery")}
@@ -825,24 +885,32 @@ function ShotCard({
       )}
 
       {showNote ? (
-        <input className="field mt-3 py-2.5 text-sm" placeholder={t("noteOptional")} value={slot.note} onChange={(e) => onNote(e.target.value)} />
+        <Input className="mt-3 h-10 rounded-2xl bg-card px-4 md:text-sm" placeholder={t("noteOptional")} value={slot.note} onChange={(e) => onNote(e.target.value)} />
       ) : (
-        <button onClick={() => setShowNote(true)} className="mt-2 text-xs text-muted">
+        <Button variant="link" onClick={() => setShowNote(true)} className="mt-2 h-auto p-0 text-xs font-normal text-muted-foreground">
           + {t("noteOptional")}
-        </button>
+        </Button>
       )}
+
+      <ConfirmDialog
+        open={discarding !== null}
+        onOpenChange={(open) => !open && setDiscarding(null)}
+        title={t("confirmDiscardPhoto")}
+        confirmLabel={t("delete")}
+        onConfirm={() => discarding && onDiscard(discarding)}
+      />
     </div>
   );
 }
 
 function ReviewRow({ label, value, onEdit, empty }: { label: string; value: string; onEdit: () => void; empty?: string }) {
   return (
-    <button onClick={onEdit} className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface p-4 text-left">
+    <button onClick={onEdit} className="flex w-full items-center justify-between gap-3 rounded-2xl bg-card p-4 text-left">
       <span className="min-w-0">
-        <span className="block text-sm text-muted">{label}</span>
-        <span className={`block truncate font-semibold ${value ? "" : "text-accent"}`}>{value || empty}</span>
+        <span className="block text-sm text-muted-foreground">{label}</span>
+        <span className={`block truncate font-semibold ${value ? "" : "text-brand"}`}>{value || empty}</span>
       </span>
-      <IconNext className="h-5 w-5 shrink-0 text-muted" />
+      <IconNext className="size-5 shrink-0 text-muted-foreground" />
     </button>
   );
 }

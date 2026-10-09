@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Thai, Open_Sans } from "next/font/google";
+import { Kanit, Open_Sans } from "next/font/google";
 import Shell from "@/components/Shell";
+import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -8,10 +10,11 @@ const openSans = Open_Sans({
   subsets: ["latin"],
 });
 
-// Open Sans has no Thai glyphs; Noto Sans Thai is drawn to match it.
-const notoThai = Noto_Sans_Thai({
-  variable: "--font-noto-thai",
+// Open Sans has no Thai glyphs, so Thai text falls through to Kanit.
+const kanit = Kanit({
+  variable: "--font-kanit",
   subsets: ["thai"],
+  weight: ["400", "500", "600", "700"],
 });
 
 // Every page depends on who is signed in on this phone (stored in the browser),
@@ -34,9 +37,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${openSans.variable} ${notoThai.variable} h-full antialiased`}>
+    <html lang="en" className={cn("dark h-full antialiased", openSans.variable, kanit.variable)}>
       <body className="flex min-h-full flex-col">
         <Shell>{children}</Shell>
+        <Toaster position="top-center" />
       </body>
     </html>
   );

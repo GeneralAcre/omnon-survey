@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import { GROUPS } from "@/lib/schema";
 import { setLang, setUser, useT, useUser } from "./app-state";
 
@@ -15,12 +20,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 export function LangToggle({ className = "" }: { className?: string }) {
   const { t, lang } = useT();
   return (
-    <button
-      onClick={() => setLang(lang === "en" ? "th" : "en")}
-      className={`rounded-full border border-line px-3 py-1.5 text-sm text-foreground ${className}`}
-    >
+    <Button variant="outline" onClick={() => setLang(lang === "en" ? "th" : "en")} className={cn("h-9 rounded-full px-3", className)}>
       {t("language")}
-    </button>
+    </Button>
   );
 }
 
@@ -32,14 +34,17 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
   const ready = name.trim() && group;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-6 pb-safe">
+    <main className="relative isolate mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-[max(env(safe-area-inset-top),1.5rem)] pb-safe">
+      {/* The canal photo behind the welcome text, fading to black behind the form. */}
+      <div aria-hidden="true" className="fixed inset-0 -z-20 bg-[url(/omnon.jpg)] bg-cover bg-[center_60%]" />
+      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-gradient-to-b from-black/20 via-black/70 to-background to-75%" />
       <div className="flex justify-end">
-        <LangToggle />
+        <LangToggle className="border-white/40 bg-black/30 backdrop-blur-sm" />
       </div>
-      <div className="mt-10">
-        <p className="text-sm font-semibold tracking-wide text-accent uppercase">Khlong Om Non</p>
-        <h1 className="mt-2 text-3xl font-bold">{t("welcome")}</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-muted">{t("welcomeSub")}</p>
+      <div className="mt-24">
+        <p className="text-sm font-semibold tracking-[0.2em] text-white/85 uppercase drop-shadow">Khlong Om Non</p>
+        <h1 className="mt-2 text-4xl font-bold text-white drop-shadow-lg">{t("welcome")}</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-white/85 drop-shadow">{t("welcomeSub")}</p>
       </div>
 
       <form
@@ -51,12 +56,12 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
           onDone?.();
         }}
       >
-        <label className="text-sm font-medium text-muted" htmlFor="name">
+        <Label className="text-muted-foreground" htmlFor="name">
           {t("yourName")}
-        </label>
-        <input
+        </Label>
+        <Input
           id="name"
-          className="field mt-2"
+          className="mt-2 h-13 rounded-2xl bg-black/50 px-4 backdrop-blur-sm dark:bg-black/50"
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
@@ -64,16 +69,22 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
           maxLength={80}
         />
 
-        <p className="mt-6 text-sm font-medium text-muted">{t("yourGroup")}</p>
-        <div className="mt-2 space-y-2">
+        <p className="mt-6 text-sm font-medium text-muted-foreground">{t("yourGroup")}</p>
+        <ToggleGroup
+          aria-label={t("yourGroup")}
+          orientation="vertical"
+          value={group ? [group] : []}
+          onValueChange={(v) => setGroup(v[0] ?? "")}
+          className="mt-2 w-full"
+        >
           {GROUPS.map((g) => (
-            <button
-              type="button"
+            <ToggleGroupItem
               key={g.id}
-              onClick={() => setGroup(g.id)}
-              className={`flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left transition ${
-                group === g.id ? "" : "border-line bg-surface"
-              }`}
+              value={g.id}
+              className={cn(
+                "h-auto w-full justify-start gap-4 rounded-2xl border-2 p-4 text-left text-base",
+                group === g.id ? "" : "border-border bg-card",
+              )}
               style={group === g.id ? { background: g.color, borderColor: g.color, color: g.ink } : undefined}
             >
               <span
@@ -82,15 +93,15 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
               >
                 {g.id}
               </span>
-              <span className="font-semibold">{L(g.label)}</span>
-            </button>
+              <span className="font-semibold whitespace-normal">{L(g.label)}</span>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
 
         <div className="mt-auto pt-8">
-          <button type="submit" className="btn-primary w-full" disabled={!ready}>
+          <Button type="submit" size="xl" className="w-full" disabled={!ready}>
             {t("start")}
-          </button>
+          </Button>
         </div>
       </form>
     </main>

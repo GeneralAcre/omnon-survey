@@ -120,7 +120,7 @@ const DICT = {
   viewList: { en: "Buildings", th: "อาคาร" },
   viewPhotos: { en: "Photos", th: "ภาพถ่าย" },
   viewMap: { en: "Map", th: "แผนที่" },
-  noPlace: { en: "without a location", th: "ยังไม่มีตำแหน่ง" },
+  noPlace: { en: "not on the map yet: add a location when editing", th: "ยังไม่อยู่บนแผนที่: เพิ่มตำแหน่งได้ตอนแก้ไข" },
   noPhotos: { en: "No photos yet.", th: "ยังไม่มีภาพถ่าย" },
   showMore: { en: "Show more", th: "แสดงเพิ่ม" },
   studyArea: { en: "Study area", th: "พื้นที่ศึกษา" },

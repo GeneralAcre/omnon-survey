@@ -11,11 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, typeLabel, type SurveyRecord } from "@/lib/schema";
+import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { setLang, setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl } from "./images";
-import { IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
+import { IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
 import AreaHero from "./AreaHero";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
@@ -73,10 +73,11 @@ export default function RecordList() {
   const photoCount = visible.reduce((n, r) => n + allPhotos(r).length, 0);
   const placeCount = visible.filter((r) => r.lat != null).length;
 
-  const chips: { id: Filter; label: string; group?: string }[] = [
-    { id: "all", label: t("all") },
-    ...GROUPS.map((g) => ({ id: g.id as Filter, label: L(g.label), group: g.id })),
-    { id: "mine", label: t("mine") },
+  // Short "G1" labels so all five chips fit on a phone; the full name stays for screen readers.
+  const chips: { id: Filter; label: string; name: string; group?: string }[] = [
+    { id: "all", label: t("all"), name: t("all") },
+    ...GROUPS.map((g) => ({ id: g.id as Filter, label: `G${g.id}`, name: L(g.label), group: g.id })),
+    { id: "mine", label: t("mine"), name: t("mine") },
   ];
 
   const views: { id: View; label: string; n: number }[] = [
@@ -143,7 +144,7 @@ export default function RecordList() {
         <ToggleGroup
           value={[filter]}
           onValueChange={(v) => v[0] && setFilter(v[0] as Filter)}
-          className="no-scrollbar -mx-4 mt-3 flex w-auto gap-2 overflow-x-auto px-4"
+          className="no-scrollbar -mx-4 mt-3 flex w-auto gap-1.5 overflow-x-auto px-4"
         >
           {chips.map((c) => {
             const active = filter === c.id;
@@ -152,8 +153,9 @@ export default function RecordList() {
               <ToggleGroupItem
                 key={c.id}
                 value={c.id}
+                aria-label={c.name}
                 className={cn(
-                  "h-auto gap-1.5 rounded-full px-4 py-2",
+                  "h-auto gap-1.5 rounded-full px-3 py-2",
                   active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary text-foreground",
                 )}
                 style={active && col ? { background: col.bg, color: col.fg } : undefined}
@@ -315,8 +317,8 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
           {r.lat != null && <IconPin className="size-4 shrink-0 text-muted-foreground" />}
         </div>
         <p className="truncate text-sm text-foreground/80">{[type, fn].filter(Boolean).join(" · ") || t("notSet")}</p>
-        <div className="mt-1.5 flex items-center gap-2">
-          <div className="flex gap-0.5">
+        <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex gap-0.5" aria-hidden="true">
             {IMAGE_SLOTS.map((s) => (
               <span
                 key={s.key}
@@ -325,7 +327,20 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
               />
             ))}
           </div>
-          <span className="text-xs text-muted-foreground">{allPhotos(r).length} 📷</span>
+          <span className="shrink-0">
+            {shotsDone(r)}/{IMAGE_SLOTS.length} {t("shots")}
+          </span>
+          <span className="flex shrink-0 items-center gap-1">
+            <IconCamera className="size-3.5" />
+            {allPhotos(r).length}
+          </span>
+          {r.colors.length > 0 && (
+            <span className="ml-auto flex shrink-0 -space-x-1" aria-label={t("stepColors")}>
+              {r.colors.slice(0, 5).map((col) => (
+                <span key={col} className="size-3.5 rounded-full ring-2 ring-card" style={{ background: col }} />
+              ))}
+            </span>
+          )}
         </div>
         <p className="mt-1 truncate text-xs text-muted-foreground">
           {t("by")} {r.updatedBy.name} · {timeAgo(r.updatedAt, lang)}

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { setLang, setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
@@ -25,7 +25,21 @@ type View = "list" | "photos" | "map";
 export default function RecordList() {
   const { t, L, lang } = useT();
   const user = useUser()!;
-  const { records, error, reload } = useRecords();
+  const [toasts, setToasts] = useState<SurveyRecord[]>([]);
+  const [fresh, setFresh] = useState<Set<string>>(new Set());
+  const onArrive = useCallback(
+    (arrived: SurveyRecord[]) => {
+      const others = arrived.filter((r) => r.createdBy.name !== user.name);
+      if (!others.length) return;
+      const ids = others.map((r) => r.id);
+      setToasts((list) => [...others, ...list].slice(0, 3));
+      setFresh((set) => new Set([...set, ...ids]));
+      setTimeout(() => setToasts((list) => list.filter((r) => !ids.includes(r.id))), 7000);
+      setTimeout(() => setFresh((set) => new Set([...set].filter((id) => !ids.includes(id)))), 20000);
+    },
+    [user.name],
+  );
+  const { records, error, reload } = useRecords({ live: true, onArrive });
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<View>("list");
   const [query, setQuery] = useState("");
@@ -72,7 +86,13 @@ export default function RecordList() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold tracking-widest text-accent uppercase">Khlong Om Non</p>
-            <h1 className="text-2xl font-bold">{t("records")}</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-bold">
+              {t("records")}
+              <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 text-[11px] font-semibold text-ok">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
+                {t("live")}
+              </span>
+            </h1>
           </div>
           <button
             onClick={() => setMenu(true)}
@@ -152,7 +172,7 @@ export default function RecordList() {
             <ul className="mt-1 space-y-2">
               {visible.map((r) => (
                 <li key={r.id}>
-                  <Card r={r} />
+                  <Card r={r} highlight={fresh.has(r.id)} />
                 </li>
               ))}
             </ul>
@@ -194,6 +214,38 @@ export default function RecordList() {
         </div>
       </Sheet>
 
+      {toasts.length > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 top-[max(env(safe-area-inset-top),0.75rem)] z-40 mx-auto flex max-w-md flex-col gap-2 px-4">
+          {toasts.map((r) => {
+            const c = groupColor(r.group);
+            const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
+            return (
+              <Link
+                key={r.id}
+                href={`/r/${r.id}`}
+                className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-line bg-surface-2/95 p-2 pr-4 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur"
+                style={{ borderLeft: `4px solid ${c.bg}` }}
+              >
+                <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-surface">
+                  {cover && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoUrl(cover.file, "thumb")} alt="" className="h-full w-full object-cover" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold">
+                    {r.plotNo} <GroupBadge group={r.group} />
+                  </span>
+                  <span className="block truncate text-xs text-muted">
+                    {r.createdBy.name} · {t("justAdded")}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
       <ExportSheet open={exporting} onClose={() => setExporting(false)} defaultGroup={user.group} />
     </main>
   );
@@ -208,14 +260,18 @@ function MenuItem({ onClick, icon, children }: { onClick: () => void; icon: Reac
   );
 }
 
-function Card({ r }: { r: SurveyRecord }) {
+function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }) {
   const { t, lang } = useT();
   const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
   const type = typeLabel(r, lang);
   const fn = functionLabel(r, lang);
   const c = groupColor(r.group);
   return (
-    <Link href={`/r/${r.id}`} className="relative flex gap-3 overflow-hidden rounded-2xl bg-surface p-2.5 pl-3.5 active:bg-surface-2">
+    <Link
+      href={`/r/${r.id}`}
+      className={`relative flex gap-3 overflow-hidden rounded-2xl bg-surface p-2.5 pl-3.5 transition-shadow duration-700 active:bg-surface-2 ${highlight ? "ring-2" : ""}`}
+      style={highlight ? ({ "--tw-ring-color": groupColor(r.group).bg } as React.CSSProperties) : undefined}
+    >
       <span className="absolute inset-y-0 left-0 w-1" style={{ background: c.bg }} />
       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-2">
         {cover ? (

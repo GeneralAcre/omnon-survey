@@ -126,6 +126,8 @@ const DICT = {
   studyArea: { en: "Study area", th: "พื้นที่ศึกษา" },
   zone: { en: "Zone", th: "โซน" },
   tapToZoom: { en: "Tap to enlarge", th: "แตะเพื่อขยาย" },
+  live: { en: "Live", th: "สด" },
+  justAdded: { en: "just added a building", th: "เพิ่งเพิ่มอาคาร" },
   notTaken: { en: "not taken", th: "ไม่ได้ถ่าย" },
   photos: { en: "photos", th: "ภาพ" },
   takeAnother: { en: "Take another", th: "ถ่ายเพิ่ม" },

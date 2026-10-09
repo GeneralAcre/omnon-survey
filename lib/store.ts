@@ -9,6 +9,8 @@ import { deletePhotos } from "./photos";
 
 type Backend = {
   list(): Promise<SurveyRecord[]>;
+  // Records changed after `since`, plus the total count (to spot deletions).
+  changes(since: string): Promise<{ records: SurveyRecord[]; count: number }>;
   get(id: string): Promise<SurveyRecord | null>;
   insert(r: SurveyRecord): Promise<void>;
   // Applies `fn` to the current record atomically; returns [before, after].
@@ -36,6 +38,14 @@ function pg(): Backend {
       await ready;
       const rows = await db<{ data: SurveyRecord }[]>`select data from survey_records order by updated_at desc`;
       return rows.map((r) => r.data);
+    },
+    async changes(since) {
+      await ready;
+      const [rows, [c]] = await Promise.all([
+        db<{ data: SurveyRecord }[]>`select data from survey_records where updated_at > ${since} order by updated_at desc`,
+        db<{ n: number }[]>`select count(*)::int as n from survey_records`,
+      ]);
+      return { records: rows.map((r) => r.data), count: c.n };
     },
     async get(id) {
       await ready;
@@ -97,6 +107,10 @@ const file: Backend = {
   async list() {
     return (await load()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   },
+  async changes(since) {
+    const all = await load();
+    return { records: all.filter((r) => r.updatedAt > since), count: all.length };
+  },
   async get(id) {
     return (await load()).find((r) => r.id === id) ?? null;
   },
@@ -131,6 +145,7 @@ const backend = () => (process.env.DATABASE_URL ? pg() : file);
 // ---------- Public API ----------
 
 export const listRecords = () => backend().list();
+export const recordChanges = (since: string) => backend().changes(since);
 export const getRecord = (id: string) => backend().get(id);
 
 export async function createRecord(input: SurveyInput, by: Person) {

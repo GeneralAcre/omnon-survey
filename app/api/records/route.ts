@@ -1,9 +1,17 @@
 import { connection } from "next/server";
-import { createRecord, listRecords } from "@/lib/store";
+import { createRecord, listRecords, recordChanges } from "@/lib/store";
 import { sanitizeInput, sanitizePerson } from "@/lib/schema";
 
-export async function GET() {
+// GET /api/records               → every record
+// GET /api/records?since=<ISO>   → { records changed since, count, now } for live polling
+export async function GET(request: Request) {
   await connection();
+  const since = new URL(request.url).searchParams.get("since");
+  if (since && !Number.isNaN(Date.parse(since))) {
+    const now = new Date().toISOString();
+    const { records, count } = await recordChanges(new Date(since).toISOString());
+    return Response.json({ records, count, now });
+  }
   return Response.json(await listRecords());
 }
 

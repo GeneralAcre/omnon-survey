@@ -30,7 +30,6 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
                 <p className="text-xs font-bold">
                   {t("zone")} {g.id} · G{g.id}
                 </p>
-                <p className="truncate text-[10px] opacity-80">{L(g.zone)}</p>
               </div>
             ))}
           </div>
@@ -54,7 +53,6 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
                 <p className="text-xs font-bold">
                   {t("zone")} {g.id} · G{g.id}
                 </p>
-                <p className="text-[10px] leading-tight opacity-80">{L(g.zone)}</p>
               </div>
             ))}
           </div>

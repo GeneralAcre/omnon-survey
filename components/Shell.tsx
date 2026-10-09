@@ -82,10 +82,7 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
               >
                 {g.id}
               </span>
-              <span>
-                <span className="block font-semibold">{L(g.label)}</span>
-                <span className={`block text-sm ${group === g.id ? "opacity-75" : "text-muted"}`}>{L(g.zone)}</span>
-              </span>
+              <span className="font-semibold">{L(g.label)}</span>
             </button>
           ))}
         </div>

@@ -152,10 +152,18 @@ export const listRecords = () => backend().list();
 export const recordChanges = (since: string) => backend().changes(since);
 export const getRecord = (id: string) => backend().get(id);
 
+// Each group owns its buildings: only that group may edit or delete them.
+export class ForbiddenError extends Error {
+  constructor(public group: string) {
+    super(`Only Group ${group} can change this building`);
+  }
+}
+
 export async function createRecord(input: SurveyInput, by: Person) {
   const now = new Date().toISOString();
   const record: SurveyRecord = {
     ...input,
+    group: by.group,
     id: randomUUID(),
     createdBy: by,
     updatedBy: by,
@@ -191,15 +199,19 @@ function mergePhotos(current: SurveyRecord["images"], sent: SurveyInput["images"
 
 export async function updateRecord(id: string, input: SurveyInput, by: Person, baseFiles?: string[]) {
   const now = new Date().toISOString();
-  const result = await backend().modify(id, (before) => ({
-    ...before,
-    ...input,
-    images: baseFiles ? mergePhotos(before.images, input.images, baseFiles) : input.images,
-    id,
-    updatedBy: by,
-    updatedAt: now,
-    history: [...(before.history ?? []), { by: by.name, group: by.group, at: now, action: "edited" as const }].slice(-50),
-  }));
+  const result = await backend().modify(id, (before) => {
+    if (before.group !== by.group) throw new ForbiddenError(before.group);
+    return {
+      ...before,
+      ...input,
+      group: before.group,
+      images: baseFiles ? mergePhotos(before.images, input.images, baseFiles) : input.images,
+      id,
+      updatedBy: by,
+      updatedAt: now,
+      history: [...(before.history ?? []), { by: by.name, group: by.group, at: now, action: "edited" as const }].slice(-50),
+    };
+  });
   if (!result) return null;
   const [before, after] = result;
   const keep = new Set(allPhotos(after).map((p) => p.file));
@@ -207,7 +219,10 @@ export async function updateRecord(id: string, input: SurveyInput, by: Person, b
   return after;
 }
 
-export async function deleteRecord(id: string) {
+export async function deleteRecord(id: string, by: Person) {
+  const current = await backend().get(id);
+  if (!current) return false;
+  if (current.group !== by.group) throw new ForbiddenError(current.group);
   const removed = await backend().remove(id);
   if (!removed) return false;
   await deletePhotos(allPhotos(removed).map((p) => p.file));

@@ -20,8 +20,7 @@ export async function POST(request: Request) {
   const by = sanitizePerson(body.by);
   const input = sanitizeInput(body.record);
   if (!by) return Response.json({ error: "Missing surveyor name or group" }, { status: 400 });
-  if (!input.group || !input.plotNo) {
-    return Response.json({ error: "Group and plot number are required" }, { status: 400 });
-  }
+  if (!input.plotNo) return Response.json({ error: "Plot number is required" }, { status: 400 });
+  // New buildings always belong to the surveyor's own group (set in createRecord).
   return Response.json(await createRecord(input, by), { status: 201 });
 }

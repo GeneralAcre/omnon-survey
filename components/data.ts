@@ -110,8 +110,12 @@ export async function saveRecord(record: SurveyInput, by: Person, id?: string, b
   return json;
 }
 
-export async function removeRecord(id: string) {
-  const res = await fetch(`/api/records/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Delete failed");
+export async function removeRecord(id: string, by: Person) {
+  const res = await fetch(`/api/records/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ by }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Delete failed");
   cache = cache?.filter((r) => r.id !== id) ?? null;
 }

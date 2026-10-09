@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { IMAGE_SLOTS, allPhotos, functionLabel, groupOf, shotsDone, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
-import { timeAgo, useT } from "./app-state";
+import { timeAgo, useT, useUser } from "./app-state";
 import { removeRecord, useRecord } from "./data";
 import { photoUrl } from "./images";
 import { IconBack, IconCamera, IconDownload, IconPin, IconTrash } from "./Icons";
@@ -15,6 +15,7 @@ import { GroupBadge } from "./GroupBadge";
 export default function RecordDetail() {
   const { id } = useParams<{ id: string }>();
   const { t, L, lang } = useT();
+  const user = useUser()!;
   const router = useRouter();
   const { record, error, reload } = useRecord(id);
   const [open, setOpen] = useState<number | null>(null);
@@ -57,14 +58,17 @@ export default function RecordDetail() {
   const cover = record.images.front.photos[0] ?? allPhotos(record)[0];
   const contributors = [...new Map(allPhotos(record).map((p) => [p.by, p.group])).entries()];
   const g = groupOf(record.group)!;
+  // Option B: only the building's own group can edit or delete it.
+  const canEdit = record.group === user.group;
 
   async function del() {
     if (!confirm(t("confirmDelete"))) return;
     setDeleting(true);
     try {
-      await removeRecord(record!.id);
+      await removeRecord(record!.id, user);
       router.replace("/");
-    } catch {
+    } catch (e) {
+      alert((e as Error).message);
       setDeleting(false);
     }
   }
@@ -210,16 +214,25 @@ export default function RecordDetail() {
           )}
         </section>
 
-        <button onClick={del} disabled={deleting} className="btn-danger w-full">
-          <IconTrash /> {t("delete")}
-        </button>
+        {canEdit && (
+          <button onClick={del} disabled={deleting} className="btn-danger w-full">
+            <IconTrash /> {t("delete")}
+          </button>
+        )}
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6 pb-safe">
         <div className="mx-auto max-w-2xl">
-          <Link href={`/r/${record.id}/edit`} className="btn-primary w-full">
-            {t("edit")}
-          </Link>
+          {canEdit ? (
+            <Link href={`/r/${record.id}/edit`} className="btn-primary w-full">
+              {t("edit")}
+            </Link>
+          ) : (
+            <div className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-surface-2 px-4 text-center text-sm text-muted">
+              <GroupBadge group={record.group} />
+              {t("viewOnly").replace("{n}", record.group)}
+            </div>
+          )}
         </div>
       </div>
 

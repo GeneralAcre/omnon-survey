@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   BUILDING_TYPES,
   FUNCTIONS,
-  GROUPS,
   IMAGE_SLOTS,
   allPhotos,
   coordsFromLink,
@@ -445,19 +444,22 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
               <div>
                 <p className="text-sm font-medium text-muted">{t("group")}</p>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {GROUPS.map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => update({ group: g.id })}
-                      className={`rounded-2xl border-2 p-3 text-left transition ${data.group === g.id ? "" : "border-line bg-surface"}`}
-                      style={data.group === g.id ? { background: g.color, borderColor: g.color, color: g.ink } : { borderTopColor: g.color }}
-                    >
-                      <span className="block text-lg font-bold">{g.id}</span>
-                      <span className={`block text-xs leading-snug ${data.group === g.id ? "opacity-75" : "text-muted"}`}>{L(g.zone)}</span>
-                    </button>
-                  ))}
-                </div>
+                {/* Buildings belong to the surveyor's group (option B), so this is fixed. */}
+                {(() => {
+                  const g = groupOf(record?.group ?? user.group)!;
+                  return (
+                    <div className="mt-2 flex items-center gap-3 rounded-2xl p-3" style={{ background: g.color, color: g.ink }}>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/85 text-lg font-bold" style={{ color: g.color }}>
+                        {g.id}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-semibold">{L(g.label)}</span>
+                        <span className="block text-xs opacity-75">{L(g.zone)}</span>
+                      </span>
+                    </div>
+                  );
+                })()}
+                <p className="mt-2 text-xs text-muted">{t("groupOwns")}</p>
               </div>
             </div>
           )}

@@ -128,6 +128,8 @@ const DICT = {
   tapToZoom: { en: "Tap to enlarge", th: "แตะเพื่อขยาย" },
   live: { en: "Live", th: "สด" },
   justAdded: { en: "just added a building", th: "เพิ่งเพิ่มอาคาร" },
+  viewOnly: { en: "View only — only Group {n} can edit this building.", th: "ดูได้อย่างเดียว — เฉพาะกลุ่ม {n} แก้ไขอาคารนี้ได้" },
+  groupOwns: { en: "Saved under your group. Other groups can see it but not change it.", th: "บันทึกในกลุ่มของคุณ กลุ่มอื่นดูได้แต่แก้ไขไม่ได้" },
   notTaken: { en: "not taken", th: "ไม่ได้ถ่าย" },
   photos: { en: "photos", th: "ภาพ" },
   takeAnother: { en: "Take another", th: "ถ่ายเพิ่ม" },

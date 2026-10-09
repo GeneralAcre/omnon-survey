@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --surface: #111111;
+  --surface-2: #1c1c1c;
+  --line: #2a2a2a;
+  --foreground: #f5f5f5;
+  --muted: #8f8f8f;
+  --accent: #4cc9f0;
+  --ok: #4ade80;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --font-sans: var(--font-open-sans), var(--font-noto-thai), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* 16px inputs stop iOS from zooming in on focus. */
+@utility field {
+  @apply w-full rounded-2xl border border-line bg-surface px-4 py-3.5 text-base text-foreground outline-none transition placeholder:text-muted/70 focus:border-foreground/60;
+}
+
+@utility btn {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+}
+
+@utility btn-primary {
+  @apply btn bg-foreground text-background;
+}
+
+@utility btn-secondary {
+  @apply btn bg-surface-2 text-foreground;
+}
+
+@utility btn-danger {
+  @apply btn bg-red-500/10 text-red-400;
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Leaflet in the dark theme */
+.leaflet-container {
+  background: #0b0b0b;
+  font-family: var(--font-sans);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #151515;
+  color: var(--foreground);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+.leaflet-popup-content {
+  margin: 10px;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #aaa;
+}
+.leaflet-control-zoom a {
+  background: #151515 !important;
+  color: #f5f5f5 !important;
+  border-color: #2a2a2a !important;
+}
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #888 !important;
+}
+.leaflet-control-attribution a {
+  color: #aaa !important;
+}

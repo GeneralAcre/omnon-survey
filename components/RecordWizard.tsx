@@ -273,7 +273,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     setSaving(true);
     setError("");
     try {
-      const saved = await saveRecord(data, user, record?.id);
+      const saved = await saveRecord(data, user, record?.id, record ? allPhotos(record).map((p) => p.file) : undefined);
       clearDraft();
       dirty.current = false;
       if (record) {

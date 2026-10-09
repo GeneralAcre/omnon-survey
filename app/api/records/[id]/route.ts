@@ -1,5 +1,5 @@
 import { deleteRecord, getRecord, updateRecord } from "@/lib/store";
-import { sanitizeInput, sanitizePerson } from "@/lib/schema";
+import { FILE_RE, sanitizeInput, sanitizePerson } from "@/lib/schema";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -18,7 +18,11 @@ export async function PUT(request: Request, { params }: Ctx) {
   if (!input.group || !input.plotNo) {
     return Response.json({ error: "Group and plot number are required" }, { status: 400 });
   }
-  const record = await updateRecord(id, input, by);
+  // Photos this phone started from, so concurrent edits can be merged.
+  const baseFiles = Array.isArray(body.baseFiles)
+    ? body.baseFiles.filter((f: unknown): f is string => typeof f === "string" && FILE_RE.test(f)).slice(0, 500)
+    : undefined;
+  const record = await updateRecord(id, input, by, baseFiles);
   if (!record) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json(record);
 }

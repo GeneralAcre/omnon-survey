@@ -98,11 +98,11 @@ export function useRecord(id: string) {
   return { record, error, reload };
 }
 
-export async function saveRecord(record: SurveyInput, by: Person, id?: string): Promise<SurveyRecord> {
+export async function saveRecord(record: SurveyInput, by: Person, id?: string, baseFiles?: string[]): Promise<SurveyRecord> {
   const res = await fetch(id ? `/api/records/${id}` : "/api/records", {
     method: id ? "PUT" : "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ record, by }),
+    body: JSON.stringify({ record, by, baseFiles }),
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error ?? "Save failed");

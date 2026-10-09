@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
-import { allPhotos, type Person, type SurveyInput, type SurveyRecord } from "./schema";
+import { IMAGE_SLOTS, allPhotos, type Person, type SurveyInput, type SurveyRecord } from "./schema";
 import { deletePhotos } from "./photos";
 
 type Backend = {
@@ -25,12 +25,16 @@ let ready: Promise<unknown> | null = null;
 
 function pg(): Backend {
   sql ??= postgres(process.env.DATABASE_URL!, { max: 5, idle_timeout: 20, prepare: false });
+  // If setup fails (e.g. a cold-start blip), forget it so the next request retries.
   ready ??= sql`
     create table if not exists survey_records (
       id uuid primary key,
       data jsonb not null,
       updated_at timestamptz not null default now()
-    )`;
+    )`.catch((e) => {
+    ready = null;
+    throw e;
+  });
   const db = sql;
   const json = (r: SurveyRecord) => db.json(r as unknown as postgres.JSONValue);
   return {
@@ -163,11 +167,34 @@ export async function createRecord(input: SurveyInput, by: Person) {
   return record;
 }
 
-export async function updateRecord(id: string, input: SurveyInput, by: Person) {
+// Several phones can edit the same building at once. `baseFiles` is the photo
+// list the phone started from: photos it removed are dropped, photos it added
+// are appended, and photos other people added meanwhile are kept.
+function mergePhotos(current: SurveyRecord["images"], sent: SurveyInput["images"], baseFiles: string[]) {
+  const base = new Set(baseFiles);
+  const merged = { ...sent };
+  for (const { key } of IMAGE_SLOTS) {
+    const now = current[key]?.photos ?? [];
+    const mine = sent[key]?.photos ?? [];
+    const mineFiles = new Set(mine.map((p) => p.file));
+    const removedByMe = new Set([...base].filter((f) => !mineFiles.has(f)));
+    const nowFiles = new Set(now.map((p) => p.file));
+    merged[key] = {
+      note: sent[key]?.note ?? current[key]?.note ?? "",
+      // Only photos this phone newly added are appended — ones it merely started
+      // with must not come back if someone else removed them meanwhile.
+      photos: [...now.filter((p) => !removedByMe.has(p.file)), ...mine.filter((p) => !nowFiles.has(p.file) && !base.has(p.file))],
+    };
+  }
+  return merged;
+}
+
+export async function updateRecord(id: string, input: SurveyInput, by: Person, baseFiles?: string[]) {
   const now = new Date().toISOString();
   const result = await backend().modify(id, (before) => ({
     ...before,
     ...input,
+    images: baseFiles ? mergePhotos(before.images, input.images, baseFiles) : input.images,
     id,
     updatedBy: by,
     updatedAt: now,

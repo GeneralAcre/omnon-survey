@@ -60,6 +60,9 @@ export const JACKED = [
   { id: "unsure", label: { en: "Not sure", th: "ไม่แน่ใจ" } },
 ] as const satisfies readonly { id: string; label: Label }[];
 
+// Most photos one shot can hold (8 shots, so up to 160 per building).
+export const MAX_PHOTOS_PER_SHOT = 20;
+
 // The 8 shots every record asks for, in survey-sheet order.
 export const IMAGE_SLOTS = [
   { key: "front", label: { en: "Front", th: "ด้านหน้า" }, hint: { en: "Whole building from the canal or street", th: "ถ่ายทั้งหลังจากฝั่งคลองหรือถนน" } },
@@ -189,7 +192,7 @@ export function sanitizeInput(raw: unknown): SurveyInput {
       photos: photos
         .map((p) => (p ?? {}) as Record<string, unknown>)
         .filter((p) => typeof p.file === "string" && FILE_RE.test(p.file))
-        .slice(0, 20)
+        .slice(0, MAX_PHOTOS_PER_SHOT)
         .map((p) => ({
           file: p.file as string,
           by: str(p.by, 80),

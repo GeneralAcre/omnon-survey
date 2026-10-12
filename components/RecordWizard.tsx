@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   BUILDING_TYPES,
   FUNCTIONS,
   JACKED,
+  MAX_PHOTOS_PER_SHOT,
   PHOTO_NOTE_SLOTS,
   IMAGE_SLOTS,
   allPhotos,
@@ -154,9 +156,15 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
   function addFiles(files: FileList | null) {
     if (!files?.length) return;
+    const slot = target.current;
+    // Photos already in the shot plus ones still on their way.
+    const room = MAX_PHOTOS_PER_SHOT - data.images[slot].photos.length - pending.filter((p) => p.slot === slot).length;
+    if (room <= 0) return void toast(t("shotFull").replace("{n}", String(MAX_PHOTOS_PER_SHOT)));
+    const picked = Array.from(files);
+    if (picked.length > room) toast(t("shotTooMany").replace("{n}", String(room)));
     dirty.current = true;
     persist(data);
-    addPhotos(context, target.current, Array.from(files), user);
+    addPhotos(context, slot, picked.slice(0, room), user);
   }
 
   // Restore an unsaved draft and any photos still waiting on this phone.
@@ -904,6 +912,7 @@ function ShotCard({
   const [discarding, setDiscarding] = useState<Upload | null>(null);
   const has = slot.photos.length > 0;
   const empty = !has && pending.length === 0;
+  const full = slot.photos.length + pending.length >= MAX_PHOTOS_PER_SHOT;
 
   return (
     <div className={`rounded-2xl border p-3 transition ${has ? "border-ok/30 bg-card" : "border-border bg-card"}`}>
@@ -921,7 +930,7 @@ function ShotCard({
         </div>
         {has && (
           <span className="shrink-0 rounded-full bg-ok/15 px-2.5 py-1 text-xs font-semibold text-ok">
-            {slot.photos.length} {t("photos")}
+            {slot.photos.length}/{MAX_PHOTOS_PER_SHOT}
           </span>
         )}
       </div>
@@ -1007,24 +1016,29 @@ function ShotCard({
                 )}
               </div>
             ))}
-            <button
-              onClick={onCamera}
-              className="flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-secondary text-xs font-semibold active:scale-[0.98]"
-            >
-              <span className="relative">
-                <IconCamera className="size-7" />
-                <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-foreground p-0.5 text-background" />
-              </span>
-              {t("takeAnother")}
-            </button>
-            <button
-              onClick={onGallery}
-              className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-xs text-muted-foreground active:scale-[0.98]"
-            >
-              <IconImage />
-              {t("gallery")}
-            </button>
+            {!full && (
+              <>
+                <button
+                  onClick={onCamera}
+                  className="flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-secondary text-xs font-semibold active:scale-[0.98]"
+                >
+                  <span className="relative">
+                    <IconCamera className="size-7" />
+                    <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-foreground p-0.5 text-background" />
+                  </span>
+                  {t("takeAnother")}
+                </button>
+                <button
+                  onClick={onGallery}
+                  className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-xs text-muted-foreground active:scale-[0.98]"
+                >
+                  <IconImage />
+                  {t("gallery")}
+                </button>
+              </>
+            )}
           </div>
+          {full && <p className="mt-2 text-xs text-muted-foreground">{t("shotFull").replace("{n}", String(MAX_PHOTOS_PER_SHOT))}</p>}
         </>
       )}
 

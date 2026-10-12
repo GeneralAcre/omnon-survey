@@ -153,6 +153,8 @@ const DICT = {
   floorsUnit: { en: "floors", th: "ชั้น" },
   yearsOld: { en: "yrs", th: "ปี" },
   optional: { en: "optional", th: "ไม่บังคับ" },
+  shotFull: { en: "This shot is full ({n} photos max). Remove one to add another.", th: "หัวข้อนี้ครบแล้ว (สูงสุด {n} ภาพ) ลบภาพออกก่อนจึงเพิ่มได้" },
+  shotTooMany: { en: "Only the first {n} photos were added — this shot is now full.", th: "เพิ่มได้เพียง {n} ภาพแรก หัวข้อนี้ครบแล้ว" },
   materialHint: { en: "What material? e.g. Wall: teak", th: "วัสดุอะไร เช่น ผนัง: ไม้สัก" },
   pickAll: { en: "Pick all that apply", th: "เลือกได้มากกว่า 1 ข้อ" },
   occupancy: { en: "People living here", th: "จำนวนผู้อยู่อาศัย" },

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
-import { IMAGE_SLOTS, allPhotos, type ImageSlotKey, type Person, type Photo, type SurveyInput, type SurveyRecord } from "./schema";
+import { IMAGE_SLOTS, MAX_PHOTOS_PER_SHOT, allPhotos, type ImageSlotKey, type Person, type Photo, type SurveyInput, type SurveyRecord } from "./schema";
 import { deletePhotos } from "./photos";
 
 type Backend = {
@@ -241,7 +241,7 @@ export async function addPhoto(id: string, slot: ImageSlotKey, photo: Photo, by:
   const result = await backend().modify(id, (before) => {
     if (before.group !== by.group) throw new ForbiddenError(before.group);
     const current = before.images[slot] ?? { photos: [], note: "" };
-    if (current.photos.some((p) => p.file === photo.file) || current.photos.length >= 20) return before;
+    if (current.photos.some((p) => p.file === photo.file) || current.photos.length >= MAX_PHOTOS_PER_SHOT) return before;
     return {
       ...before,
       images: { ...before.images, [slot]: { ...current, photos: [...current.photos, photo] } },

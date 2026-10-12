@@ -133,6 +133,7 @@ const DICT = {
   photos: { en: "photos", th: "ภาพ" },
   takeAnother: { en: "Take another", th: "ถ่ายเพิ่ม" },
   switchUser: { en: "Switch surveyor", th: "เปลี่ยนผู้สำรวจ" },
+  surveyingAs: { en: "Surveying as", th: "กำลังสำรวจในชื่อ" },
   // wizard
   stepPlot: { en: "Plot", th: "แปลง" },
   stepType: { en: "Building type", th: "ประเภทอาคาร" },

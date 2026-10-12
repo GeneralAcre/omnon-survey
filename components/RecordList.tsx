@@ -8,12 +8,11 @@ import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { zipParts } from "@/lib/naming";
-import { setLang, setUser, timeAgo, useT, useUser } from "./app-state";
+import { setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
 import { IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
@@ -32,7 +31,7 @@ type Filter = "all" | "mine" | "1" | "2" | "3";
 type View = "list" | "photos" | "map";
 
 export default function RecordList() {
-  const { t, L, lang } = useT();
+  const { t, L } = useT();
   const user = useUser()!;
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const onArrive = useCallback(
@@ -52,7 +51,6 @@ export default function RecordList() {
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<View>("list");
   const [query, setQuery] = useState("");
-  const [menu, setMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const isMine = (r: SurveyRecord) => r.createdBy.name === user.name || allPhotos(r).some((p) => p.by === user.name);
@@ -96,7 +94,7 @@ export default function RecordList() {
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non</p>
-            <h1 className="flex items-center gap-2 text-2xl font-bold">
+            <h1 className="flex items-center gap-2 text-xl font-bold sm:text-2xl">
               {t("records")}
               <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 text-[11px] font-semibold text-ok">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
@@ -106,19 +104,28 @@ export default function RecordList() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <LangToggle />
-            <Button
-              variant="outline"
-              onClick={() => setMenu(true)}
-              className="h-auto gap-2 rounded-full bg-card py-1.5 pr-3 pl-1.5 font-normal"
-              aria-label={t("switchUser")}
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
-                {user.name.slice(0, 1).toUpperCase()}
-              </span>
-              <span className="hidden max-w-[7rem] truncate text-sm sm:inline">{user.name}</span>
-              <GroupBadge group={user.group} />
+            <Button variant="outline" size="icon" onClick={() => setExporting(true)} className="size-9 rounded-full bg-card" aria-label={t("export")} title={t("export")}>
+              <IconDownload className="size-5" />
             </Button>
           </div>
+        </div>
+
+        {/* Who is signed in, with the way back to the sign-in screen in plain sight. */}
+        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
+            {user.name.slice(0, 1).toUpperCase()}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] text-muted-foreground">{t("surveyingAs")}</p>
+            <p className="flex items-center gap-1.5 text-sm font-semibold">
+              <span className="truncate">{user.name}</span>
+              <GroupBadge group={user.group} className="shrink-0" />
+            </p>
+          </div>
+          <Button variant="secondary" onClick={() => setUser(null)} className="h-9 shrink-0 gap-1.5 rounded-full px-3">
+            <IconUser className="size-4" />
+            {t("switchUser")}
+          </Button>
         </div>
 
         <div className="mt-3 sm:mt-4">
@@ -221,35 +228,6 @@ export default function RecordList() {
         {t("newRecord")}
       </Link>
 
-      <Drawer open={menu} onOpenChange={setMenu} showSwipeHandle>
-        <DrawerContent className="px-5 pb-safe sm:mx-auto sm:max-w-md">
-        <DrawerTitle className="sr-only">{t("switchUser")}</DrawerTitle>
-        <div className="flex items-center gap-3 pt-2 pb-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold" style={{ background: me.bg, color: me.fg }}>
-            {user.name.slice(0, 1).toUpperCase()}
-          </span>
-          <div>
-            <p className="font-semibold">{user.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {L(groupOf(user.group)!.label)} · {L(groupOf(user.group)!.zone)}
-            </p>
-          </div>
-        </div>
-        <Separator />
-        <MenuItem onClick={() => { setMenu(false); setUser(null); }} icon={<IconUser />}>{t("switchUser")}</MenuItem>
-        <Separator />
-        <MenuItem onClick={() => setLang(lang === "en" ? "th" : "en")} icon={<span className="w-5 text-center text-sm">ก</span>}>
-          {t("language")}
-        </MenuItem>
-        <Separator />
-        <MenuItem onClick={() => { setMenu(false); setExporting(true); }} icon={<IconDownload />}>{t("export")}</MenuItem>
-        <Separator />
-        <Link href="/about" className="flex min-h-14 items-center gap-3 text-[15px]">
-          <IconImage /> {t("about")}
-        </Link>
-        </DrawerContent>
-      </Drawer>
-
       <ExportSheet open={exporting} onClose={() => setExporting(false)} defaultGroup={user.group} records={records ?? []} />
     </main>
   );
@@ -280,15 +258,6 @@ function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) 
         </span>
       </span>
     </Link>
-  );
-}
-
-function MenuItem({ onClick, icon, children }: { onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <Button variant="ghost" onClick={onClick} className="h-auto min-h-14 w-full justify-start gap-3 rounded-none px-0 text-[15px] font-normal hover:bg-transparent">
-      {icon}
-      {children}
-    </Button>
   );
 }
 

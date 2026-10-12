@@ -1,12 +1,13 @@
 "use client";
 
 import { buttonVariants } from "@/components/ui/button";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
 
 // Full-bleed landing hero: the Khlong Om Non photo, fading into the page below.
 export default function WorkshopIntro() {
-  const { L } = useT();
+  const { t, L } = useT();
 
   return (
     <section className="relative isolate flex min-h-[78svh] w-full items-end overflow-hidden">
@@ -23,13 +24,18 @@ export default function WorkshopIntro() {
             th: "สำรวจภูมิทัศน์คลองที่ยังมีชีวิต ผ่านอาคาร เรื่องราว และสถานที่ที่ทีมเวิร์กช็อปบันทึกไว้",
           })}
         </p>
-        <a
-          href="#survey-records"
-          className={cn(buttonVariants({ variant: "outline", size: "xl" }), "mt-5 border-white/40 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 dark:bg-white/10 dark:hover:bg-white/20")}
-        >
-          {L({ en: "Explore the survey", th: "ดูข้อมูลสำรวจ" })}
-          <span aria-hidden="true">↓</span>
-        </a>
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <a
+            href="#survey-records"
+            className={cn(buttonVariants({ variant: "outline", size: "xl" }), "border-white/40 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 dark:bg-white/10 dark:hover:bg-white/20")}
+          >
+            {L({ en: "Explore the survey", th: "ดูข้อมูลสำรวจ" })}
+            <span aria-hidden="true">↓</span>
+          </a>
+          <Link href="/about" className="text-[15px] font-semibold text-white/85 underline-offset-4 drop-shadow hover:underline">
+            {t("about")} →
+          </Link>
+        </div>
       </div>
     </section>
   );

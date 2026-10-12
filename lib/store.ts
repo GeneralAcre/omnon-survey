@@ -164,7 +164,7 @@ export const getRecord = (id: string) => backend().get(id);
 // Each group owns its buildings: only that group may edit or delete them.
 export class ForbiddenError extends Error {
   constructor(public group: string) {
-    super(`Only Group ${group} can change this building`);
+    super(`Only Zone ${group} can change this building`);
   }
 }
 

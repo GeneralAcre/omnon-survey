@@ -32,7 +32,7 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
                 style={{ background: g.color, color: g.ink }}
               >
                 <p className="text-xs font-bold">
-                  {t("zone")} {g.id} · G{g.id}
+                  {t("zone")} {g.id}
                 </p>
               </div>
             ))}
@@ -54,7 +54,7 @@ export default function AreaHero({ myGroup }: { myGroup: string }) {
             {GROUPS.map((g) => (
               <div key={g.id} className="rounded-xl px-2 py-1.5" style={{ background: g.color, color: g.ink }}>
                 <p className="text-xs font-bold">
-                  {t("zone")} {g.id} · G{g.id}
+                  {t("zone")} {g.id}
                 </p>
               </div>
             ))}

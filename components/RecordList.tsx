@@ -20,6 +20,7 @@ import { IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, Ico
 import AreaHero from "./AreaHero";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
+import { LangToggle } from "./Shell";
 
 // Leaflet touches `window`, so the map only loads in the browser.
 const PlacesMap = dynamic(() => import("./PlacesMap"), {
@@ -74,10 +75,10 @@ export default function RecordList() {
   const photoCount = visible.reduce((n, r) => n + allPhotos(r).length, 0);
   const placeCount = visible.filter((r) => r.lat != null).length;
 
-  // Short "G1" labels so all five chips fit on a phone; the full name stays for screen readers.
+  // The chip row scrolls sideways if "Zone 1…3" don't all fit.
   const chips: { id: Filter; label: string; name: string; group?: string }[] = [
     { id: "all", label: t("all"), name: t("all") },
-    ...GROUPS.map((g) => ({ id: g.id as Filter, label: `G${g.id}`, name: L(g.label), group: g.id })),
+    ...GROUPS.map((g) => ({ id: g.id as Filter, label: L(g.label), name: L(g.label), group: g.id })),
     { id: "mine", label: t("mine"), name: t("mine") },
   ];
 
@@ -93,7 +94,7 @@ export default function RecordList() {
     <main id="survey-records" className="mx-auto w-full max-w-2xl flex-1 scroll-mt-4 pb-32">
       <div className="px-4 pt-[max(env(safe-area-inset-top),0.75rem)] sm:pt-[max(env(safe-area-inset-top),1rem)]">
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non</p>
             <h1 className="flex items-center gap-2 text-2xl font-bold">
               {t("records")}
@@ -103,18 +104,21 @@ export default function RecordList() {
               </span>
             </h1>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setMenu(true)}
-            className="h-auto gap-2 rounded-full bg-card py-1.5 pr-3 pl-1.5 font-normal"
-            aria-label={t("switchUser")}
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
-              {user.name.slice(0, 1).toUpperCase()}
-            </span>
-            <span className="max-w-[7rem] truncate text-sm">{user.name}</span>
-            <GroupBadge group={user.group} />
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <LangToggle />
+            <Button
+              variant="outline"
+              onClick={() => setMenu(true)}
+              className="h-auto gap-2 rounded-full bg-card py-1.5 pr-3 pl-1.5 font-normal"
+              aria-label={t("switchUser")}
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
+                {user.name.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="hidden max-w-[7rem] truncate text-sm sm:inline">{user.name}</span>
+              <GroupBadge group={user.group} />
+            </Button>
+          </div>
         </div>
 
         <div className="mt-3 sm:mt-4">
@@ -352,7 +356,7 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
 }
 
 function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; onClose: () => void; defaultGroup: string; records: SurveyRecord[] }) {
-  const { t } = useT();
+  const { t, L } = useT();
   const [group, setGroup] = useState(defaultGroup);
   const q = group ? `group=${group}` : "";
   const parts = useMemo(() => zipParts(records.filter((r) => !group || r.group === group)), [records, group]);
@@ -375,7 +379,7 @@ function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; 
         onValueChange={(v) => v[0] && setGroup(v[0] === "all" ? "" : v[0])}
         className="no-scrollbar mt-2 w-full gap-2 overflow-x-auto"
       >
-        {[{ id: "", label: t("all") }, ...GROUPS.map((g) => ({ id: g.id, label: `G${g.id}` }))].map((g) => {
+        {[{ id: "", label: t("all") }, ...GROUPS.map((g) => ({ id: g.id, label: L(g.label) }))].map((g) => {
           const col = g.id ? groupColor(g.id) : null;
           const active = group === g.id;
           return (
@@ -401,7 +405,7 @@ function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; 
             <span className="mt-2 block text-sm">{t("exportZipParts")}</span>
             <div className="mt-3 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto">
               {parts.map((p, n) => {
-                const plot = (r: SurveyRecord) => (group ? r.plotNo : `G${r.group} ${r.plotNo}`);
+                const plot = (r: SurveyRecord) => (group ? r.plotNo : `${L(groupOf(r.group)?.label ?? { en: r.group, th: r.group })} ${r.plotNo}`);
                 return (
                   <a key={n} href={`/api/export/photos?${q}&part=${n + 1}`} download className="flex items-center gap-2 rounded-xl bg-background p-3 active:opacity-80">
                     <IconDownload className="size-4 shrink-0 text-brand" />

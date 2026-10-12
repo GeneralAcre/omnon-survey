@@ -1,13 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { groupColor } from "@/lib/schema";
+import { groupColor, groupOf } from "@/lib/schema";
+import { useT } from "./app-state";
 
-// Small coloured "G1" pill used everywhere a group is shown.
+// Small coloured "Zone 1" pill used everywhere a zone is shown.
 export function GroupBadge({ group, className = "" }: { group: string; className?: string }) {
+  const { L } = useT();
   const c = groupColor(group);
+  const g = groupOf(group);
   return (
     <Badge className={cn("h-auto px-2 py-0.5 text-[11px] font-bold", className)} style={{ background: c.bg, color: c.fg }}>
-      G{group}
+      {g ? L(g.label) : group}
     </Badge>
   );
 }

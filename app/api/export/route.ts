@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { listRecords } from "@/lib/store";
-import { IMAGE_SLOTS, functionLabel, groupOf, typeLabel } from "@/lib/schema";
+import { IMAGE_SLOTS, floodLinesLabel, functionLabel, groupOf, jackedLabel, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 
 function cell(v: string) {
@@ -27,15 +27,21 @@ export async function GET(request: Request) {
   }
 
   const header = [
-    "Group",
     "Zone",
+    "Zone name",
     "Plot No.",
     "Building Type",
     "ประเภทอาคาร",
+    "Build Year",
+    "Building Age (years)",
+    "Floors",
     ...IMAGE_SLOTS.flatMap((s) => [`${s.label.en} (photos)`, `${s.label.en} (taken by)`, `${s.label.en} (note)`]),
     "Color Swatches",
     "Function",
     "การใช้งาน",
+    "People living here",
+    "Jacked up",
+    "Flood lines",
     "Notes",
     "Google Maps link",
     "Latitude",
@@ -51,23 +57,30 @@ export async function GET(request: Request) {
     r.plotNo,
     typeLabel(r, "en"),
     typeLabel(r, "th"),
+    r.buildYear ?? "",
+    r.buildAge ?? "",
+    r.floors ?? "",
     ...IMAGE_SLOTS.flatMap((s) => {
       const photos = r.images[s.key]?.photos ?? [];
       return [
         photos.map((p, i) => `${url.origin}/api/photos/${p.file}?download=${encodeURIComponent(photoFileName(r, s.key, i, p))}`).join("\n"),
-        [...new Set(photos.map((p) => `${p.by} (G${p.group})`))].join(", "),
-        r.images[s.key]?.note ?? "",
+        [...new Set(photos.map((p) => `${p.by} (Zone ${p.group})`))].join(", "),
+        // Slot note, then any per-photo captions ("#2 Roof: zinc").
+        [r.images[s.key]?.note, ...photos.map((p, i) => p.note && `#${i + 1} ${p.note}`)].filter(Boolean).join("\n"),
       ];
     }),
     r.colors.join(" "),
     functionLabel(r, "en"),
     functionLabel(r, "th"),
+    r.occupancy ?? "",
+    jackedLabel(r, "en"),
+    floodLinesLabel(r, "\n"),
     r.notes,
     r.mapLink ?? "",
     r.lat != null ? String(r.lat) : "",
     r.lng != null ? String(r.lng) : "",
-    `${r.createdBy.name} (G${r.createdBy.group})`,
-    `${r.updatedBy.name} (G${r.updatedBy.group})`,
+    `${r.createdBy.name} (Zone ${r.createdBy.group})`,
+    `${r.updatedBy.name} (Zone ${r.updatedBy.group})`,
     r.createdAt,
     r.updatedAt,
   ]);

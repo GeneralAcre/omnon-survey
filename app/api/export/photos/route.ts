@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const entries: ZipEntry[] = [];
   for (const r of records) {
     const g = groupOf(r.group);
-    const groupDir = safeSegment(`Group-${r.group}_${g?.zone.en ?? ""}`);
+    const groupDir = safeSegment(`Zone-${r.group}_${g?.zone.en ?? ""}`);
     const plotDir = `Plot-${safeSegment(r.plotNo)}`;
     for (const s of IMAGE_SLOTS) {
       r.images[s.key]?.photos.forEach((p, i) => {
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
-  const scope = id && records[0] ? `plot-${safeSegment(records[0].plotNo)}` : group ? `group-${group}` : "all";
+  const scope = id && records[0] ? `plot-${safeSegment(records[0].plotNo)}` : group ? `zone-${group}` : "all";
   const label = part ? `${scope}-part-${part}-of-${parts.length}` : scope;
   return new Response(zipStream(entries), {
     headers: {

@@ -53,12 +53,26 @@ function BackgroundUploads() {
   );
 }
 
+// Both languages always visible, so it can be found whichever one is showing.
 export function LangToggle({ className = "" }: { className?: string }) {
-  const { t, lang } = useT();
+  const { lang } = useT();
+  const options = [
+    { id: "en", label: "EN" },
+    { id: "th", label: "ไทย" },
+  ] as const;
   return (
-    <Button variant="outline" onClick={() => setLang(lang === "en" ? "th" : "en")} className={cn("h-9 rounded-full px-3", className)}>
-      {t("language")}
-    </Button>
+    <div role="group" aria-label="Language / ภาษา" className={cn("flex h-9 shrink-0 items-center rounded-full border border-border bg-card p-0.5 text-xs font-semibold", className)}>
+      {options.map((o) => (
+        <button
+          key={o.id}
+          aria-pressed={lang === o.id}
+          onClick={() => setLang(o.id)}
+          className={cn("h-full rounded-full px-2.5 transition-colors", lang === o.id ? "bg-foreground text-background" : "text-muted-foreground")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }
 

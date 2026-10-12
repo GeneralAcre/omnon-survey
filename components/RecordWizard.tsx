@@ -6,15 +6,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BUILDING_TYPES,
   FUNCTIONS,
+  JACKED,
+  PHOTO_NOTE_SLOTS,
   IMAGE_SLOTS,
   allPhotos,
+  buildYearAge,
   coordsFromLink,
   emptyInput,
+  floodLinesLabel,
+  functionIds,
   functionLabel,
+  jackedLabel,
   groupOf,
   mapsLink,
   shotsDone,
   typeLabel,
+  wholeNumber,
+  type FloodLine,
   type ImageSlotKey,
   type Label,
   type SurveyInput,
@@ -28,10 +36,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useT, useUser } from "./app-state";
 import ConfirmDialog from "./ConfirmDialog";
+import { LangToggle } from "./Shell";
 import { saveRecord, useRecords } from "./data";
 import { photoUrl, pixelUrl, retryImage } from "./images";
 import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPalette, IconPin, IconPlus, IconX } from "./Icons";
 import ColorSampler, { MainColours } from "./ColorSampler";
+import JackedDiagram from "./JackedDiagram";
 import { addPhotos, discardContext, finishUpload, handBack, handOff, release, retryUpload, useUploads, type Upload } from "./uploads";
 
 const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "stepColors", "stepReview"] as const;
@@ -253,9 +263,11 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     records?.find(
       (r) => r.id !== record?.id && r.group === data.group && r.plotNo.trim().toLowerCase() === data.plotNo.trim().toLowerCase(),
     );
-  const canNext = step !== 0 || (data.plotNo.trim() && data.group);
+  const canNext =
+    step === 0 ? Boolean(data.plotNo.trim() && data.group) :
+    step === 2 ? Boolean(data.occupancy.trim() && data.jacked) : true;
   const isLast = step === STEPS.length - 1;
-  const optionalStep = step === 1 || step === 2;
+  const optionalStep = step === 1;
   // Colour-scheme shots first, then every other photo of the building.
   const colourPhotos = [...data.images.colorScheme.photos, ...allPhotos(data).filter((p) => p.slot !== "colorScheme")];
   const colourFile = colourPhotos.find((p) => p.file === colourFrom)?.file ?? colourPhotos[0]?.file;
@@ -280,6 +292,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               {pending.length}
             </span>
           )}
+          <LangToggle />
         </div>
         <div className="mx-auto mt-3 flex max-w-2xl gap-1">
           {STEPS.map((s, i) => (
@@ -325,6 +338,25 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
           {step === 0 && (
             <div className="space-y-7">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{t("group")}</p>
+                {/* Buildings belong to the surveyor's group (option B), so this is fixed. */}
+                {(() => {
+                  const g = groupOf(record?.group ?? user.group)!;
+                  return (
+                    <div className="mt-2 flex items-center gap-3 rounded-2xl p-3" style={{ background: g.color, color: g.ink }}>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/85 text-lg font-bold" style={{ color: g.color }}>
+                        {g.id}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-semibold">{L(g.label)}</span>
+                        <span className="block truncate text-sm opacity-80">{L(g.zone)}</span>
+                      </span>
+                    </div>
+                  );
+                })()}
+                <p className="mt-2 text-xs text-muted-foreground">{t("groupOwns")}</p>
+              </div>
               <div>
                 <FieldLabel htmlFor="plot" className="text-muted-foreground">
                   {t("plotNo")}
@@ -402,50 +434,172 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   )}
                 </div>
               </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{t("group")}</p>
-                {/* Buildings belong to the surveyor's group (option B), so this is fixed. */}
-                {(() => {
-                  const g = groupOf(record?.group ?? user.group)!;
-                  return (
-                    <div className="mt-2 flex items-center gap-3 rounded-2xl p-3" style={{ background: g.color, color: g.ink }}>
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/85 text-lg font-bold" style={{ color: g.color }}>
-                        {g.id}
-                      </span>
-                      <span className="min-w-0 font-semibold">{L(g.label)}</span>
-                    </div>
-                  );
-                })()}
-                <p className="mt-2 text-xs text-muted-foreground">{t("groupOwns")}</p>
-              </div>
             </div>
           )}
 
           {step === 1 && (
-            <Choices
-              options={BUILDING_TYPES}
-              value={data.buildingType}
-              other={data.buildingTypeOther}
-              onPick={(id) => {
-                update({ buildingType: id });
-                if (id !== "other") setStep(2);
-              }}
-              onOther={(v) => update({ buildingTypeOther: v })}
-            />
+            <div className="space-y-6">
+              {/* No auto-advance here: build year and age sit below the choices. */}
+              <Choices
+                options={BUILDING_TYPES}
+                isOn={(id) => data.buildingType === id}
+                other={data.buildingTypeOther}
+                onPick={(id) => update({ buildingType: id })}
+                onOther={(v) => update({ buildingTypeOther: v })}
+              />
+              <section>
+                <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+                  {t("buildingDetails")} <span className="font-normal">({t("optional")})</span>
+                </h2>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="min-w-0">
+                    <FieldLabel htmlFor="buildYear" className="text-xs font-medium text-muted-foreground">
+                      {t("buildYear")}
+                    </FieldLabel>
+                    <Input
+                      id="buildYear"
+                      inputMode="numeric"
+                      value={data.buildYear}
+                      onChange={(e) => update({ buildYear: e.target.value })}
+                      placeholder={t("buildYearHint")}
+                      className="mt-1.5 h-12 rounded-xl bg-card px-3 text-center"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <FieldLabel htmlFor="buildAge" className="text-xs font-medium text-muted-foreground">
+                      {t("buildAge")}
+                    </FieldLabel>
+                    <Input
+                      id="buildAge"
+                      inputMode="numeric"
+                      value={data.buildAge}
+                      onChange={(e) => update({ buildAge: e.target.value })}
+                      placeholder={t("buildAgeHint")}
+                      className="mt-1.5 h-12 rounded-xl bg-card px-3 text-center"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <FieldLabel htmlFor="floors" className="text-xs font-medium text-muted-foreground">
+                      {t("floors")}
+                    </FieldLabel>
+                    <Input
+                      id="floors"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={data.floors}
+                      onChange={(e) => update({ floors: wholeNumber(e.target.value, 1) })}
+                      placeholder={t("floorsHint")}
+                      className="mt-1.5 h-12 rounded-xl bg-card px-3 text-center"
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
           )}
 
           {step === 2 && (
-            <Choices
-              options={FUNCTIONS}
-              value={data.function}
-              other={data.functionOther}
-              onPick={(id) => {
-                update({ function: id });
-                if (id !== "other") setStep(3);
-              }}
-              onOther={(v) => update({ functionOther: v })}
-            />
+            <div className="space-y-6">
+              <div>
+                <p className="mb-2 text-sm text-muted-foreground">{t("pickAll")}</p>
+                <Choices
+                  multi
+                  options={FUNCTIONS}
+                  isOn={(id) => functionIds(data).includes(id)}
+                  onPick={(id) => {
+                    const ids = functionIds(data);
+                    const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+                    // Keep the sheet's order so "Residential, Shop" reads the same on every record.
+                    update({ function: FUNCTIONS.map((f) => f.id).filter((f) => next.includes(f)).join(",") });
+                  }}
+                />
+              </div>
+              <div>
+                <FieldLabel htmlFor="occupancy" className="text-sm font-medium text-muted-foreground">
+                  {t("occupancy")}
+                </FieldLabel>
+                <Input
+                  id="occupancy"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={data.occupancy}
+                  // Whole people only: 0 is fine, minus signs and decimals are dropped.
+                  onChange={(e) => update({ occupancy: wholeNumber(e.target.value, 0) })}
+                  placeholder={t("occupancyHint")}
+                  className="mt-2 h-12 rounded-2xl bg-card px-4"
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{t("jacked")}</p>
+                <div className="mt-2">
+                  <JackedDiagram />
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {JACKED.map((j) => (
+                    <Button
+                      key={j.id}
+                      variant={data.jacked === j.id ? "default" : "outline"}
+                      aria-pressed={data.jacked === j.id}
+                      onClick={() => update({ jacked: j.id })}
+                      className={cn("h-12 rounded-2xl text-[15px]", data.jacked === j.id ? "border-foreground hover:bg-foreground" : "bg-card dark:bg-card")}
+                    >
+                      {L(j.label)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {t("floodLine")} <span className="font-normal">({t("optional")})</span>
+                </p>
+                {(() => {
+                  // Always show at least one blank row to type into.
+                  const rows = data.floodLines.length ? data.floodLines : [{ year: "", level: "" }];
+                  const set = (i: number, patch: Partial<FloodLine>) =>
+                    update({ floodLines: rows.map((f, j) => (j === i ? { ...f, ...patch } : f)) });
+                  return (
+                    <div className="mt-2 space-y-2">
+                      {rows.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Input
+                            inputMode="numeric"
+                            aria-label={t("floodYear")}
+                            value={f.year}
+                            onChange={(e) => set(i, { year: e.target.value })}
+                            placeholder={t("floodYearHint")}
+                            className="h-12 w-28 shrink-0 rounded-2xl bg-card px-4"
+                          />
+                          <Input
+                            aria-label={t("floodLevel")}
+                            value={f.level}
+                            onChange={(e) => set(i, { level: e.target.value })}
+                            placeholder={t("floodLevelHint")}
+                            className="h-12 min-w-0 flex-1 rounded-2xl bg-card px-4"
+                          />
+                          {(rows.length > 1 || f.year || f.level) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={t("delete")}
+                              onClick={() => update({ floodLines: rows.filter((_, j) => j !== i) })}
+                              className="h-12 w-10 shrink-0 text-muted-foreground"
+                            >
+                              <IconX />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        variant="link"
+                        onClick={() => update({ floodLines: [...rows, { year: "", level: "" }] })}
+                        className="h-auto p-0 text-sm text-brand"
+                      >
+                        + {t("addFlood")}
+                      </Button>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           )}
 
           {step === 3 && (
@@ -467,6 +621,10 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   onRetry={(p) => retryUpload(p.id)}
                   onDiscard={(p) => finishUpload(p.id)}
                   onNote={(note) => updateSlot(s.key, (x) => ({ ...x, note }))}
+                  photoNotes={PHOTO_NOTE_SLOTS.includes(s.key)}
+                  onPhotoNote={(file, note) =>
+                    updateSlot(s.key, (x) => ({ ...x, photos: x.photos.map((p) => (p.file === file ? { ...p, note } : p)) }))
+                  }
                 />
               ))}
             </div>
@@ -558,7 +716,12 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
             <div className="space-y-2">
               <ReviewRow label={t("plotNo")} value={`${data.plotNo} · ${L(groupOf(data.group)!.label)}`} onEdit={() => setStep(0)} />
               <ReviewRow label={t("stepType")} value={typeLabel(data, lang)} onEdit={() => setStep(1)} empty={t("notSet")} />
+              <ReviewRow label={`${t("buildYear")} / ${t("buildAge")}`} value={buildYearAge(data, t)} onEdit={() => setStep(1)} empty={t("notSet")} />
+              <ReviewRow label={t("floors")} value={data.floors && `${data.floors} ${t("floorsUnit")}`} onEdit={() => setStep(1)} empty={t("notSet")} />
               <ReviewRow label={t("stepFunction")} value={functionLabel(data, lang)} onEdit={() => setStep(2)} empty={t("notSet")} />
+              <ReviewRow label={t("occupancy")} value={data.occupancy ? `${data.occupancy} ${t("people")}` : ""} onEdit={() => setStep(2)} empty={t("notSet")} />
+              <ReviewRow label={t("jacked")} value={jackedLabel(data, lang)} onEdit={() => setStep(2)} empty={t("notSet")} />
+              <ReviewRow label={t("floodLine")} value={floodLinesLabel(data)} onEdit={() => setStep(2)} empty={t("notSet")} />
               <button onClick={() => setStep(3)} className="w-full rounded-2xl bg-card p-4 text-left">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{t("stepPhotos")}</span>
@@ -629,7 +792,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               </Button>
             ) : (
               <Button size="xl" onClick={() => setStep(step + 1)} disabled={!canNext} className="flex-1">
-                {optionalStep && !(step === 1 ? data.buildingType : data.function) ? t("skip") : t("next")}
+                {optionalStep && !(step === 1 ? data.buildingType || data.buildYear || data.buildAge || data.floors : data.function || data.occupancy || data.jacked || data.floodLines.length) ? t("skip") : t("next")}
                 <IconNext />
               </Button>
             )}
@@ -656,40 +819,52 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   );
 }
 
+// Full-width rows like a settings list: a radio dot for one answer, a tick box when `multi`.
 function Choices({
+  multi = false,
   options,
-  value,
+  isOn,
   other,
   onPick,
   onOther,
 }: {
+  multi?: boolean;
   options: { id: string; label: Label }[];
-  value: string;
-  other: string;
+  isOn: (id: string) => boolean;
+  other?: string;
   onPick: (id: string) => void;
-  onOther: (v: string) => void;
+  onOther?: (v: string) => void;
 }) {
   const { t, L } = useT();
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((o) => (
-          <Button
-            key={o.id}
-            variant={value === o.id ? "default" : "outline"}
-            aria-pressed={value === o.id}
-            onClick={() => onPick(o.id)}
-            className={cn(
-              "h-auto min-h-20 items-end justify-start rounded-2xl p-3.5 text-left text-[15px] leading-snug whitespace-normal active:scale-[0.98]",
-              value === o.id ? "border-foreground hover:bg-foreground" : "bg-card dark:bg-card",
-            )}
-          >
-            {L(o.label)}
-          </Button>
-        ))}
+      <div role={multi ? "group" : "radiogroup"} className="divide-y divide-border overflow-hidden rounded-2xl bg-card">
+        {options.map((o) => {
+          const on = isOn(o.id);
+          return (
+            <button
+              key={o.id}
+              role={multi ? "checkbox" : "radio"}
+              aria-checked={on}
+              onClick={() => onPick(o.id)}
+              className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left text-[15px] leading-snug transition-colors active:bg-secondary"
+            >
+              <span
+                className={cn(
+                  "flex size-5 shrink-0 items-center justify-center border-2 transition-colors",
+                  multi ? "rounded-md" : "rounded-full",
+                  on ? "border-brand bg-brand text-background" : "border-muted-foreground/50",
+                )}
+              >
+                {on && (multi ? <IconCheck className="size-3.5" /> : <span className="size-2 rounded-full bg-background" />)}
+              </span>
+              <span className={on ? "font-semibold" : ""}>{L(o.label)}</span>
+            </button>
+          );
+        })}
       </div>
-      {value === "other" && (
-        <Input autoFocus className="mt-3 h-12 rounded-2xl bg-card px-4" placeholder={t("describe")} value={other} onChange={(e) => onOther(e.target.value)} />
+      {onOther && isOn("other") && (
+        <Input autoFocus className="mt-3 h-12 rounded-2xl bg-card px-4" placeholder={t("describe")} value={other ?? ""} onChange={(e) => onOther(e.target.value)} />
       )}
     </div>
   );
@@ -707,6 +882,8 @@ function ShotCard({
   onRetry,
   onDiscard,
   onNote,
+  photoNotes = false,
+  onPhotoNote,
 }: {
   index: number;
   label: Label;
@@ -719,6 +896,8 @@ function ShotCard({
   onRetry: (p: Upload) => void;
   onDiscard: (p: Upload) => void;
   onNote: (note: string) => void;
+  photoNotes?: boolean;
+  onPhotoNote: (file: string, note: string) => void;
 }) {
   const { t, L } = useT();
   const [showNote, setShowNote] = useState(!!slot.note);
@@ -759,66 +938,94 @@ function ShotCard({
           </Button>
         </div>
       ) : (
-        <div className="no-scrollbar -mx-3 mt-3 flex gap-2 overflow-x-auto px-3">
-          {slot.photos.map((p) => (
-            <div key={p.file} className="relative h-24 w-24 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full rounded-xl object-cover" />
-              <button
-                onClick={() => onRemove(p.file)}
-                aria-label="Remove"
-                className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70"
-              >
-                <IconX className="size-4" />
-              </button>
-              <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">{p.by}</span>
-            </div>
-          ))}
-          {pending.map((p) => (
-            <div key={p.id} className="relative h-24 w-24 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.preview} alt="" className="h-full w-full rounded-xl object-cover opacity-40" />
-              {p.status === "uploading" ? (
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                </span>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-xl bg-black/55 p-1 text-center">
-                  {p.status === "failed" ? (
-                    <span className="text-[10px] leading-tight text-red-300">{t("badPhoto")}</span>
-                  ) : (
-                    <>
-                      <span className="text-[10px] leading-tight text-yellow-300">{t("onPhone")}</span>
-                      <button onClick={() => onRetry(p)} className="text-[11px] font-semibold">
-                        {t("retry")}
-                      </button>
-                    </>
-                  )}
-                  <button onClick={() => setDiscarding(p)} className="text-[10px] text-muted-foreground underline">
-                    {t("delete")}
-                  </button>
+        <>
+          {/* One row per photo so each can be captioned, e.g. "Wall: teak". */}
+          {photoNotes && slot.photos.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {slot.photos.map((p, i) => (
+                <div key={p.file} className="flex items-center gap-2">
+                  <div className="relative h-16 w-16 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full rounded-xl object-cover" />
+                    <button
+                      onClick={() => onRemove(p.file)}
+                      aria-label="Remove"
+                      className="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/80"
+                    >
+                      <IconX className="size-3.5" />
+                    </button>
+                  </div>
+                  <Input
+                    className="h-11 flex-1 rounded-2xl bg-background px-4 md:text-sm"
+                    placeholder={`${i + 1}. ${t("materialHint")}`}
+                    value={p.note ?? ""}
+                    onChange={(e) => onPhotoNote(p.file, e.target.value)}
+                  />
                 </div>
-              )}
+              ))}
             </div>
-          ))}
-          <button
-            onClick={onCamera}
-            className="flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-secondary text-xs font-semibold active:scale-[0.98]"
-          >
-            <span className="relative">
-              <IconCamera className="size-7" />
-              <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-foreground p-0.5 text-background" />
-            </span>
-            {t("takeAnother")}
-          </button>
-          <button
-            onClick={onGallery}
-            className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-xs text-muted-foreground active:scale-[0.98]"
-          >
-            <IconImage />
-            {t("gallery")}
-          </button>
-        </div>
+          )}
+          <div className="no-scrollbar -mx-3 mt-3 flex gap-2 overflow-x-auto px-3">
+            {!photoNotes && slot.photos.map((p) => (
+              <div key={p.file} className="relative h-24 w-24 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full rounded-xl object-cover" />
+                <button
+                  onClick={() => onRemove(p.file)}
+                  aria-label="Remove"
+                  className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70"
+                >
+                  <IconX className="size-4" />
+                </button>
+                <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">{p.by}</span>
+              </div>
+            ))}
+            {pending.map((p) => (
+              <div key={p.id} className="relative h-24 w-24 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.preview} alt="" className="h-full w-full rounded-xl object-cover opacity-40" />
+                {p.status === "uploading" ? (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  </span>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-xl bg-black/55 p-1 text-center">
+                    {p.status === "failed" ? (
+                      <span className="text-[10px] leading-tight text-red-300">{t("badPhoto")}</span>
+                    ) : (
+                      <>
+                        <span className="text-[10px] leading-tight text-yellow-300">{t("onPhone")}</span>
+                        <button onClick={() => onRetry(p)} className="text-[11px] font-semibold">
+                          {t("retry")}
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => setDiscarding(p)} className="text-[10px] text-muted-foreground underline">
+                      {t("delete")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={onCamera}
+              className="flex h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-secondary text-xs font-semibold active:scale-[0.98]"
+            >
+              <span className="relative">
+                <IconCamera className="size-7" />
+                <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-foreground p-0.5 text-background" />
+              </span>
+              {t("takeAnother")}
+            </button>
+            <button
+              onClick={onGallery}
+              className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border text-xs text-muted-foreground active:scale-[0.98]"
+            >
+              <IconImage />
+              {t("gallery")}
+            </button>
+          </div>
+        </>
       )}
 
       {showNote ? (

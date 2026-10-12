@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { IMAGE_SLOTS, allPhotos, functionLabel, groupOf, shotsDone, typeLabel } from "@/lib/schema";
+import { IMAGE_SLOTS, allPhotos, floodLinesLabel, functionLabel, groupOf, jackedLabel, shotsDone, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { cn } from "@/lib/utils";
 import { timeAgo, useT, useUser } from "./app-state";
@@ -14,6 +14,7 @@ import { removeRecord, useRecord } from "./data";
 import { photoUrl, retryImage } from "./images";
 import { IconBack, IconCamera, IconDownload, IconPin, IconTrash } from "./Icons";
 import ConfirmDialog from "./ConfirmDialog";
+import { LangToggle } from "./Shell";
 import Lightbox, { type LightboxItem } from "./Lightbox";
 import { GroupBadge } from "./GroupBadge";
 
@@ -57,7 +58,7 @@ export default function RecordDetail() {
   const items: LightboxItem[] = IMAGE_SLOTS.flatMap((s) =>
     record.images[s.key].photos.map((p, i) => ({
       ...p,
-      title: `${record.plotNo} · ${L(s.label)}`,
+      title: [record.plotNo, L(s.label), p.note].filter(Boolean).join(" · "),
       downloadName: photoFileName(record, s.key, i, p),
     })),
   );
@@ -92,6 +93,7 @@ export default function RecordDetail() {
             {L(g.label)} · {L(g.zone)}
           </p>
         </div>
+        <LangToggle className="mr-2" />
       </header>
 
       {cover && (
@@ -105,6 +107,12 @@ export default function RecordDetail() {
         <div className="grid grid-cols-2 gap-2">
           <Info label={t("stepType")} value={typeLabel(record, lang) || "—"} />
           <Info label={t("stepFunction")} value={functionLabel(record, lang) || "—"} />
+          <Info label={t("buildYear")} value={record.buildYear || "—"} />
+          <Info label={t("buildAge")} value={record.buildAge ? `${record.buildAge} ${t("yearsOld")}` : "—"} />
+          <Info label={t("floors")} value={record.floors ? `${record.floors} ${t("floorsUnit")}` : "—"} />
+          <Info label={t("occupancy")} value={record.occupancy ? `${record.occupancy} ${t("people")}` : "—"} />
+          <Info label={t("jacked")} value={jackedLabel(record, lang) || "—"} />
+          <Info label={t("floodLine")} value={floodLinesLabel(record, "\n") || "—"} />
         </div>
 
         {record.mapLink && (
@@ -169,14 +177,17 @@ export default function RecordDetail() {
                   {photos.map((p) => {
                     const idx = flatIndex++;
                     return (
-                      <button key={p.file} onClick={() => setOpen(idx)} className="relative aspect-square overflow-hidden rounded-xl">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
-                        <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">
-                          <IconCamera className="size-3 shrink-0" />
-                          <span className="truncate">{p.by}</span>
-                        </span>
-                      </button>
+                      <div key={p.file}>
+                        <button onClick={() => setOpen(idx)} className="relative block aspect-square w-full overflow-hidden rounded-xl">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">
+                            <IconCamera className="size-3 shrink-0" />
+                            <span className="truncate">{p.by}</span>
+                          </span>
+                        </button>
+                        {p.note && <p className="mt-1 text-xs leading-snug">{p.note}</p>}
+                      </div>
                     );
                   })}
                 </div>
@@ -186,8 +197,8 @@ export default function RecordDetail() {
         })}
 
         <section className="rounded-2xl bg-card p-4 text-sm">
-          <Row label={t("filledBy")} value={`${record.createdBy.name} · G${record.createdBy.group}`} sub={timeAgo(record.createdAt, lang)} />
-          <Row label={t("editedBy")} value={`${record.updatedBy.name} · G${record.updatedBy.group}`} sub={timeAgo(record.updatedAt, lang)} />
+          <Row label={t("filledBy")} value={`${record.createdBy.name} · ${L(groupOf(record.createdBy.group)?.label ?? g.label)}`} sub={timeAgo(record.createdAt, lang)} />
+          <Row label={t("editedBy")} value={`${record.updatedBy.name} · ${L(groupOf(record.updatedBy.group)?.label ?? g.label)}`} sub={timeAgo(record.updatedAt, lang)} />
           {contributors.length > 0 && (
             <div className="border-t border-border py-3">
               <p className="text-muted-foreground">{t("takenBy")}</p>
@@ -211,7 +222,7 @@ export default function RecordDetail() {
                   {[...record.history].reverse().map((h, i) => (
                     <li key={i} className="flex justify-between gap-3">
                       <span>
-                        {h.by} <span className="text-muted-foreground">G{h.group} · {t(h.action)}</span>
+                        {h.by} <span className="text-muted-foreground">{L(groupOf(h.group)?.label ?? g.label)} · {t(h.action)}</span>
                       </span>
                       <span className="shrink-0 text-muted-foreground">{timeAgo(h.at, lang)}</span>
                     </li>
@@ -254,7 +265,7 @@ function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-semibold leading-snug">{value}</p>
+      <p className="mt-1 font-semibold leading-snug whitespace-pre-line">{value}</p>
     </div>
   );
 }

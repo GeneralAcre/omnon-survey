@@ -50,7 +50,7 @@ export default function PlacesMap({ records, noPlaceLabel }: { records: SurveyRe
       const img = cover ? `<img src="${photoUrl(cover.file, "thumb")}" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-bottom:8px" />` : "";
       L.marker([r.lat!, r.lng!], { icon })
         .bindPopup(
-          `<a href="/r/${esc(r.id)}" style="display:block;width:180px;color:inherit;text-decoration:none">${img}<div style="font-weight:700;font-size:16px">${esc(r.plotNo)}</div><div style="opacity:.7;font-size:12px">${esc(r.updatedBy.name)} · G${esc(r.group)} · ${allPhotos(r).length} 📷</div></a>`,
+          `<a href="/r/${esc(r.id)}" style="display:block;width:180px;color:inherit;text-decoration:none">${img}<div style="font-weight:700;font-size:16px">${esc(r.plotNo)}</div><div style="opacity:.7;font-size:12px">${esc(r.updatedBy.name)} · Zone ${esc(r.group)} · ${allPhotos(r).length} 📷</div></a>`,
         )
         .addTo(g);
     }

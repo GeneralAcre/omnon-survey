@@ -2,9 +2,9 @@ export type Lang = "en" | "th";
 export type Label = Record<Lang, string>;
 
 export const GROUPS = [
-  { id: "1", color: "#D62828", ink: "#ffffff", label: { en: "Group 1", th: "กลุ่ม 1" }, zone: { en: "Canal & Road Urbanization", th: "คลองกับการขยายตัวของถนน" } },
-  { id: "2", color: "#F77F00", ink: "#000000", label: { en: "Group 2", th: "กลุ่ม 2" }, zone: { en: "Housing Estate & Orchard", th: "หมู่บ้านจัดสรรและสวนผลไม้" } },
-  { id: "3", color: "#FCBF49", ink: "#000000", label: { en: "Group 3", th: "กลุ่ม 3" }, zone: { en: "Cultural Heritage Enrichment", th: "มรดกทางวัฒนธรรม" } },
+  { id: "1", color: "#D62828", ink: "#ffffff", label: { en: "Zone 1", th: "โซน 1" }, zone: { en: "Canal & Road Urbanization", th: "คลองกับการขยายตัวของถนน" } },
+  { id: "2", color: "#F77F00", ink: "#000000", label: { en: "Zone 2", th: "โซน 2" }, zone: { en: "Housing Estate & Orchard", th: "หมู่บ้านจัดสรรและสวนผลไม้" } },
+  { id: "3", color: "#FCBF49", ink: "#000000", label: { en: "Zone 3", th: "โซน 3" }, zone: { en: "Cultural Heritage Enrichment", th: "มรดกทางวัฒนธรรม" } },
 ] as const satisfies readonly { id: string; color: string; ink: string; label: Label; zone: Label }[];
 
 // Group colour + readable text colour on top of it.
@@ -14,6 +14,14 @@ export function groupColor(id: string) {
 }
 
 export const BUILDING_TYPES: { id: string; label: Label }[] = [
+  { id: "type-a", label: { en: "Type A (Thai house)", th: "Type A (เรือนไทย)" } },
+  { id: "type-b", label: { en: "Type B (Vernacular house)", th: "Type B (เรือนพื้นถิ่น)" } },
+  { id: "type-c", label: { en: "Type C (Modern)", th: "Type C (สมัยใหม่)" } },
+  { id: "other", label: { en: "Other", th: "อื่น ๆ" } },
+];
+
+// Types from the first survey sheet, kept so older records still show a label.
+const OLD_BUILDING_TYPES: { id: string; label: Label }[] = [
   { id: "stilt", label: { en: "Timber house on stilts", th: "เรือนไม้ใต้ถุนสูง" } },
   { id: "panya", label: { en: "Hip-roofed (Panya) house", th: "เรือนหลังคาปั้นหยา" } },
   { id: "thai-gable", label: { en: "Thai traditional gabled house", th: "เรือนไทยหลังคาจั่ว" } },
@@ -23,11 +31,20 @@ export const BUILDING_TYPES: { id: string; label: Label }[] = [
   { id: "floating", label: { en: "Floating / raft house", th: "เรือนแพ" } },
   { id: "temple", label: { en: "Temple building", th: "อาคารในวัด" } },
   { id: "sala", label: { en: "Pavilion (sala) / pier", th: "ศาลา / ท่าน้ำ" } },
-  { id: "other", label: { en: "Other", th: "อื่น ๆ" } },
 ];
 
+// A building can have several functions; they're stored comma-separated in `function`.
 export const FUNCTIONS: { id: string; label: Label }[] = [
-  { id: "residential", label: { en: "Residential", th: "ที่อยู่อาศัย" } },
+  { id: "residential", label: { en: "Residential", th: "ที่พักอาศัย" } },
+  { id: "shop", label: { en: "Shop", th: "ร้านค้า" } },
+  { id: "hotel", label: { en: "Hotel / guesthouse", th: "โรงแรม / ที่พัก" } },
+  { id: "sala", label: { en: "Waterside pavilion (sala)", th: "ศาลาท่าน้ำ" } },
+  { id: "shrine", label: { en: "Shrine", th: "ศาลเจ้า" } },
+];
+
+// Functions from the first survey sheet, kept so older records still show a label.
+const OLD_FUNCTIONS: { id: string; label: Label }[] = [
+  { id: "other", label: { en: "Other", th: "อื่น ๆ" } },
   { id: "commercial", label: { en: "Shop / commercial", th: "ร้านค้า / พาณิชย์" } },
   { id: "mixed", label: { en: "Home + shop", th: "บ้านและร้านค้า" } },
   { id: "religious", label: { en: "Religious", th: "ศาสนสถาน" } },
@@ -35,8 +52,13 @@ export const FUNCTIONS: { id: string; label: Label }[] = [
   { id: "agricultural", label: { en: "Orchard / farming", th: "สวน / เกษตรกรรม" } },
   { id: "storage", label: { en: "Storage / workshop", th: "โกดัง / โรงงานเล็ก" } },
   { id: "vacant", label: { en: "Vacant / abandoned", th: "ว่าง / ร้าง" } },
-  { id: "other", label: { en: "Other", th: "อื่น ๆ" } },
 ];
+
+export const JACKED = [
+  { id: "yes", label: { en: "Yes", th: "เคย" } },
+  { id: "no", label: { en: "No", th: "ไม่เคย" } },
+  { id: "unsure", label: { en: "Not sure", th: "ไม่แน่ใจ" } },
+] as const satisfies readonly { id: string; label: Label }[];
 
 // The 8 shots every record asks for, in survey-sheet order.
 export const IMAGE_SLOTS = [
@@ -59,7 +81,15 @@ export type Photo = {
   by: string;
   group: string;
   at: string;
+  // Caption for this one photo, e.g. "Wall: teak" on a Materials shot.
+  note?: string;
 };
+
+// Slots where each photo gets its own caption.
+export const PHOTO_NOTE_SLOTS: readonly ImageSlotKey[] = ["materials"];
+
+// One flood mark on the house; a house can have several from different years.
+export type FloodLine = { year: string; level: string };
 
 export type ImageSlot = { photos: Photo[]; note: string };
 
@@ -71,8 +101,14 @@ export type SurveyRecord = {
   plotNo: string;
   buildingType: string;
   buildingTypeOther: string;
+  buildYear: string;
+  buildAge: string;
+  floors: string;
   function: string;
   functionOther: string;
+  occupancy: string;
+  jacked: string;
+  floodLines: FloodLine[];
   images: Record<ImageSlotKey, ImageSlot>;
   colors: string[];
   notes: string;
@@ -88,7 +124,7 @@ export type SurveyRecord = {
 
 export type SurveyInput = Pick<
   SurveyRecord,
-  "group" | "plotNo" | "buildingType" | "buildingTypeOther" | "function" | "functionOther" | "images" | "colors" | "notes" | "mapLink" | "lat" | "lng"
+  "group" | "plotNo" | "buildingType" | "buildingTypeOther" | "buildYear" | "buildAge" | "floors" | "function" | "functionOther" | "occupancy" | "jacked" | "floodLines" | "images" | "colors" | "notes" | "mapLink" | "lat" | "lng"
 >;
 
 export function emptyImages(): Record<ImageSlotKey, ImageSlot> {
@@ -104,8 +140,14 @@ export function emptyInput(group = ""): SurveyInput {
     plotNo: "",
     buildingType: "",
     buildingTypeOther: "",
+    buildYear: "",
+    buildAge: "",
+    floors: "",
     function: "",
     functionOther: "",
+    occupancy: "",
+    jacked: "",
+    floodLines: [],
     images: emptyImages(),
     colors: [],
     notes: "",
@@ -116,6 +158,13 @@ export function emptyInput(group = ""): SurveyInput {
 }
 
 const str = (v: unknown, max = 2000) => (typeof v === "string" ? v.slice(0, max) : "");
+
+// Leading whole number, no leading zeros; "" when blank or below `min` (so no negative people, no 0 floors).
+// "-3" is rejected rather than read as 3, and "4.5" keeps the 4.
+export function wholeNumber(v: unknown, min: number) {
+  const s = ((typeof v === "string" ? v : "").trim().match(/^\d+/)?.[0] ?? "").replace(/^0+(?=\d)/, "").slice(0, 4);
+  return s && Number(s) >= min ? s : "";
+}
 
 export const FILE_RE = /^[a-z0-9-]+\.(jpg|jpeg|png|webp)$/i;
 const HEX_RE = /^#[0-9a-f]{6}$/i;
@@ -146,6 +195,7 @@ export function sanitizeInput(raw: unknown): SurveyInput {
           by: str(p.by, 80),
           group: str(p.group, 10),
           at: str(p.at, 40),
+          note: str(p.note, 200),
         })),
       note: str(slot.note, 1000),
     };
@@ -155,8 +205,18 @@ export function sanitizeInput(raw: unknown): SurveyInput {
     plotNo: str(r.plotNo, 50).trim(),
     buildingType: str(r.buildingType, 40),
     buildingTypeOther: str(r.buildingTypeOther, 200),
-    function: str(r.function, 40),
+    buildYear: str(r.buildYear, 40).trim(),
+    buildAge: str(r.buildAge, 40).trim(),
+    floors: wholeNumber(r.floors, 1),
+    function: str(r.function, 200),
     functionOther: str(r.functionOther, 200),
+    occupancy: wholeNumber(r.occupancy, 0),
+    jacked: JACKED.some((j) => j.id === r.jacked) ? (r.jacked as string) : "",
+    floodLines: (Array.isArray(r.floodLines) ? r.floodLines : [])
+      .map((f) => (f ?? {}) as Record<string, unknown>)
+      .map((f) => ({ year: str(f.year, 20).trim(), level: str(f.level, 100).trim() }))
+      .filter((f) => f.year || f.level)
+      .slice(0, 10),
     images,
     colors: Array.isArray(r.colors)
       ? r.colors.filter((c): c is string => typeof c === "string" && HEX_RE.test(c)).slice(0, 12)
@@ -172,12 +232,36 @@ export function groupOf(id: string) {
 
 export function typeLabel(r: Pick<SurveyRecord, "buildingType" | "buildingTypeOther">, lang: Lang) {
   if (r.buildingType === "other") return r.buildingTypeOther || BUILDING_TYPES.at(-1)!.label[lang];
-  return BUILDING_TYPES.find((t) => t.id === r.buildingType)?.label[lang] ?? "";
+  return [...BUILDING_TYPES, ...OLD_BUILDING_TYPES].find((t) => t.id === r.buildingType)?.label[lang] ?? "";
+}
+
+// "2510 · 58 yrs", or whichever half was filled in.
+export function buildYearAge(r: Pick<SurveyRecord, "buildYear" | "buildAge">, t: (k: "yearsOld") => string) {
+  return [r.buildYear, r.buildAge && `${r.buildAge} ${t("yearsOld")}`].filter(Boolean).join(" · ");
+}
+
+export function functionIds(r: Pick<SurveyRecord, "function">) {
+  return r.function ? r.function.split(",") : [];
 }
 
 export function functionLabel(r: Pick<SurveyRecord, "function" | "functionOther">, lang: Lang) {
-  if (r.function === "other") return r.functionOther || FUNCTIONS.at(-1)!.label[lang];
-  return FUNCTIONS.find((t) => t.id === r.function)?.label[lang] ?? "";
+  return functionIds(r)
+    .map((id) =>
+      id === "other"
+        ? r.functionOther || OLD_FUNCTIONS[0].label[lang]
+        : [...FUNCTIONS, ...OLD_FUNCTIONS].find((t) => t.id === id)?.label[lang],
+    )
+    .filter(Boolean)
+    .join(", ");
+}
+
+// "2554: 1.2 m · 2560: 0.5 m"
+export function floodLinesLabel(r: Pick<SurveyRecord, "floodLines">, sep = " · ") {
+  return (r.floodLines ?? []).map((f) => [f.year, f.level].filter(Boolean).join(": ")).join(sep);
+}
+
+export function jackedLabel(r: Pick<SurveyRecord, "jacked">, lang: Lang) {
+  return JACKED.find((j) => j.id === r.jacked)?.label[lang] ?? "";
 }
 
 export function allPhotos(r: Pick<SurveyRecord, "images">) {

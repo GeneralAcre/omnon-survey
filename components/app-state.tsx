@@ -124,7 +124,6 @@ const DICT = {
   showMore: { en: "Show more", th: "แสดงเพิ่ม" },
   studyArea: { en: "Study area", th: "พื้นที่ศึกษา" },
   zone: { en: "Zone", th: "โซน" },
-  tapToZoom: { en: "Tap to enlarge", th: "แตะเพื่อขยาย" },
   live: { en: "Live", th: "สด" },
   justAdded: { en: "just added a building", th: "เพิ่งเพิ่มอาคาร" },
   viewOnly: { en: "View only — only Zone {n} can edit this building.", th: "ดูได้อย่างเดียว — เฉพาะโซน {n} แก้ไขอาคารนี้ได้" },

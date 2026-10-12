@@ -9,35 +9,15 @@ import FullscreenDialog from "./FullscreenDialog";
 import { IconX } from "./Icons";
 import area from "@/public/area.png";
 
-// The workshop zone map, with each zone tied to its group colour.
-export default function AreaHero({ myGroup }: { myGroup: string }) {
-  const { t, L } = useT();
+// The workshop zone map; tap to open it full screen.
+export default function AreaHero() {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <button onClick={() => setOpen(true)} className="block w-full overflow-hidden rounded-3xl border border-border bg-card text-left">
         <Image src={area} alt={t("studyArea")} sizes="(min-width: 672px) 672px, 100vw" fetchPriority="high" loading="eager" className="aspect-[2.15/1] w-full object-cover sm:aspect-[3/2]" />
-        {/* Zone buttons sit under the map, not on it, so every zone label on the image stays visible. */}
-        <div className="px-2.5 pt-2 pb-2.5 sm:px-3 sm:pb-3">
-          <div className="flex items-end justify-between gap-2">
-            <p className="text-xs font-semibold sm:text-sm">{t("studyArea")}</p>
-            <p className="text-[10px] text-muted-foreground sm:text-[11px]">{t("tapToZoom")}</p>
-          </div>
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
-            {GROUPS.map((g) => (
-              <div
-                key={g.id}
-                className={`rounded-lg px-1.5 py-1 sm:rounded-xl sm:px-2 sm:py-1.5 ${g.id === myGroup ? "ring-2 ring-white" : ""}`}
-                style={{ background: g.color, color: g.ink }}
-              >
-                <p className="text-xs font-bold">
-                  {t("zone")} {g.id}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
       </button>
 
       {open && (

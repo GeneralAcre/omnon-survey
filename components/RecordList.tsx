@@ -129,7 +129,7 @@ export default function RecordList() {
         </div>
 
         <div className="mt-3 sm:mt-4">
-          <AreaHero myGroup={user.group} />
+          <AreaHero />
         </div>
       </div>
 

@@ -15,7 +15,7 @@ import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, sho
 import { zipParts } from "@/lib/naming";
 import { setLang, setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
-import { photoUrl } from "./images";
+import { photoUrl, retryImage } from "./images";
 import { IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
 import AreaHero from "./AreaHero";
 import { GroupBadge } from "./GroupBadge";
@@ -264,7 +264,7 @@ function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) 
       <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-card">
         {cover && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photoUrl(cover.file, "thumb")} alt="" className="h-full w-full object-cover" />
+          <img src={photoUrl(cover.file, "thumb")} onError={retryImage} alt="" className="h-full w-full object-cover" />
         )}
       </span>
       <span className="min-w-0 flex-1">
@@ -304,7 +304,7 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
       <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photoUrl(cover.file, "thumb")} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img src={photoUrl(cover.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
             <IconImage className="size-6" />

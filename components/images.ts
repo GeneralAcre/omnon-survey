@@ -8,6 +8,20 @@ export const pixelUrl = (file: string, size: "full" | "thumb" = "full") =>
 export const downloadUrl = (file: string, niceName: string) =>
   `/api/photos/${file}?download=${encodeURIComponent(niceName)}`;
 
+// onError for photo <img>s: weak signal can drop a single image, so try it again
+// (after 1, 2 and 4 s) instead of leaving a broken picture until a reload.
+export function retryImage(e: { currentTarget: HTMLImageElement }) {
+  const img = e.currentTarget;
+  const tries = Number(img.dataset.tries ?? 0);
+  if (tries >= 3) return;
+  img.dataset.tries = String(tries + 1);
+  setTimeout(() => {
+    const url = new URL(img.src);
+    url.searchParams.set("try", String(tries + 1));
+    img.src = url.toString();
+  }, 1000 * 2 ** tries);
+}
+
 async function resize(bitmap: ImageBitmap, maxSide: number, quality: number): Promise<Blob> {
   const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
@@ -21,8 +35,8 @@ async function resize(bitmap: ImageBitmap, maxSide: number, quality: number): Pr
   return blob;
 }
 
-// Full image: 2560px long side at high quality (sharp enough for drawings and
-// print, ~1–1.5 MB). Thumb: 480px for fast lists on 4G.
+// Full image: 2048px long side (fine for A4 prints and drawing over, ~1–1.5 MB,
+// about half the upload time of 2560px on field 4G). Thumb: 480px for fast lists.
 export async function prepare(file: Blob): Promise<{ full: Blob; thumb: Blob }> {
   let bitmap: ImageBitmap;
   try {
@@ -32,7 +46,7 @@ export async function prepare(file: Blob): Promise<{ full: Blob; thumb: Blob }> 
     throw Object.assign(new Error("Can't read this photo"), { permanent: true });
   }
   try {
-    const [full, thumb] = [await resize(bitmap, 2560, 0.9), await resize(bitmap, 480, 0.75)];
+    const [full, thumb] = [await resize(bitmap, 2048, 0.85), await resize(bitmap, 480, 0.75)];
     return { full, thumb };
   } finally {
     bitmap.close();

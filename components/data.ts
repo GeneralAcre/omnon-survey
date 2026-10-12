@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Person, SurveyInput, SurveyRecord } from "@/lib/schema";
+import { onPhotoAttached } from "./uploads";
 
 // Keep the last list in memory so going back to the list is instant.
 let cache: SurveyRecord[] | null = null;
@@ -67,9 +68,16 @@ export function useRecords({ live = false, onArrive }: { live?: boolean; onArriv
     const onVisible = () => document.visibilityState === "visible" && (live ? poll() : reload());
     document.addEventListener("visibilitychange", onVisible);
     const timer = live ? setInterval(() => document.visibilityState === "visible" && poll(), POLL_MS) : undefined;
+    // A photo that finished uploading after its building was saved.
+    const stop = onPhotoAttached((r) => {
+      if (!cache?.some((x) => x.id === r.id)) return;
+      cache = cache.map((x) => (x.id === r.id ? r : x));
+      setRecords(cache);
+    });
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       clearInterval(timer);
+      stop();
     };
   }, [reload, poll, live]);
 
@@ -95,16 +103,18 @@ export function useRecord(id: string) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     reload();
-  }, [reload]);
+    return onPhotoAttached((r) => r.id === id && setRecord(r));
+  }, [reload, id]);
 
   return { record, error, reload };
 }
 
-export async function saveRecord(record: SurveyInput, by: Person, id?: string, baseFiles?: string[]): Promise<SurveyRecord> {
+// `newId`: the id a new building should get (chosen on the phone, see uploads.ts).
+export async function saveRecord(record: SurveyInput, by: Person, id?: string, baseFiles?: string[], newId?: string): Promise<SurveyRecord> {
   const res = await fetch(id ? `/api/records/${id}` : "/api/records", {
     method: id ? "PUT" : "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ record, by, baseFiles }),
+    body: JSON.stringify({ record, by, baseFiles, id: id ? undefined : newId }),
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error ?? "Save failed");

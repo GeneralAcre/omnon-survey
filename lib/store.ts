@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
-import { IMAGE_SLOTS, allPhotos, type Person, type SurveyInput, type SurveyRecord } from "./schema";
+import { IMAGE_SLOTS, allPhotos, type ImageSlotKey, type Person, type Photo, type SurveyInput, type SurveyRecord } from "./schema";
 import { deletePhotos } from "./photos";
 
 type Backend = {
@@ -168,12 +168,19 @@ export class ForbiddenError extends Error {
   }
 }
 
-export async function createRecord(input: SurveyInput, by: Person) {
+// `id` lets the phone pick the id up front, so photos still uploading know which
+// building they belong to. Sending the same save twice returns the first one.
+export async function createRecord(input: SurveyInput, by: Person, id: string = randomUUID()) {
+  const existing = await backend().get(id);
+  if (existing) {
+    if (existing.createdBy.name === by.name && existing.createdBy.group === by.group) return existing;
+    throw new ForbiddenError(existing.group);
+  }
   const now = new Date().toISOString();
   const record: SurveyRecord = {
     ...input,
     group: by.group,
-    id: randomUUID(),
+    id,
     createdBy: by,
     updatedBy: by,
     history: [{ by: by.name, group: by.group, at: now, action: "created" }],
@@ -226,6 +233,22 @@ export async function updateRecord(id: string, input: SurveyInput, by: Person, b
   const keep = new Set(allPhotos(after).map((p) => p.file));
   await deletePhotos(allPhotos(before).map((p) => p.file).filter((f) => !keep.has(f)));
   return after;
+}
+
+// A photo that finished uploading after its building was saved. Appending in one
+// step means it can't overwrite anyone's edits made in the meantime.
+export async function addPhoto(id: string, slot: ImageSlotKey, photo: Photo, by: Person) {
+  const result = await backend().modify(id, (before) => {
+    if (before.group !== by.group) throw new ForbiddenError(before.group);
+    const current = before.images[slot] ?? { photos: [], note: "" };
+    if (current.photos.some((p) => p.file === photo.file) || current.photos.length >= 20) return before;
+    return {
+      ...before,
+      images: { ...before.images, [slot]: { ...current, photos: [...current.photos, photo] } },
+      updatedAt: new Date().toISOString(),
+    };
+  });
+  return result?.[1] ?? null;
 }
 
 export async function deleteRecord(id: string, by: Person) {

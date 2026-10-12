@@ -11,7 +11,7 @@ import { photoFileName } from "@/lib/naming";
 import { cn } from "@/lib/utils";
 import { timeAgo, useT, useUser } from "./app-state";
 import { removeRecord, useRecord } from "./data";
-import { photoUrl } from "./images";
+import { photoUrl, retryImage } from "./images";
 import { IconBack, IconCamera, IconDownload, IconPin, IconTrash } from "./Icons";
 import ConfirmDialog from "./ConfirmDialog";
 import Lightbox, { type LightboxItem } from "./Lightbox";
@@ -97,7 +97,7 @@ export default function RecordDetail() {
       {cover && (
         <button onClick={() => setOpen(items.findIndex((x) => x.file === cover.file))} className="block w-full px-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photoUrl(cover.file)} alt="" className="aspect-[4/3] w-full rounded-3xl object-cover" />
+          <img src={photoUrl(cover.file)} onError={retryImage} alt="" className="aspect-[4/3] w-full rounded-3xl object-cover" />
         </button>
       )}
 
@@ -171,7 +171,7 @@ export default function RecordDetail() {
                     return (
                       <button key={p.file} onClick={() => setOpen(idx)} className="relative aspect-square overflow-hidden rounded-xl">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoUrl(p.file, "thumb")} alt="" loading="lazy" className="h-full w-full object-cover" />
+                        <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
                         <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">
                           <IconCamera className="size-3 shrink-0" />
                           <span className="truncate">{p.by}</span>

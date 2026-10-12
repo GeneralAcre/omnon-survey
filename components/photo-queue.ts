@@ -1,14 +1,17 @@
 // Keeps every photo on the phone (IndexedDB) from the moment it's taken until
 // the server has it. Survives bad signal, closed tabs, and Android killing the
 // page while the camera app is open.
-import type { ImageSlotKey } from "@/lib/schema";
+import type { ImageSlotKey, Person } from "@/lib/schema";
 
 export type QueuedPhoto = {
   id: string;
-  context: string; // "new" or a record id
+  // "new" or a record id while in a form; "saved:<record id>" once that form was saved.
+  context: string;
   slot: ImageSlotKey;
   blob: Blob;
   createdAt: number;
+  by?: Person;
+  file?: string; // set once uploaded, until it is attached to its building
 };
 
 const DB = "omnon";
@@ -48,6 +51,14 @@ export const queue = {
   list: async (context: string): Promise<QueuedPhoto[]> => {
     try {
       const all = (await tx<QueuedPhoto[]>("readonly", (s) => s.index("context").getAll(context))) ?? [];
+      return all.sort((a, b) => a.createdAt - b.createdAt);
+    } catch {
+      return [];
+    }
+  },
+  all: async (): Promise<QueuedPhoto[]> => {
+    try {
+      const all = (await tx<QueuedPhoto[]>("readonly", (s) => s.getAll())) ?? [];
       return all.sort((a, b) => a.createdAt - b.createdAt);
     } catch {
       return [];

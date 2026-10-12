@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { IMAGE_SLOTS, groupColor, type SurveyRecord } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { useT } from "./app-state";
-import { photoUrl } from "./images";
+import { photoUrl, retryImage } from "./images";
 import Lightbox, { type LightboxItem } from "./Lightbox";
 
 const PAGE = 90;
@@ -44,7 +44,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
           return (
             <button key={p.file} onClick={() => setOpen(i)} className="relative aspect-square overflow-hidden rounded-lg bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl(p.file, "thumb")} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
               <span className="absolute inset-x-0 top-0 h-1" style={{ background: c.bg }} />
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-1.5 pt-4 pb-1 text-left">
                 <span className="block truncate text-[11px] font-semibold">{p.plotNo}</span>

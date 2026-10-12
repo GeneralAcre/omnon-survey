@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { GroupBadge } from "./GroupBadge";
 import { timeAgo, useT } from "./app-state";
 import FullscreenDialog from "./FullscreenDialog";
-import { downloadUrl, photoUrl } from "./images";
+import { downloadUrl, photoUrl, retryImage } from "./images";
 import { IconBack, IconDownload, IconNext, IconX } from "./Icons";
 
 export type LightboxItem = { file: string; title: string; by: string; group: string; at: string; downloadName: string; href?: string };
@@ -53,7 +53,7 @@ export default function Lightbox({ items, index, onClose }: { items: LightboxIte
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img key={item.file} src={photoUrl(item.file)} alt={item.title} className="max-h-full max-w-full object-contain" />
+        <img key={item.file} src={photoUrl(item.file)} onError={retryImage} alt={item.title} className="max-h-full max-w-full object-contain" />
         {items.length > 1 && (
           <>
             <Button variant="secondary" size="icon-xl" onClick={() => go(-1)} aria-label="Previous" className="absolute left-2 hidden bg-white/10 sm:inline-flex">

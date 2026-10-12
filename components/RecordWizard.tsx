@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BUILDING_TYPES,
   FUNCTIONS,
@@ -29,34 +29,12 @@ import { cn } from "@/lib/utils";
 import { useT, useUser } from "./app-state";
 import ConfirmDialog from "./ConfirmDialog";
 import { saveRecord, useRecords } from "./data";
-import { photoUrl, pixelUrl, prepare, uploadPrepared } from "./images";
-import { queue } from "./photo-queue";
+import { photoUrl, pixelUrl, retryImage } from "./images";
 import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPalette, IconPin, IconPlus, IconX } from "./Icons";
 import ColorSampler, { MainColours } from "./ColorSampler";
+import { addPhotos, discardContext, finishUpload, handBack, handOff, release, retryUpload, useUploads, type Upload } from "./uploads";
 
 const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "stepColors", "stepReview"] as const;
-
-type Pending = {
-  id: string;
-  slot: ImageSlotKey;
-  preview: string;
-  status: "uploading" | "waiting" | "failed";
-  blob: Blob;
-};
-
-// At most 2 uploads at once so a weak 4G link isn't saturated.
-let active = 0;
-const waiting: (() => void)[] = [];
-async function limited<T>(fn: () => Promise<T>): Promise<T> {
-  if (active >= 2) await new Promise<void>((r) => waiting.push(r));
-  active++;
-  try {
-    return await fn();
-  } finally {
-    active--;
-    waiting.shift()?.();
-  }
-}
 
 function fromRecord(record: SurveyRecord): SurveyInput {
   const base = emptyInput(record.group);
@@ -76,7 +54,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
   const [data, setData] = useState<SurveyInput>(initial);
   const [step, setStep] = useState(0);
-  const [pending, setPending] = useState<Pending[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [draftRestored, setDraftRestored] = useState(false);
@@ -93,6 +70,10 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  // Photos taken in this form (uploads.ts keeps them on the phone and uploads them).
+  const allUploads = useUploads();
+  const mine = useMemo(() => allUploads.filter((u) => u.context === context), [allUploads, context]);
+  const pending = mine.filter((u) => !u.file);
 
   function persist(next: SurveyInput) {
     try {
@@ -112,14 +93,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     scroller.current?.scrollTo({ top: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
-
-  useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => {
-      if (pending.length) e.preventDefault();
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [pending.length]);
 
   const waitingCount = pending.filter((p) => p.status === "waiting").length;
 
@@ -151,42 +124,29 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     });
   }
 
-  async function upload(p: Pending) {
-    setPending((list) => list.map((x) => (x.id === p.id ? { ...x, status: "uploading" } : x)));
-    try {
-      const name = await limited(async () => uploadPrepared(await prepare(p.blob)));
-      // Draft is written inside updateSlot before the local copy is dropped,
-      // so a crash in between can only duplicate a photo, never lose it.
-      updateSlot(p.slot, (s) =>
-        s.photos.some((x) => x.file === name)
-          ? s
-          : { ...s, photos: [...s.photos, { file: name, by: user.name, group: user.group, at: new Date().toISOString() }] },
-      );
-      await queue.remove(p.id);
-      URL.revokeObjectURL(p.preview);
-      setPending((list) => list.filter((x) => x.id !== p.id));
-    } catch (e) {
-      const status = (e as { permanent?: boolean }).permanent ? "failed" : "waiting";
-      setPending((list) => list.map((x) => (x.id === p.id ? { ...x, status } : x)));
+  // Uploaded photos join the building being filled in. The phone's copy is only
+  // dropped (next effect) once the draft that includes the photo has been written.
+  useEffect(() => {
+    for (const u of mine) {
+      if (!u.file) continue;
+      const photo = { file: u.file, by: u.by?.name ?? user.name, group: u.by?.group ?? user.group, at: new Date(u.createdAt).toISOString() };
+      // Copies finished uploads (an external store) into the form.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      updateSlot(u.slot, (s) => (s.photos.some((x) => x.file === photo.file) ? s : { ...s, photos: [...s.photos, photo] }));
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mine]);
 
-  async function addFiles(files: FileList | null) {
+  useEffect(() => {
+    const inForm = new Set(allPhotos(data).map((p) => p.file));
+    for (const u of mine) if (u.file && inForm.has(u.file)) finishUpload(u.id);
+  }, [mine, data]);
+
+  function addFiles(files: FileList | null) {
     if (!files?.length) return;
     dirty.current = true;
     persist(data);
-    const slot = target.current;
-    const items: Pending[] = Array.from(files).map((file) => ({
-      id: crypto.randomUUID(),
-      slot,
-      blob: file,
-      preview: URL.createObjectURL(file),
-      status: "uploading",
-    }));
-    setPending((list) => [...list, ...items]);
-    // Save to the phone first, then upload.
-    await Promise.all(items.map((p) => queue.put({ id: p.id, context, slot, blob: p.blob, createdAt: Date.now() })));
-    items.forEach(upload);
+    addPhotos(context, target.current, Array.from(files), user);
   }
 
   // Restore an unsaved draft and any photos still waiting on this phone.
@@ -204,40 +164,8 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
         dirty.current = true;
       }
     } catch {}
-    queue.list(context).then((items) => {
-      if (!items.length) return;
-      dirty.current = true;
-      const restoredItems: Pending[] = items.map((q) => ({
-        id: q.id,
-        slot: q.slot,
-        blob: q.blob,
-        preview: URL.createObjectURL(q.blob),
-        status: "uploading",
-      }));
-      setPending((list) => [...list, ...restoredItems]);
-      restoredItems.forEach(upload);
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Photos waiting for signal: retry when the phone comes back online, and every 20 s.
-  useEffect(() => {
-    if (!waitingCount) return;
-    const retryAll = () => pending.filter((p) => p.status === "waiting").forEach(upload);
-    window.addEventListener("online", retryAll);
-    const timer = setInterval(retryAll, 20000);
-    return () => {
-      window.removeEventListener("online", retryAll);
-      clearInterval(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [waitingCount]);
-
-  function discardPending(p: Pending) {
-    URL.revokeObjectURL(p.preview);
-    queue.remove(p.id);
-    setPending((list) => list.filter((x) => x.id !== p.id));
-  }
 
   function openPicker(slot: ImageSlotKey, camera: boolean) {
     target.current = slot;
@@ -246,9 +174,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
   function resetLocal() {
     clearDraft();
-    queue.clear(context);
-    pending.forEach((p) => URL.revokeObjectURL(p.preview));
-    setPending([]);
+    discardContext(context);
     dirty.current = false;
   }
 
@@ -294,8 +220,13 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   async function save() {
     setSaving(true);
     setError("");
+    // Photos still uploading go with this building and are added to it as each one
+    // finishes, so nobody has to wait here. A new building's id is chosen now for that.
+    const id = record?.id ?? crypto.randomUUID();
+    const moving = handOff(context, id);
     try {
-      const saved = await saveRecord(data, user, record?.id, record ? allPhotos(record).map((p) => p.file) : undefined);
+      const saved = await saveRecord(data, user, record?.id, record ? allPhotos(record).map((p) => p.file) : undefined, id);
+      release(id);
       clearDraft();
       dirty.current = false;
       if (record) {
@@ -303,19 +234,20 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
         return;
       }
       // Straight back to a fresh form for the next building.
-      setJustSaved({ id: saved.id, plotNo: saved.plotNo, photos: allPhotos(saved).length });
+      setJustSaved({ id: saved.id, plotNo: saved.plotNo, photos: allPhotos(saved).length + moving.length });
       setData(emptyInput(data.group));
       setDraftRestored(false);
       setStep(0);
       setSaving(false);
       reload();
     } catch (e) {
+      handBack(moving, context, id);
       setError(navigator.onLine === false || e instanceof TypeError ? t("noSignal") : (e as Error).message);
       setSaving(false);
     }
   }
 
-  const uploading = pending.filter((p) => p.status === "uploading").length;
+  const failedCount = pending.filter((p) => p.status === "failed").length;
   const duplicate =
     data.plotNo.trim() &&
     records?.find(
@@ -532,8 +464,8 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   onCamera={() => openPicker(s.key, true)}
                   onGallery={() => openPicker(s.key, false)}
                   onRemove={(file) => updateSlot(s.key, (x) => ({ ...x, photos: x.photos.filter((p) => p.file !== file) }))}
-                  onRetry={upload}
-                  onDiscard={discardPending}
+                  onRetry={(p) => retryUpload(p.id)}
+                  onDiscard={(p) => finishUpload(p.id)}
                   onNote={(note) => updateSlot(s.key, (x) => ({ ...x, note }))}
                 />
               ))}
@@ -561,7 +493,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                           )}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={photoUrl(p.file, "thumb")} alt="" className="h-full w-full object-cover" />
+                          <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full object-cover" />
                         </button>
                       ))}
                     </div>
@@ -641,7 +573,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                       <div key={s.key} className="relative aspect-square overflow-hidden rounded-lg bg-secondary">
                         {p ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={photoUrl(p.file, "thumb")} alt="" className="h-full w-full object-cover" />
+                          <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full object-cover" />
                         ) : (
                           <span className="absolute inset-0 flex items-center justify-center px-1 text-center text-[10px] text-muted-foreground">
                             {L(s.label)}
@@ -673,11 +605,16 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       <footer className="border-t border-border bg-background px-4 pt-3 pb-safe">
         <div className="mx-auto max-w-2xl">
           {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
-          {pending.some((p) => p.status === "failed") && <p className="mb-2 text-sm text-red-400">{t("badPhotoFooter")}</p>}
-          {waitingCount > 0 && (
+          {failedCount > 0 && <p className="mb-2 text-sm text-red-400">{t("badPhotoFooter")}</p>}
+          {waitingCount > 0 ? (
             <p className="mb-2 text-sm text-yellow-300">
               {waitingCount} {t("photosWaiting")}
             </p>
+          ) : (
+            isLast &&
+            pending.length > failedCount && (
+              <p className="mb-2 text-sm text-muted-foreground">{t("uploadsAfterSave").replace("{n}", String(pending.length - failedCount))}</p>
+            )
           )}
           <div className="flex gap-2">
             {step > 0 && (
@@ -687,8 +624,8 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               </Button>
             )}
             {isLast ? (
-              <Button size="xl" onClick={save} disabled={saving || pending.length > 0} className="flex-1">
-                {saving ? t("saving") : uploading > 0 ? t("waitUploads") : waitingCount > 0 ? t("waitSignal") : t("save")}
+              <Button size="xl" onClick={save} disabled={saving || failedCount > 0} className="flex-1">
+                {saving ? t("saving") : t("save")}
               </Button>
             ) : (
               <Button size="xl" onClick={() => setStep(step + 1)} disabled={!canNext} className="flex-1">
@@ -775,17 +712,17 @@ function ShotCard({
   label: Label;
   hint: Label;
   slot: SurveyInput["images"][ImageSlotKey];
-  pending: Pending[];
+  pending: Upload[];
   onCamera: () => void;
   onGallery: () => void;
   onRemove: (file: string) => void;
-  onRetry: (p: Pending) => void;
-  onDiscard: (p: Pending) => void;
+  onRetry: (p: Upload) => void;
+  onDiscard: (p: Upload) => void;
   onNote: (note: string) => void;
 }) {
   const { t, L } = useT();
   const [showNote, setShowNote] = useState(!!slot.note);
-  const [discarding, setDiscarding] = useState<Pending | null>(null);
+  const [discarding, setDiscarding] = useState<Upload | null>(null);
   const has = slot.photos.length > 0;
   const empty = !has && pending.length === 0;
 
@@ -826,7 +763,7 @@ function ShotCard({
           {slot.photos.map((p) => (
             <div key={p.file} className="relative h-24 w-24 shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl(p.file, "thumb")} alt="" className="h-full w-full rounded-xl object-cover" />
+              <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full rounded-xl object-cover" />
               <button
                 onClick={() => onRemove(p.file)}
                 aria-label="Remove"

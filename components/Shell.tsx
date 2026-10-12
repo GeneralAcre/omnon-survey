@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,13 +8,49 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { GROUPS } from "@/lib/schema";
 import { setLang, setUser, useT, useUser } from "./app-state";
+import { startUploads, useUploads } from "./uploads";
 
 // Gates the app behind a one-time "who are you" screen.
 export default function Shell({ children }: { children: React.ReactNode }) {
   const user = useUser();
   if (user === undefined) return <div className="flex-1" />;
   if (user === null) return <SignIn />;
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <BackgroundUploads />
+    </>
+  );
+}
+
+// Photos still uploading for buildings that were already saved, on every page.
+function BackgroundUploads() {
+  const { t } = useT();
+  const uploads = useUploads();
+  const saved = uploads.filter((u) => u.context.startsWith("saved:"));
+  const waiting = saved.filter((u) => u.status === "waiting").length;
+  const busy = uploads.some((u) => u.status !== "failed");
+
+  useEffect(() => startUploads(), []);
+
+  // Closing the page now would pause these until the app is opened again.
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [busy]);
+
+  if (!saved.length) return null;
+  return (
+    <div
+      role="status"
+      className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] left-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full bg-secondary/95 px-3.5 py-2 text-xs font-semibold shadow-lg backdrop-blur"
+    >
+      <span className={`h-2 w-2 shrink-0 rounded-full ${waiting ? "bg-yellow-400" : "animate-pulse bg-brand"}`} />
+      {(waiting ? t("waitingBg") : t("uploadingBg")).replace("{n}", String(waiting || saved.length))}
+    </div>
+  );
 }
 
 export function LangToggle({ className = "" }: { className?: string }) {

@@ -1,6 +1,7 @@
 // Minimal streaming ZIP writer (STORE only — JPEGs don't compress further).
 // Each entry is read fully before it's emitted so the CRC and size go in the
-// local header; photos are ~1 MB, so memory stays flat.
+// local header; photos are ~1 MB, so memory stays flat. The next few photos are
+// fetched while the current one streams, so storage round-trips overlap.
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -32,12 +33,24 @@ export function zipStream(entries: ZipEntry[]): ReadableStream<Uint8Array> {
   let offset = 0;
   let i = 0;
   let count = 0;
+  const AHEAD = 4;
+  const reads = new Map<number, Promise<Uint8Array | null>>();
+  const readAhead = (from: number) => {
+    for (let k = from; k < Math.min(from + AHEAD, entries.length); k++) {
+      if (reads.has(k)) continue;
+      const p = entries[k].read();
+      p.catch(() => {}); // awaited below; this just stops an early failure counting as unhandled
+      reads.set(k, p);
+    }
+  };
 
   return new ReadableStream({
     async pull(controller) {
       while (i < entries.length) {
-        const e = entries[i++];
-        const data = await e.read();
+        readAhead(i);
+        const e = entries[i];
+        const data = await reads.get(i)!;
+        reads.delete(i++);
         if (!data) continue;
         const name = enc.encode(e.name);
         const crc = crc32(data);

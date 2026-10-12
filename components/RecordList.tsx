@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
+import { zipParts } from "@/lib/naming";
 import { setLang, setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl } from "./images";
@@ -245,7 +246,7 @@ export default function RecordList() {
         </DrawerContent>
       </Drawer>
 
-      <ExportSheet open={exporting} onClose={() => setExporting(false)} defaultGroup={user.group} />
+      <ExportSheet open={exporting} onClose={() => setExporting(false)} defaultGroup={user.group} records={records ?? []} />
     </main>
   );
 }
@@ -350,12 +351,13 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
   );
 }
 
-function ExportSheet({ open, onClose, defaultGroup }: { open: boolean; onClose: () => void; defaultGroup: string }) {
+function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; onClose: () => void; defaultGroup: string; records: SurveyRecord[] }) {
   const { t } = useT();
   const [group, setGroup] = useState(defaultGroup);
   const q = group ? `group=${group}` : "";
+  const parts = useMemo(() => zipParts(records.filter((r) => !group || r.group === group)), [records, group]);
   const items = [
-    { href: `/api/export/photos?${q}`, title: t("exportZip"), sub: t("exportZipSub") },
+    ...(parts.length > 1 ? [] : [{ href: `/api/export/photos?${q}`, title: t("exportZip"), sub: t("exportZipSub") }]),
     { href: `/api/export?format=csv&${q}`, title: t("exportCsv"), sub: t("exportCsvSub") },
     { href: `/api/export?format=json&${q}`, title: t("exportJson"), sub: "" },
   ];
@@ -392,6 +394,29 @@ function ExportSheet({ open, onClose, defaultGroup }: { open: boolean; onClose: 
         })}
       </ToggleGroup>
       <div className="mt-4 space-y-2 pb-2">
+        {parts.length > 1 && (
+          <div className="rounded-2xl bg-secondary p-4">
+            <span className="block font-semibold">{t("exportZip")}</span>
+            <span className="block text-sm text-muted-foreground">{t("exportZipSub")}</span>
+            <span className="mt-2 block text-sm">{t("exportZipParts")}</span>
+            <div className="mt-3 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto">
+              {parts.map((p, n) => {
+                const plot = (r: SurveyRecord) => (group ? r.plotNo : `G${r.group} ${r.plotNo}`);
+                return (
+                  <a key={n} href={`/api/export/photos?${q}&part=${n + 1}`} download className="flex items-center gap-2 rounded-xl bg-background p-3 active:opacity-80">
+                    <IconDownload className="size-4 shrink-0 text-brand" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{t("part")} {n + 1}/{parts.length}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {plot(p[0])}–{plot(p.at(-1)!)} · {p.reduce((c, r) => c + allPhotos(r).length, 0)} {t("photos")}
+                      </span>
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {items.map((i) => (
           <a key={i.title} href={i.href} download className="flex items-center gap-3 rounded-2xl bg-secondary p-4 active:opacity-80">
             <IconDownload className="size-5 shrink-0 text-brand" />

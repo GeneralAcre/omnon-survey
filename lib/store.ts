@@ -104,7 +104,16 @@ async function save(records: SurveyRecord[]) {
   await mkdir(DATA_DIR, { recursive: true });
   const tmp = `${RECORDS_FILE}.${randomUUID()}.tmp`;
   await writeFile(tmp, JSON.stringify(records), "utf8");
-  await rename(tmp, RECORDS_FILE);
+  // Windows refuses to replace a file another request is reading (EPERM/EBUSY); wait and retry.
+  for (let i = 0; ; i++) {
+    try {
+      return await rename(tmp, RECORDS_FILE);
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException).code;
+      if (i >= 20 || (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES")) throw e;
+      await new Promise((r) => setTimeout(r, 25 + i * 25));
+    }
+  }
 }
 
 const file: Backend = {

@@ -192,6 +192,11 @@ const DICT = {
     en: "Group / Plot / Shot folders with readable file names. Unzip and drag into Google Drive.",
     th: "แยกโฟลเดอร์ กลุ่ม / แปลง / มุมภาพ พร้อมชื่อไฟล์อ่านง่าย แตกไฟล์แล้วลากใส่ Google Drive ได้เลย",
   },
+  exportZipParts: {
+    en: "Too many photos for one file, so they come in parts. Download each one:",
+    th: "ภาพเยอะเกินกว่าจะรวมเป็นไฟล์เดียว จึงแบ่งเป็นหลายส่วน ดาวน์โหลดทีละส่วน:",
+  },
+  part: { en: "Part", th: "ส่วนที่" },
   exportCsv: { en: "Spreadsheet (CSV)", th: "ตาราง (CSV)" },
   exportCsvSub: { en: "Opens in Excel / Google Sheets.", th: "เปิดด้วย Excel / Google Sheets ได้" },
   exportJson: { en: "Raw data (JSON)", th: "ข้อมูลดิบ (JSON)" },

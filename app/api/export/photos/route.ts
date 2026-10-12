@@ -2,17 +2,23 @@ import { connection } from "next/server";
 import { listRecords } from "@/lib/store";
 import { readPhoto } from "@/lib/photos";
 import { IMAGE_SLOTS, groupOf } from "@/lib/schema";
-import { photoFileName, slotFolder } from "@/lib/naming";
+import { photoFileName, slotFolder, zipParts } from "@/lib/naming";
 import { safeSegment, zipStream, type ZipEntry } from "@/lib/zip";
 
 // Streams every photo as a ZIP laid out for dropping straight into Google Drive:
 //   Group-2_Housing-Estate-&-Orchard/Plot-A01/01-Front/G2_Plot-A01_Front_1_Somchai.jpg
+// ?part=N returns just the Nth part (see zipParts), for when all photos are too big for one file.
+export const maxDuration = 300;
+
 export async function GET(request: Request) {
   await connection();
   const url = new URL(request.url);
   const group = url.searchParams.get("group");
   const id = url.searchParams.get("id");
-  const records = (await listRecords()).filter((r) => (!group || r.group === group) && (!id || r.id === id));
+  const part = Number(url.searchParams.get("part")) || 0;
+  let records = (await listRecords()).filter((r) => (!group || r.group === group) && (!id || r.id === id));
+  const parts = part ? zipParts(records) : [];
+  if (part) records = parts[part - 1] ?? [];
 
   const entries: ZipEntry[] = [];
   for (const r of records) {
@@ -34,7 +40,8 @@ export async function GET(request: Request) {
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
-  const label = id && records[0] ? `plot-${safeSegment(records[0].plotNo)}` : group ? `group-${group}` : "all";
+  const scope = id && records[0] ? `plot-${safeSegment(records[0].plotNo)}` : group ? `group-${group}` : "all";
+  const label = part ? `${scope}-part-${part}-of-${parts.length}` : scope;
   return new Response(zipStream(entries), {
     headers: {
       "Content-Type": "application/zip",

@@ -22,9 +22,12 @@ function aws() {
   return client;
 }
 
+// Where photos are served from, so pages can open the connection early.
+export const r2Origin = () => (r2Enabled() ? `https://${env().account}.r2.cloudflarestorage.com` : null);
+
 function objectUrl(key: string) {
   const e = env();
-  return new URL(`https://${e.account}.r2.cloudflarestorage.com/${e.bucket}/${key.split("/").map(encodeURIComponent).join("/")}`);
+  return new URL(`${r2Origin()}/${e.bucket}/${key.split("/").map(encodeURIComponent).join("/")}`);
 }
 
 // AWS "basic" timestamp, e.g. 20261009T140000Z.
@@ -48,11 +51,12 @@ export function presignUpload(key: string) {
 }
 
 // Signed with the time rounded down to the hour, so the same photo gets the same
-// URL for an hour and phones can cache it instead of re-downloading.
+// URL for an hour and phones can cache it instead of re-downloading. A photo
+// never changes once uploaded, so the phone may keep it for a day.
 export function presignView(key: string, downloadName?: string) {
   const hour = new Date();
   hour.setUTCMinutes(0, 0, 0);
-  const params: Record<string, string> = {};
+  const params: Record<string, string> = { "response-cache-control": "private, max-age=86400, immutable" };
   if (downloadName) params["response-content-disposition"] = downloadName;
   return presign("GET", key, 2 * 3600, params, hour);
 }

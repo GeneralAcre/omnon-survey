@@ -60,8 +60,10 @@ export function useRecords({ live = false, onArrive }: { live?: boolean; onArriv
   }, [reload]);
 
   useEffect(() => {
+    // Coming back to a page with the list already in memory: fetch only what changed.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    reload();
+    if (cache) poll();
+    else reload();
     const onVisible = () => document.visibilityState === "visible" && (live ? poll() : reload());
     document.addEventListener("visibilitychange", onVisible);
     const timer = live ? setInterval(() => document.visibilityState === "visible" && poll(), POLL_MS) : undefined;

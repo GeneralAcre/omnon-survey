@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Kanit, Open_Sans } from "next/font/google";
+import { preconnect } from "react-dom";
 import Shell from "@/components/Shell";
 import { Toaster } from "@/components/ui/sonner";
+import { r2Origin } from "@/lib/r2";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -36,6 +38,9 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  // Photos load from R2 (via a redirect); start that connection along with the page.
+  const r2 = r2Origin();
+  if (r2) preconnect(r2);
   return (
     <html lang="en" className={cn("dark h-full antialiased", openSans.variable, kanit.variable)}>
       <body className="flex min-h-full flex-col">

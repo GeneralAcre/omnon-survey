@@ -1,18 +1,21 @@
 import { connection } from "next/server";
 import { createRecord, listRecords, recordChanges } from "@/lib/store";
-import { sanitizeInput, sanitizePerson } from "@/lib/schema";
+import { sanitizeInput, sanitizePerson, type SurveyRecord } from "@/lib/schema";
 
 // GET /api/records               → every record
 // GET /api/records?since=<ISO>   → { records changed since, count, now } for live polling
+// Edit history is left out of lists (only a building page shows it), which makes them ~30% smaller.
+const withoutHistory = (records: SurveyRecord[]) => records.map((r) => ({ ...r, history: undefined }));
+
 export async function GET(request: Request) {
   await connection();
   const since = new URL(request.url).searchParams.get("since");
   if (since && !Number.isNaN(Date.parse(since))) {
     const now = new Date().toISOString();
     const { records, count } = await recordChanges(new Date(since).toISOString());
-    return Response.json({ records, count, now });
+    return Response.json({ records: withoutHistory(records), count, now });
   }
-  return Response.json(await listRecords());
+  return Response.json(withoutHistory(await listRecords()));
 }
 
 export async function POST(request: Request) {

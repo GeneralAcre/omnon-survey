@@ -16,10 +16,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ name
 
   const redirect = url.searchParams.has("proxy") ? null : await photoRedirect(name, size, filename);
   if (redirect) {
-    return new Response(null, {
-      status: 302,
-      headers: { Location: redirect, "Cache-Control": filename ? "no-store" : "private, max-age=3000" },
-    });
+    const headers: Record<string, string> = { Location: redirect, "Cache-Control": "no-store" };
+    if (!filename) {
+      headers["Cache-Control"] = "private, max-age=3000";
+      // The signed URL stays the same all hour and is valid for two, so Vercel's CDN
+      // can hand it to everyone until the hour ends without running this function.
+      const untilHourEnd = 3600 - Math.floor((Date.now() / 1000) % 3600);
+      if (untilHourEnd > 60) headers["Vercel-CDN-Cache-Control"] = `max-age=${untilHourEnd - 30}`;
+    }
+    return new Response(null, { status: 302, headers });
   }
 
   const data = await readPhoto(name, size);

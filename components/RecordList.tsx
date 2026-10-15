@@ -331,6 +331,7 @@ function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; 
   const parts = useMemo(() => zipParts(records.filter((r) => !group || r.group === group)), [records, group]);
   const items = [
     ...(parts.length > 1 ? [] : [{ href: `/api/export/photos?${q}`, title: t("exportZip"), sub: t("exportZipSub") }]),
+    { href: `/api/export?format=xlsx&${q}`, title: t("exportXlsx"), sub: t("exportXlsxSub") },
     { href: `/api/export?format=csv&${q}`, title: t("exportCsv"), sub: t("exportCsvSub") },
     { href: `/api/export?format=json&${q}`, title: t("exportJson"), sub: "" },
   ];

@@ -142,7 +142,10 @@ export default function StudyMap({
 
   // Fly to the zone picked in the filter chips.
   useEffect(() => {
-    map.current?.flyToBounds(boundsOf(zone), { padding: [16, 16], duration: 0.6 });
+    const m = map.current;
+    // A hidden map has no size to fit into, and Leaflet would throw on the NaN zoom.
+    if (!m || !m.getSize().x || !m.getSize().y) return;
+    m.flyToBounds(boundsOf(zone), { padding: [16, 16], duration: 0.6 });
   }, [zone]);
 
   // Dots and chips, redrawn when records or the picked plot change.

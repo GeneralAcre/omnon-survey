@@ -67,21 +67,43 @@ export default function Landing() {
               {t("about")}
             </Link>
           </div>
-          <div className="flex items-center gap-2">
-            <LangToggle />
-            <Link href="/survey" className={cn(buttonVariants(), pill, "hidden sm:inline-flex")}>
-              {t("openSurvey")}
-            </Link>
-          </div>
+          <LangToggle />
         </div>
       </nav>
 
       <section className="relative isolate min-h-[32rem] overflow-hidden bg-foreground text-white sm:min-h-[38rem] lg:min-h-[min(78svh,52rem)]">
-        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%]" />
+        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/15 to-black/10" />
         <div className={cn(wrap, "flex min-h-[32rem] flex-col justify-end pb-10 pt-16 sm:min-h-[38rem] sm:pb-14 lg:min-h-[min(78svh,52rem)] lg:pb-16")}>
           <p className="mb-4 text-xs font-semibold tracking-[0.22em] text-white/80 uppercase">Adaptive futures for Khlong Om Non</p>
           <h1 className="max-w-5xl font-display text-6xl leading-[0.92] text-white sm:text-7xl lg:text-9xl">Fluid Heritage</h1>
+          {/* The main thing a visitor here should do. */}
+          <Link
+            href="/new"
+            className="mt-8 inline-flex h-14 w-full items-center justify-center gap-2 self-start rounded-full bg-white px-7 text-base font-semibold text-black shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition hover:bg-white/90 active:scale-95 sm:w-auto"
+          >
+            <IconPlus className="size-5" />
+            {t("addBuilding")}
+          </Link>
+        </div>
+      </section>
+
+      {/* A taste of the history, with the full timeline on /about. */}
+      <section className="border-b border-border">
+        <div className={cn(wrap, "grid gap-6 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
+          <p className="font-display text-7xl leading-none text-brand sm:text-8xl">1636</p>
+          <div>
+            <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+              {L({
+                en: "Khlong Om Non was once the main course of the Chao Phraya. When a shortcut was dug across its meander, the river moved on, and the old bend became a 17.5 km cultural landscape of temples, orchards and riverside houses.",
+                th: "คลองอ้อมนนท์เคยเป็นเส้นทางหลักของแม่น้ำเจ้าพระยา เมื่อมีการขุดคลองลัดตัดคุ้งน้ำ แม่น้ำจึงเปลี่ยนเส้นทาง และคุ้งเดิมกลายเป็นภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่เต็มไปด้วยวัด สวนผลไม้ และเรือนริมน้ำ",
+              })}
+            </p>
+            <Link href="/about" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold hover:underline">
+              {L({ en: "Read the full timeline", th: "อ่านลำดับเหตุการณ์ทั้งหมด" })} <IconNext className="size-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -96,15 +118,6 @@ export default function Landing() {
               th: "An architectural field study of a 17.5 km cultural landscape shaped by water, settlement and everyday life.",
             })}
           </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link href="/survey" className={cn(buttonVariants(), pill, "gap-2")}>
-              {t("openSurvey")}
-              <IconNext className="size-4" />
-            </Link>
-            <Link href="/about" className={cn(buttonVariants({ variant: "secondary" }), pill)}>
-              {t("about")}
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -168,8 +181,8 @@ export default function Landing() {
               <p className={eyebrow}>{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
               <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
             </div>
-            <Link href="/survey" className="hidden shrink-0 items-center gap-1 text-sm font-semibold hover:underline sm:flex">
-              {t("openSurvey")} <IconNext className="size-4" />
+            <Link href="/new" className="hidden shrink-0 items-center gap-1 text-sm font-semibold hover:underline sm:flex">
+              <IconPlus className="size-4" /> {t("addBuilding")}
             </Link>
           </div>
           <ul className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -197,25 +210,6 @@ export default function Landing() {
         </section>
       )}
 
-      {/* A taste of the history, with the full timeline on /about. */}
-      <section className="border-t border-border">
-        <div className={cn(wrap, "grid gap-6 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
-          <p className="font-display text-7xl leading-none text-brand sm:text-8xl">1636</p>
-          <div>
-            <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
-            <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-              {L({
-                en: "Khlong Om Non was once the main course of the Chao Phraya. When a shortcut was dug across its meander, the river moved on, and the old bend became a 17.5 km cultural landscape of temples, orchards and riverside houses.",
-                th: "คลองอ้อมนนท์เคยเป็นเส้นทางหลักของแม่น้ำเจ้าพระยา เมื่อมีการขุดคลองลัดตัดคุ้งน้ำ แม่น้ำจึงเปลี่ยนเส้นทาง และคุ้งเดิมกลายเป็นภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่เต็มไปด้วยวัด สวนผลไม้ และเรือนริมน้ำ",
-              })}
-            </p>
-            <Link href="/about" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold hover:underline">
-              {L({ en: "Read the full timeline", th: "อ่านลำดับเหตุการณ์ทั้งหมด" })} <IconNext className="size-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
       <section className={cn(wrap, "pb-16 sm:pb-24")}>
         <div className="flex flex-col items-start gap-6 rounded-3xl bg-foreground p-8 text-background sm:p-12 md:flex-row md:items-center md:justify-between">
           <div>
@@ -230,21 +224,12 @@ export default function Landing() {
           <div className="flex flex-wrap gap-2">
             <Link href="/new" className={cn(buttonVariants({ variant: "secondary" }), pill, "gap-2")}>
               <IconPlus className="size-4" />
-              {t("newRecord")}
-            </Link>
-            <Link href="/survey" className={cn(pill, "inline-flex items-center border border-background/30 hover:bg-background/10")}>
-              {t("openSurvey")}
+              {t("addBuilding")}
             </Link>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className={cn(wrap, "flex flex-col gap-2 py-8 pb-safe text-sm text-muted-foreground sm:flex-row sm:justify-between")}>
-          <span>Fluid Heritage · Khlong Om Non Workshop</span>
-          <span>XAUAT × Chulalongkorn University</span>
-        </div>
-      </footer>
     </main>
   );
 }

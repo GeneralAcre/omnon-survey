@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -10,13 +10,13 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
+import { GROUPS, allPhotos, functionLabel, groupColor, groupOf, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { zipParts } from "@/lib/naming";
 import { plotOf } from "@/lib/study-area";
-import { setUser, timeAgo, useT, useUser } from "./app-state";
+import { setUser, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
-import { IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
+import { IconBack, IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
 import AreaHero from "./AreaHero";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
@@ -29,6 +29,19 @@ const StudyMap = dynamic(() => import("./StudyMap"), {
 });
 
 type Filter = "all" | "mine" | "1" | "2" | "3";
+
+const WIDE = "(min-width: 1024px)";
+function useWide() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(WIDE);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(WIDE).matches,
+    () => false,
+  );
+}
 type View = "list" | "photos" | "map";
 
 export default function RecordList() {
@@ -50,7 +63,10 @@ export default function RecordList() {
   );
   const { records, error, reload } = useRecords({ live: true, onArrive });
   const [filter, setFilter] = useState<Filter>("all");
-  const [view, setView] = useState<View>("list");
+  const [picked, setView] = useState<View>("list");
+  const wide = useWide();
+  // Wide screens keep the map beside the list, so there is no map tab.
+  const view: View = wide && picked === "map" ? "list" : picked;
   const [query, setQuery] = useState("");
   const [exporting, setExporting] = useState(false);
   const results = useRef<HTMLDivElement>(null);
@@ -92,8 +108,9 @@ export default function RecordList() {
   const views: { id: View; label: string; n: number }[] = [
     { id: "list", label: t("viewList"), n: visible.length },
     { id: "photos", label: t("viewPhotos"), n: photoCount },
-    { id: "map", label: t("viewMap"), n: placeCount },
+    ...(wide ? [] : [{ id: "map" as View, label: t("viewMap"), n: placeCount }]),
   ];
+  const zone = GROUPS.some((g) => g.id === filter) ? filter : undefined;
 
   const me = groupColor(user.group);
 
@@ -106,19 +123,42 @@ export default function RecordList() {
     { label: t("statSurveyors"), n: new Set(all.flatMap((r) => [r.createdBy.name, ...allPhotos(r).map((p) => p.by)])).size },
   ];
 
+  // Who is signed in, with the way back to the sign-in screen in plain sight.
+  const surveyor = (
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
+        {user.name.slice(0, 1).toUpperCase()}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] text-muted-foreground">{t("surveyingAs")}</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold">
+          <span className="truncate">{user.name}</span>
+          <GroupBadge group={user.group} className="shrink-0" />
+        </p>
+      </div>
+      <Button variant="secondary" onClick={() => setUser(null)} className="h-9 shrink-0 gap-1.5 rounded-full px-3">
+        <IconUser className="size-4" />
+        {t("switchUser")}
+      </Button>
+    </div>
+  );
+
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 pb-32">
+    <main className="mx-auto w-full max-w-6xl flex-1 pb-32 lg:max-w-[96rem] lg:pb-10">
       <div className="px-4 pt-[env(safe-area-inset-top)] sm:px-6 lg:px-8">
-        <nav className="flex h-16 items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 text-[17px] tracking-tight">
-            <span>
+        <nav className="flex h-14 items-center justify-between gap-3">
+          <div className="flex items-center gap-1">
+            <Link href="/" aria-label={t("back")} className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+              <IconBack />
+            </Link>
+            <Link href="/" className="text-[17px] tracking-tight">
               khlong <span className="font-semibold">om non</span>
-            </span>
-          </Link>
+            </Link>
+          </div>
           <LangToggle />
         </nav>
 
-        <div className="mt-4 flex items-end justify-between gap-3 sm:mt-6">
+        <div className="mt-1 flex items-end justify-between gap-3 sm:mt-2">
           <div className="min-w-0">
             <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non · Field survey</p>
             <h1 className="mt-1 flex items-center gap-3 font-display text-4xl leading-none sm:text-5xl">
@@ -129,132 +169,127 @@ export default function RecordList() {
               </span>
             </h1>
           </div>
-          <Button variant="secondary" onClick={() => setExporting(true)} className="h-11 shrink-0 gap-2 rounded-full px-4 font-semibold" aria-label={t("export")} title={t("export")}>
-            <IconDownload className="size-5" />
-            <span className="hidden sm:inline">{t("export")}</span>
-          </Button>
-        </div>
-
-        {/* Wide screens: the tiles stretch to the map's height so the two halves line up. */}
-        <div className="mt-3 grid gap-3 sm:mt-4 lg:grid-cols-2 lg:gap-4">
-          <div className="flex flex-col gap-3 lg:gap-4">
-            <dl className="grid grid-cols-4 gap-2 lg:flex-1 lg:grid-cols-2 lg:grid-rows-2 lg:gap-4">
-              {stats.map((s) => (
-                // Label first for <dl> order; shown under the number.
-                <div key={s.label} className="flex min-w-0 flex-col-reverse justify-between rounded-2xl border border-border bg-card px-3 py-2.5 lg:px-6 lg:py-5">
-                  <dt className="truncate text-[11px] text-muted-foreground sm:text-xs lg:text-sm">{s.label}</dt>
-                  <dd className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-6xl">{records ? s.n.toLocaleString() : "–"}</dd>
-                </div>
-              ))}
-            </dl>
-
-        {/* Who is signed in, with the way back to the sign-in screen in plain sight. */}
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
-            {user.name.slice(0, 1).toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] text-muted-foreground">{t("surveyingAs")}</p>
-            <p className="flex items-center gap-1.5 text-sm font-semibold">
-              <span className="truncate">{user.name}</span>
-              <GroupBadge group={user.group} className="shrink-0" />
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="hidden w-[24rem] lg:block">{surveyor}</div>
+            <Button variant="secondary" onClick={() => setExporting(true)} className="h-11 shrink-0 gap-2 rounded-full px-4 font-semibold" aria-label={t("export")} title={t("export")}>
+              <IconDownload className="size-5" />
+              <span className="hidden sm:inline">{t("export")}</span>
+            </Button>
           </div>
-          <Button variant="secondary" onClick={() => setUser(null)} className="h-9 shrink-0 gap-1.5 rounded-full px-3">
-            <IconUser className="size-4" />
-            {t("switchUser")}
-          </Button>
         </div>
-          </div>
 
-          <AreaHero records={all} onOpen={openMap} />
-        </div>
-      </div>
-
-      <div ref={results} className="sticky top-0 z-20 scroll-mt-0 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-xl sm:px-6 lg:px-8">
-        <div className="md:flex md:items-center md:gap-3">
-        <ToggleGroup
-          aria-label={t("viewList")}
-          value={[view]}
-          onValueChange={(v) => v[0] && setView(v[0] as View)}
-          spacing={1}
-          className="grid w-full grid-cols-3 rounded-2xl bg-card p-1 md:w-[26rem] md:shrink-0"
-        >
-          {views.map((v) => (
-            <ToggleGroupItem
-              key={v.id}
-              value={v.id}
-              className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-foreground aria-pressed:text-background hover:aria-pressed:bg-foreground"
-            >
-              {v.label}
-              <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-background/50">{records ? v.n : ""}</span>
-            </ToggleGroupItem>
+        {/* Phones: tiles over the surveyor and a map preview. Wide screens: one slim strip of numbers. */}
+        <dl className="mt-3 grid grid-cols-4 gap-2 sm:mt-4 lg:mt-5 lg:gap-3">
+          {stats.map((s) => (
+            // Label first for <dl> order; shown under (or after) the number.
+            <div key={s.label} className="flex min-w-0 flex-col-reverse justify-between rounded-2xl border border-border bg-card px-3 py-2.5 lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2 lg:px-5 lg:py-3">
+              <dt className="truncate text-[11px] text-muted-foreground sm:text-xs lg:text-sm">{s.label}</dt>
+              <dd className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-3xl">{records ? s.n.toLocaleString() : "–"}</dd>
+            </div>
           ))}
-        </ToggleGroup>
-
-        {view !== "map" && (
-          <div className="relative mt-3 md:mt-0 md:flex-1">
-            <IconSearch className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="h-12 rounded-2xl bg-card pr-4 pl-11" />
-          </div>
-        )}
+        </dl>
+        <div className="mt-3 grid grid-cols-1 gap-3 lg:hidden">
+          {surveyor}
+          {/* Not mounted on wide screens: Leaflet can't fit a map into a hidden, zero-size box. */}
+          {!wide && <AreaHero records={all} onOpen={openMap} />}
         </div>
-
-        <ToggleGroup
-          value={[filter]}
-          onValueChange={(v) => v[0] && setFilter(v[0] as Filter)}
-          className="no-scrollbar -mx-4 mt-3 flex w-auto gap-1.5 overflow-x-auto px-4"
-        >
-          {chips.map((c) => {
-            const active = filter === c.id;
-            const col = c.group ? groupColor(c.group) : null;
-            return (
-              <ToggleGroupItem
-                key={c.id}
-                value={c.id}
-                aria-label={c.name}
-                className={cn(
-                  "h-auto gap-1.5 rounded-full px-3 py-2",
-                  active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary text-foreground",
-                )}
-                style={active && col ? { background: col.bg, color: col.fg } : undefined}
-              >
-                {col && !active && <span className="h-2.5 w-2.5 rounded-full" style={{ background: col.bg }} />}
-                {c.label}
-                <span className="opacity-60">{records ? count(c.id) : ""}</span>
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-8">
-        {error && (
-          <Alert variant="destructive" className="mt-2 rounded-2xl">
-            <AlertDescription>{t("loadError")}</AlertDescription>
-            <AlertAction>
-              <Button variant="link" size="sm" onClick={reload} className="text-destructive">
-                {t("retry")}
-              </Button>
-            </AlertAction>
-          </Alert>
-        )}
-        {records === null && !error && <p className="py-16 text-center text-muted-foreground">{t("loading")}</p>}
+      {/* Wide screens: the list on the left, the map held beside it. */}
+      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6 lg:px-8">
+        <div className="min-w-0">
+          <div ref={results} className="sticky top-0 z-20 scroll-mt-0 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-xl sm:px-6 lg:px-0 lg:pt-0">
+            <div className="md:flex md:items-center md:gap-3">
+              <ToggleGroup
+                aria-label={t("viewList")}
+                value={[view]}
+                onValueChange={(v) => v[0] && setView(v[0] as View)}
+                spacing={1}
+                className={cn("grid w-full rounded-2xl bg-card p-1 md:shrink-0", wide ? "grid-cols-2 md:w-[18rem]" : "grid-cols-3 md:w-[26rem]")}
+              >
+                {views.map((v) => (
+                  <ToggleGroupItem
+                    key={v.id}
+                    value={v.id}
+                    className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-foreground aria-pressed:text-background hover:aria-pressed:bg-foreground"
+                  >
+                    {v.label}
+                    <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-background/50">{records ? v.n : ""}</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
 
-        {records && view === "list" && (
-          <>
-            {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
-            <ul className="mt-1 grid gap-2 md:grid-cols-2 md:gap-3 xl:grid-cols-3">
-              {visible.map((r) => (
-                <li key={r.id}>
-                  <Card r={r} highlight={fresh.has(r.id)} />
-                </li>
-              ))}
-            </ul>
-          </>
+              {view !== "map" && (
+                <div className="relative mt-3 md:mt-0 md:flex-1">
+                  <IconSearch className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="h-12 rounded-2xl bg-card pr-4 pl-11" />
+                </div>
+              )}
+            </div>
+
+            <ToggleGroup
+              value={[filter]}
+              onValueChange={(v) => v[0] && setFilter(v[0] as Filter)}
+              className="no-scrollbar -mx-4 mt-3 flex w-auto gap-1.5 overflow-x-auto px-4 lg:mx-0 lg:px-0"
+            >
+              {chips.map((c) => {
+                const active = filter === c.id;
+                const col = c.group ? groupColor(c.group) : null;
+                return (
+                  <ToggleGroupItem
+                    key={c.id}
+                    value={c.id}
+                    aria-label={c.name}
+                    className={cn(
+                      "h-auto gap-1.5 rounded-full px-3 py-2",
+                      active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary text-foreground",
+                    )}
+                    style={active && col ? { background: col.bg, color: col.fg } : undefined}
+                  >
+                    {col && !active && <span className="h-2.5 w-2.5 rounded-full" style={{ background: col.bg }} />}
+                    {c.label}
+                    <span className="opacity-60">{records ? count(c.id) : ""}</span>
+                  </ToggleGroupItem>
+                );
+              })}
+            </ToggleGroup>
+          </div>
+
+          <div className="px-4 sm:px-6 lg:px-0">
+            {error && (
+              <Alert variant="destructive" className="mt-2 rounded-2xl">
+                <AlertDescription>{t("loadError")}</AlertDescription>
+                <AlertAction>
+                  <Button variant="link" size="sm" onClick={reload} className="text-destructive">
+                    {t("retry")}
+                  </Button>
+                </AlertAction>
+              </Alert>
+            )}
+            {records === null && !error && <p className="py-16 text-center text-muted-foreground">{t("loading")}</p>}
+
+            {records && view === "list" && (
+              <>
+                {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
+                <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4">
+                  {visible.map((r) => (
+                    <li key={r.id}>
+                      <Card r={r} highlight={fresh.has(r.id)} />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {records && view === "photos" && <PhotoFeed records={visible} />}
+            {records && view === "map" && <StudyMap records={visible} zone={zone} />}
+          </div>
+        </div>
+
+        {wide && (
+          <div className="sticky top-4 self-start">
+            <StudyMap records={visible} zone={zone} className="h-[calc(100dvh-2rem)]" />
+          </div>
         )}
-        {records && view === "photos" && <PhotoFeed records={visible} />}
-        {records && view === "map" && <StudyMap records={visible} zone={GROUPS.some((g) => g.id === filter) ? filter : undefined} />}
       </div>
 
       <Link
@@ -301,65 +336,46 @@ function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) 
   );
 }
 
+// Photo first, then the plot and its zone, like the landing page's "Recently documented".
 function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }) {
   const { t, lang } = useT();
   const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
   const type = typeLabel(r, lang);
   const fn = functionLabel(r, lang);
-  const c = groupColor(r.group);
+  const photos = allPhotos(r).length;
   return (
-    <Link
-      href={`/r/${r.id}`}
-      className={`relative flex h-full gap-3 overflow-hidden rounded-2xl border border-transparent bg-card p-2.5 pl-3.5 transition duration-300 hover:border-border hover:bg-secondary/60 active:bg-secondary ${highlight ? "ring-2" : ""}`}
-      style={highlight ? ({ "--tw-ring-color": groupColor(r.group).bg } as React.CSSProperties) : undefined}
-    >
-      <span className="absolute inset-y-0 left-0 w-1" style={{ background: c.bg }} />
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
+    <Link href={`/r/${r.id}`} className="group block">
+      <div
+        className={`relative aspect-[4/5] overflow-hidden rounded-2xl bg-card ${highlight ? "ring-2 ring-offset-2 ring-offset-background" : ""}`}
+        style={highlight ? ({ "--tw-ring-color": groupColor(r.group).bg } as React.CSSProperties) : undefined}
+      >
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photoUrl(cover.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={photoUrl(cover.file, "thumb")}
+            onError={retryImage}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <IconImage className="size-6" />
+            <IconImage className="size-8" />
           </div>
         )}
-      </div>
-      <div className="min-w-0 flex-1 py-0.5">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-lg font-bold">{r.plotNo}</span>
-          <GroupBadge group={r.group} />
-          {r.lat != null && <IconPin className="size-4 shrink-0 text-muted-foreground" />}
-        </div>
-        <p className="truncate text-sm text-foreground/80">{[type, fn].filter(Boolean).join(" · ") || t("notSet")}</p>
-        <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="flex gap-0.5" aria-hidden="true">
-            {IMAGE_SLOTS.map((s) => (
-              <span
-                key={s.key}
-                className="h-1.5 w-2.5 rounded-full"
-                style={{ background: r.images[s.key]?.photos.length ? c.bg : "var(--border)" }}
-              />
-            ))}
-          </div>
-          <span className="shrink-0">
-            {shotsDone(r)}/{IMAGE_SLOTS.length} {t("shots")}
-          </span>
-          <span className="flex shrink-0 items-center gap-1">
+        {photos > 0 && (
+          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur">
             <IconCamera className="size-3.5" />
-            {allPhotos(r).length}
+            {photos}
           </span>
-          {r.colors.length > 0 && (
-            <span className="ml-auto flex shrink-0 -space-x-1" aria-label={t("stepColors")}>
-              {r.colors.slice(0, 5).map((col) => (
-                <span key={col} className="size-3.5 rounded-full ring-2 ring-card" style={{ background: col }} />
-              ))}
-            </span>
-          )}
-        </div>
-        <p className="mt-1 truncate text-xs text-muted-foreground">
-          {t("by")} {r.updatedBy.name} · {timeAgo(r.updatedAt, lang)}
-        </p>
+        )}
       </div>
+      <div className="mt-2.5 flex items-center gap-2">
+        <span className="truncate font-semibold">{r.plotNo}</span>
+        <GroupBadge group={r.group} className="shrink-0" />
+        {r.lat != null && <IconPin className="size-4 shrink-0 text-muted-foreground" />}
+      </div>
+      <p className="mt-0.5 truncate text-xs text-muted-foreground">{[type, fn].filter(Boolean).join(" · ") || t("notSet")}</p>
     </Link>
   );
 }

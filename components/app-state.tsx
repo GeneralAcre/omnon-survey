@@ -71,6 +71,7 @@ const DICT = {
   appName: { en: "Om Non Survey", th: "สำรวจคลองอ้อมนนท์" },
   records: { en: "Buildings", th: "อาคาร" },
   newRecord: { en: "New building", th: "เพิ่มอาคาร" },
+  addBuilding: { en: "Add building", th: "เพิ่มอาคาร" },
   all: { en: "All", th: "ทั้งหมด" },
   mine: { en: "Mine", th: "ของฉัน" },
   search: { en: "Search plot, type, name…", th: "ค้นหาเลขแปลง ประเภท ชื่อ…" },

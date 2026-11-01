@@ -95,7 +95,7 @@ export default function About() {
       </section>
       </div>
 
-      <section className="mt-10 grid gap-2 px-4 sm:px-6 md:grid-cols-3 md:gap-3 lg:mt-16 lg:px-8">
+      <section className="mt-10 grid grid-cols-1 gap-2 px-4 sm:px-6 md:grid-cols-3 md:gap-3 lg:mt-16 lg:px-8">
         {GROUPS.map((g) => (
           <div key={g.id} className="flex items-center gap-4 rounded-2xl bg-card p-4">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold" style={{ background: g.color, color: g.ink }}>

@@ -1,46 +1,22 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
-import { GROUPS } from "@/lib/schema";
-import { Button } from "@/components/ui/button";
+import dynamic from "next/dynamic";
+import type { SurveyRecord } from "@/lib/schema";
 import { useT } from "./app-state";
-import FullscreenDialog from "./FullscreenDialog";
-import { IconX } from "./Icons";
-import area from "@/public/area.png";
 
-// The workshop zone map; tap to open it full screen.
-export default function AreaHero() {
+// Leaflet touches `window`, so the map only loads in the browser.
+const StudyMap = dynamic(() => import("./StudyMap"), {
+  ssr: false,
+  loading: () => <div className="aspect-[2.15/1] w-full animate-pulse bg-card sm:aspect-[2/1] lg:aspect-[3/2]" />,
+});
+
+// A still view of the study area; tap it to open the full map.
+export default function AreaHero({ records, onOpen }: { records: SurveyRecord[]; onOpen: () => void }) {
   const { t } = useT();
-  const [open, setOpen] = useState(false);
-
   return (
-    <>
-      <button onClick={() => setOpen(true)} className="block w-full overflow-hidden rounded-3xl border border-border bg-card text-left">
-        <Image src={area} alt={t("studyArea")} sizes="(min-width: 672px) 672px, 100vw" fetchPriority="high" loading="eager" className="aspect-[2.15/1] w-full object-cover sm:aspect-[3/2]" />
-      </button>
-
-      {open && (
-        <FullscreenDialog title={t("studyArea")} onClose={() => setOpen(false)}>
-          <div className="flex justify-end px-2 pt-[max(env(safe-area-inset-top),0.5rem)]">
-            <Button variant="ghost" size="icon-xl" aria-label={t("close")} onClick={() => setOpen(false)}>
-              <IconX />
-            </Button>
-          </div>
-          <div className="flex min-h-0 flex-1 items-center overflow-auto" onClick={() => setOpen(false)} style={{ touchAction: "pinch-zoom pan-x pan-y" }}>
-            <Image src={area} alt={t("studyArea")} sizes="100vw" className="h-auto w-full" />
-          </div>
-          <div className="grid grid-cols-3 gap-1.5 px-3 pt-3 pb-safe">
-            {GROUPS.map((g) => (
-              <div key={g.id} className="rounded-xl px-2 py-1.5" style={{ background: g.color, color: g.ink }}>
-                <p className="text-xs font-bold">
-                  {t("zone")} {g.id}
-                </p>
-              </div>
-            ))}
-          </div>
-        </FullscreenDialog>
-      )}
-    </>
+    <button onClick={onOpen} aria-label={t("openMap")} className="relative block w-full overflow-hidden rounded-3xl text-left transition hover:opacity-90">
+      <StudyMap records={records} preview className="aspect-[2.15/1] sm:aspect-[2/1] lg:aspect-[3/2]" />
+      <span className="absolute top-3 left-3 z-[500] rounded-full bg-background/95 px-3 py-1.5 text-xs font-semibold shadow-sm backdrop-blur">{t("openMap")}</span>
+    </button>
   );
 }

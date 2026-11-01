@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { GROUPS, IMAGE_SLOTS, allPhotos, functionLabel, groupColor, groupOf, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { zipParts } from "@/lib/naming";
+import { plotOf } from "@/lib/study-area";
 import { setUser, timeAgo, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
@@ -22,9 +23,9 @@ import PhotoFeed from "./PhotoFeed";
 import { LangToggle } from "./Shell";
 
 // Leaflet touches `window`, so the map only loads in the browser.
-const PlacesMap = dynamic(() => import("./PlacesMap"), {
+const StudyMap = dynamic(() => import("./StudyMap"), {
   ssr: false,
-  loading: () => <div className="h-[62dvh] animate-pulse rounded-3xl bg-card" />,
+  loading: () => <div className="h-[62dvh] lg:h-[72dvh] animate-pulse rounded-3xl bg-card" />,
 });
 
 type Filter = "all" | "mine" | "1" | "2" | "3";
@@ -52,6 +53,12 @@ export default function RecordList() {
   const [view, setView] = useState<View>("list");
   const [query, setQuery] = useState("");
   const [exporting, setExporting] = useState(false);
+  const results = useRef<HTMLDivElement>(null);
+
+  const openMap = () => {
+    setView("map");
+    results.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const isMine = (r: SurveyRecord) => r.createdBy.name === user.name || allPhotos(r).some((p) => p.by === user.name);
 
@@ -71,7 +78,9 @@ export default function RecordList() {
 
   const count = (f: Filter) => (records ?? []).filter((r) => (f === "all" ? true : f === "mine" ? isMine(r) : r.group === f)).length;
   const photoCount = visible.reduce((n, r) => n + allPhotos(r).length, 0);
-  const placeCount = visible.filter((r) => r.lat != null).length;
+  // On the map: matched to a plot of the study area, or pinned by GPS.
+  const onMap = (r: SurveyRecord) => r.lat != null || plotOf(r).length > 0;
+  const placeCount = visible.filter(onMap).length;
 
   // The chip row scrolls sideways if "Zone 1…3" don't all fit.
   const chips: { id: Filter; label: string; name: string; group?: string }[] = [
@@ -88,30 +97,59 @@ export default function RecordList() {
 
   const me = groupColor(user.group);
 
+  // Whole-survey totals, whatever the filter, for the headline numbers.
+  const all = records ?? [];
+  const stats = [
+    { label: t("records"), n: all.length },
+    { label: t("viewPhotos"), n: all.reduce((n, r) => n + allPhotos(r).length, 0) },
+    { label: t("statMapped"), n: all.filter(onMap).length },
+    { label: t("statSurveyors"), n: new Set(all.flatMap((r) => [r.createdBy.name, ...allPhotos(r).map((p) => p.by)])).size },
+  ];
+
   return (
-    <main id="survey-records" className="mx-auto w-full max-w-2xl flex-1 scroll-mt-4 pb-32">
-      <div className="px-4 pt-[max(env(safe-area-inset-top),0.75rem)] sm:pt-[max(env(safe-area-inset-top),1rem)]">
-        <div className="flex items-center justify-between gap-3">
+    <main className="mx-auto w-full max-w-6xl flex-1 pb-32">
+      <div className="px-4 pt-[env(safe-area-inset-top)] sm:px-6 lg:px-8">
+        <nav className="flex h-16 items-center justify-between gap-3">
+          <Link href="/" className="flex items-center gap-2 text-[17px] tracking-tight">
+            <span>
+              khlong <span className="font-semibold">om non</span>
+            </span>
+          </Link>
+          <LangToggle />
+        </nav>
+
+        <div className="mt-4 flex items-end justify-between gap-3 sm:mt-6">
           <div className="min-w-0">
-            <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non</p>
-            <h1 className="flex items-center gap-2 text-xl font-bold sm:text-2xl">
+            <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non · Field survey</p>
+            <h1 className="mt-1 flex items-center gap-3 font-display text-4xl leading-none sm:text-5xl">
               {t("records")}
-              <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 text-[11px] font-semibold text-ok">
+              <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 font-sans text-[11px] font-semibold tracking-normal text-ok">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
                 {t("live")}
               </span>
             </h1>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <LangToggle />
-            <Button variant="outline" size="icon" onClick={() => setExporting(true)} className="size-9 rounded-full bg-card" aria-label={t("export")} title={t("export")}>
-              <IconDownload className="size-5" />
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={() => setExporting(true)} className="h-11 shrink-0 gap-2 rounded-full px-4 font-semibold" aria-label={t("export")} title={t("export")}>
+            <IconDownload className="size-5" />
+            <span className="hidden sm:inline">{t("export")}</span>
+          </Button>
         </div>
 
+        {/* Wide screens: the tiles stretch to the map's height so the two halves line up. */}
+        <div className="mt-3 grid gap-3 sm:mt-4 lg:grid-cols-2 lg:gap-4">
+          <div className="flex flex-col gap-3 lg:gap-4">
+            <dl className="grid grid-cols-4 gap-2 lg:flex-1 lg:grid-cols-2 lg:grid-rows-2 lg:gap-4">
+              {stats.map((s) => (
+                // Label first for <dl> order; shown under the number.
+                <div key={s.label} className="flex min-w-0 flex-col-reverse justify-between rounded-2xl border border-border bg-card px-3 py-2.5 lg:px-6 lg:py-5">
+                  <dt className="truncate text-[11px] text-muted-foreground sm:text-xs lg:text-sm">{s.label}</dt>
+                  <dd className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-6xl">{records ? s.n.toLocaleString() : "–"}</dd>
+                </div>
+              ))}
+            </dl>
+
         {/* Who is signed in, with the way back to the sign-in screen in plain sight. */}
-        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
             {user.name.slice(0, 1).toUpperCase()}
           </span>
@@ -127,19 +165,20 @@ export default function RecordList() {
             {t("switchUser")}
           </Button>
         </div>
+          </div>
 
-        <div className="mt-3 sm:mt-4">
-          <AreaHero />
+          <AreaHero records={all} onOpen={openMap} />
         </div>
       </div>
 
-      <div className="sticky top-0 z-20 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-xl">
+      <div ref={results} className="sticky top-0 z-20 scroll-mt-0 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div className="md:flex md:items-center md:gap-3">
         <ToggleGroup
           aria-label={t("viewList")}
           value={[view]}
           onValueChange={(v) => v[0] && setView(v[0] as View)}
           spacing={1}
-          className="grid w-full grid-cols-3 rounded-2xl bg-card p-1"
+          className="grid w-full grid-cols-3 rounded-2xl bg-card p-1 md:w-[26rem] md:shrink-0"
         >
           {views.map((v) => (
             <ToggleGroupItem
@@ -152,6 +191,14 @@ export default function RecordList() {
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
+
+        {view !== "map" && (
+          <div className="relative mt-3 md:mt-0 md:flex-1">
+            <IconSearch className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="h-12 rounded-2xl bg-card pr-4 pl-11" />
+          </div>
+        )}
+        </div>
 
         <ToggleGroup
           value={[filter]}
@@ -179,16 +226,9 @@ export default function RecordList() {
             );
           })}
         </ToggleGroup>
-
-        {view !== "map" && (
-          <div className="relative mt-3">
-            <IconSearch className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="h-12 rounded-2xl bg-card pr-4 pl-11" />
-          </div>
-        )}
       </div>
 
-      <div className="px-4">
+      <div className="px-4 sm:px-6 lg:px-8">
         {error && (
           <Alert variant="destructive" className="mt-2 rounded-2xl">
             <AlertDescription>{t("loadError")}</AlertDescription>
@@ -204,7 +244,7 @@ export default function RecordList() {
         {records && view === "list" && (
           <>
             {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
-            <ul className="mt-1 space-y-2">
+            <ul className="mt-1 grid gap-2 md:grid-cols-2 md:gap-3 xl:grid-cols-3">
               {visible.map((r) => (
                 <li key={r.id}>
                   <Card r={r} highlight={fresh.has(r.id)} />
@@ -214,14 +254,14 @@ export default function RecordList() {
           </>
         )}
         {records && view === "photos" && <PhotoFeed records={visible} />}
-        {records && view === "map" && <PlacesMap records={visible} noPlaceLabel={t("noPlace")} />}
+        {records && view === "map" && <StudyMap records={visible} zone={GROUPS.some((g) => g.id === filter) ? filter : undefined} />}
       </div>
 
       <Link
         href="/new"
         className={cn(
           buttonVariants({ size: "xl" }),
-          "fixed right-5 bottom-[max(env(safe-area-inset-bottom),1.25rem)] z-30 h-16 pr-6 pl-5 text-base shadow-[0_8px_30px_rgba(0,0,0,0.6)] active:scale-95",
+          "fixed right-5 bottom-[max(env(safe-area-inset-bottom),1.25rem)] z-30 h-16 pr-6 pl-5 text-base shadow-[0_8px_30px_rgba(0,0,0,0.15)] active:scale-95",
         )}
       >
         <IconPlus />
@@ -240,7 +280,7 @@ function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) 
   return (
     <Link
       href={`/r/${r.id}`}
-      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-secondary/95 p-2 pr-4 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur"
+      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-secondary/95 p-2 pr-4 shadow-[0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur"
       style={{ borderLeft: `4px solid ${c.bg}` }}
     >
       <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-card">
@@ -270,7 +310,7 @@ function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }
   return (
     <Link
       href={`/r/${r.id}`}
-      className={`relative flex gap-3 overflow-hidden rounded-2xl bg-card p-2.5 pl-3.5 transition-shadow duration-700 active:bg-secondary ${highlight ? "ring-2" : ""}`}
+      className={`relative flex h-full gap-3 overflow-hidden rounded-2xl border border-transparent bg-card p-2.5 pl-3.5 transition duration-300 hover:border-border hover:bg-secondary/60 active:bg-secondary ${highlight ? "ring-2" : ""}`}
       style={highlight ? ({ "--tw-ring-color": groupColor(r.group).bg } as React.CSSProperties) : undefined}
     >
       <span className="absolute inset-y-0 left-0 w-1" style={{ background: c.bg }} />

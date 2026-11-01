@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { IMAGE_SLOTS, allPhotos, floodLinesLabel, functionLabel, groupOf, jackedLabel, shotsDone, typeLabel } from "@/lib/schema";
+import { IMAGE_SLOTS, allPhotos, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyLabel, shotsDone, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { cn } from "@/lib/utils";
 import { timeAgo, useT, useUser } from "./app-state";
@@ -48,7 +48,7 @@ export default function RecordDetail() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-muted-foreground">
         {t("notFound")}
-        <Link href="/" className={buttonVariants({ variant: "secondary", size: "xl" })}>
+        <Link href="/survey" className={buttonVariants({ variant: "secondary", size: "xl" })}>
           {t("backToList")}
         </Link>
       </main>
@@ -72,7 +72,7 @@ export default function RecordDetail() {
     setDeleting(true);
     try {
       await removeRecord(record!.id, user);
-      router.replace("/");
+      router.replace("/survey");
     } catch (e) {
       toast.error((e as Error).message);
       setDeleting(false);
@@ -82,9 +82,9 @@ export default function RecordDetail() {
   let flatIndex = 0;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 pb-32">
-      <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/85 px-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 backdrop-blur-xl">
-        <Link href="/" aria-label={t("backToList")} className={buttonVariants({ variant: "ghost", size: "icon-xl" })}>
+    <main className="mx-auto w-full max-w-6xl flex-1 pb-32">
+      <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/85 px-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 backdrop-blur-xl sm:px-4 lg:px-6">
+        <Link href="/survey" aria-label={t("backToList")} className={buttonVariants({ variant: "ghost", size: "icon-xl" })}>
           <IconBack />
         </Link>
         <div className="min-w-0 flex-1">
@@ -96,21 +96,24 @@ export default function RecordDetail() {
         <LangToggle className="mr-2" />
       </header>
 
+      {/* Phones: one column. Wide screens: the building's facts beside its photos. */}
+      <div className="sm:px-2 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-8 lg:px-4 lg:pt-2">
+      <div>
       {cover && (
-        <button onClick={() => setOpen(items.findIndex((x) => x.file === cover.file))} className="block w-full px-4">
+        <button onClick={() => setOpen(items.findIndex((x) => x.file === cover.file))} className="block w-full px-4 lg:px-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photoUrl(cover.file)} onError={retryImage} alt="" className="aspect-[4/3] w-full rounded-3xl object-cover" />
+          <img src={photoUrl(cover.file)} onError={retryImage} alt="" className="aspect-[4/3] w-full rounded-3xl object-cover transition hover:opacity-90" />
         </button>
       )}
 
-      <div className="space-y-3 px-4 pt-4">
+      <div className="space-y-3 px-4 pt-4 lg:px-0">
         <div className="grid grid-cols-2 gap-2">
           <Info label={t("stepType")} value={typeLabel(record, lang) || "—"} />
           <Info label={t("stepFunction")} value={functionLabel(record, lang) || "—"} />
           <Info label={t("buildYear")} value={record.buildYear || "—"} />
           <Info label={t("buildAge")} value={record.buildAge ? `${record.buildAge} ${t("yearsOld")}` : "—"} />
           <Info label={t("floors")} value={record.floors ? `${record.floors} ${t("floorsUnit")}` : "—"} />
-          <Info label={t("occupancy")} value={record.occupancy ? `${record.occupancy} ${t("people")}` : "—"} />
+          <Info label={t("occupancy")} value={occupancyLabel(record, lang) || "—"} />
           <Info label={t("jacked")} value={jackedLabel(record, lang) || "—"} />
           <Info label={t("floodLine")} value={floodLinesLabel(record, "\n") || "—"} />
         </div>
@@ -141,7 +144,7 @@ export default function RecordDetail() {
               <div className="flex flex-wrap gap-2">
                 {record.colors.map((c) => (
                   <span key={c} className="flex items-center gap-1.5 rounded-full bg-secondary py-1 pr-2.5 pl-1">
-                    <span className="h-5 w-5 rounded-full border border-white/10" style={{ background: c }} />
+                    <span className="h-5 w-5 rounded-full border border-foreground/10" style={{ background: c }} />
                     <span className="font-mono text-xs text-muted-foreground">{c}</span>
                   </span>
                 ))}
@@ -150,8 +153,11 @@ export default function RecordDetail() {
             {record.notes && <p className={`text-[15px] leading-relaxed whitespace-pre-line ${record.colors.length ? "mt-3" : ""}`}>{record.notes}</p>}
           </div>
         )}
+      </div>
+      </div>
 
-        <div className="flex items-center justify-between pt-3">
+      <div className="space-y-3 px-4 pt-4 lg:px-0 lg:pt-0">
+        <div className="flex items-center justify-between pt-3 lg:pt-0">
           <h2 className="text-lg font-bold">
             {t("stepPhotos")} <span className="text-sm font-normal text-muted-foreground">{shotsDone(record)}/{IMAGE_SLOTS.length}</span>
           </h2>
@@ -173,7 +179,7 @@ export default function RecordDetail() {
               </div>
               {note && <p className="mt-1 text-sm text-muted-foreground">{note}</p>}
               {photos.length > 0 && (
-                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                   {photos.map((p) => {
                     const idx = flatIndex++;
                     return (
@@ -181,7 +187,7 @@ export default function RecordDetail() {
                         <button onClick={() => setOpen(idx)} className="relative block aspect-square w-full overflow-hidden rounded-xl">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
-                          <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">
+                          <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
                             <IconCamera className="size-3 shrink-0" />
                             <span className="truncate">{p.by}</span>
                           </span>
@@ -238,6 +244,7 @@ export default function RecordDetail() {
             <IconTrash /> {t("delete")}
           </Button>
         )}
+      </div>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6 pb-safe">

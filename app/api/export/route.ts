@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { listRecords } from "@/lib/store";
-import { IMAGE_SLOTS, floodLinesLabel, functionLabel, groupOf, jackedLabel, typeLabel } from "@/lib/schema";
+import { IMAGE_SLOTS, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyCode, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { readPhoto } from "@/lib/photos";
 import { imageInfo, xlsxStream, type XlsxImage } from "@/lib/xlsx";
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     "Color Swatches",
     "Function",
     "การใช้งาน",
-    "People living here",
+    "Anyone living here (2 yes, 1 no, 0 not sure)",
     "Jacked up",
     "Flood lines",
     "Notes",
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
     r.colors.join(" "),
     functionLabel(r, "en"),
     functionLabel(r, "th"),
-    r.occupancy ?? "",
+    occupancyCode(r.occupancy ?? ""),
     jackedLabel(r, "en"),
     floodLinesLabel(r, "\n"),
     r.notes,

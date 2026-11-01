@@ -60,15 +60,33 @@ export const JACKED = [
   { id: "unsure", label: { en: "Not sure", th: "ไม่แน่ใจ" } },
 ] as const satisfies readonly { id: string; label: Label }[];
 
+// Does anyone live here? Stored as the survey's codes: 2 yes, 1 no, 0 not sure.
+export const OCCUPANCY = [
+  { id: "2", label: { en: "People live here", th: "มีคนอยู่" } },
+  { id: "1", label: { en: "No one lives here", th: "ไม่มีคนอยู่" } },
+  { id: "0", label: { en: "Not sure", th: "ไม่แน่ใจ" } },
+] as const satisfies readonly { id: string; label: Label }[];
+
+// Older records typed a head count; any count above 2 means people live there.
+export function occupancyCode(v: unknown) {
+  const n = wholeNumber(v, 0);
+  return n === "" ? "" : Number(n) > 2 ? "2" : n;
+}
+
+export function occupancyLabel(r: Pick<SurveyRecord, "occupancy">, lang: Lang) {
+  return OCCUPANCY.find((o) => o.id === occupancyCode(r.occupancy))?.label[lang] ?? "";
+}
+
 // Most photos one shot can hold (8 shots, so up to 160 per building).
 export const MAX_PHOTOS_PER_SHOT = 20;
 
 // The 8 shots every record asks for, in survey-sheet order.
 export const IMAGE_SLOTS = [
   { key: "front", label: { en: "Front", th: "ด้านหน้า" }, hint: { en: "Whole building from the canal or street", th: "ถ่ายทั้งหลังจากฝั่งคลองหรือถนน" } },
-  { key: "elevationA", label: { en: "Elevation A", th: "รูปด้าน A" }, hint: { en: "Left side, straight on", th: "ด้านซ้าย ถ่ายตรง" } },
-  { key: "elevationB", label: { en: "Elevation B", th: "รูปด้าน B" }, hint: { en: "Right side, straight on", th: "ด้านขวา ถ่ายตรง" } },
-  { key: "rear", label: { en: "Rear", th: "ด้านหลัง" }, hint: { en: "Back of the building", th: "ด้านหลังอาคาร" } },
+  // Keys stay elevationA/B/rear so saved photos keep their shot; only the names changed.
+  { key: "elevationA", label: { en: "Left", th: "ด้านซ้าย" }, hint: { en: "Left side, straight on", th: "ด้านซ้าย ถ่ายตรง" } },
+  { key: "elevationB", label: { en: "Right", th: "ด้านขวา" }, hint: { en: "Right side, straight on", th: "ด้านขวา ถ่ายตรง" } },
+  { key: "rear", label: { en: "Back", th: "ด้านหลัง" }, hint: { en: "Back of the building", th: "ด้านหลังอาคาร" } },
   { key: "materials", label: { en: "Materials", th: "วัสดุ" }, hint: { en: "Close-up of wall, roof, floor", th: "ระยะใกล้ ผนัง หลังคา พื้น" } },
   { key: "pattern", label: { en: "Pattern", th: "ลวดลาย" }, hint: { en: "Fretwork, vents, railings", th: "ไม้ฉลุ ช่องลม ราวระเบียง" } },
   { key: "specialElements", label: { en: "Special elements", th: "องค์ประกอบพิเศษ" }, hint: { en: "Stairs to water, piers, shrines…", th: "บันไดลงน้ำ ท่าน้ำ ศาลพระภูมิ…" } },
@@ -213,7 +231,7 @@ export function sanitizeInput(raw: unknown): SurveyInput {
     floors: wholeNumber(r.floors, 1),
     function: str(r.function, 200),
     functionOther: str(r.functionOther, 200),
-    occupancy: wholeNumber(r.occupancy, 0),
+    occupancy: occupancyCode(r.occupancy),
     jacked: JACKED.some((j) => j.id === r.jacked) ? (r.jacked as string) : "",
     floodLines: (Array.isArray(r.floodLines) ? r.floodLines : [])
       .map((f) => (f ?? {}) as Record<string, unknown>)

@@ -2,7 +2,7 @@
 
 Mobile-first field survey app for the **Khlong Om Non Workshop**, Xi'an University of Architecture and Technology × Faculty of Architecture, Chulalongkorn University.
 
-Students sign in with their name and group, then record buildings along the canal: plot number, location (GPS or Google Maps link), building type, function, and any number of photos per shot (Front, Elevation A/B, Rear, Materials, Pattern, Special elements, Color scheme). Every photo and record keeps who took it and which group they're in. English / ไทย.
+Students sign in with their name and group, then record buildings along the canal: plot number, location (GPS or Google Maps link), building type, function, and any number of photos per shot (Front, Left, Right, Back, Materials, Pattern, Special elements, Color scheme). Every photo and record keeps who took it and which group they're in. English / ไทย.
 
 ## Run locally
 

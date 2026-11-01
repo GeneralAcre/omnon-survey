@@ -8,6 +8,7 @@ import {
   BUILDING_TYPES,
   FUNCTIONS,
   JACKED,
+  OCCUPANCY,
   MAX_PHOTOS_PER_SHOT,
   PHOTO_NOTE_SLOTS,
   IMAGE_SLOTS,
@@ -19,6 +20,8 @@ import {
   functionIds,
   functionLabel,
   jackedLabel,
+  occupancyCode,
+  occupancyLabel,
   groupOf,
   mapsLink,
   shotsDone,
@@ -42,11 +45,18 @@ import { LangToggle } from "./Shell";
 import { saveRecord, useRecords } from "./data";
 import { photoUrl, pixelUrl, retryImage } from "./images";
 import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPalette, IconPin, IconPlus, IconX } from "./Icons";
-import ColorSampler, { MainColours } from "./ColorSampler";
+import ColorSampler from "./ColorSampler";
 import JackedDiagram from "./JackedDiagram";
 import { addPhotos, discardContext, finishUpload, handBack, handOff, release, retryUpload, useUploads, type Upload } from "./uploads";
 
 const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "stepColors", "stepReview"] as const;
+
+// "Survey" on the study map opens /new?plot=Z01L-16A. The wizard only renders
+// in the browser (after the surveyor is known), so `window` is there.
+function fromMap(): Partial<SurveyInput> {
+  const plotNo = new URLSearchParams(window.location.search).get("plot")?.slice(0, 50);
+  return plotNo ? { plotNo } : {};
+}
 
 function fromRecord(record: SurveyRecord): SurveyInput {
   const base = emptyInput(record.group);
@@ -62,7 +72,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const { records, reload } = useRecords();
   const context = record?.id ?? "new";
   const draftKey = record ? `omnon.draft.${record.id}` : "omnon.draft";
-  const initial = () => (record ? fromRecord(record) : emptyInput(user.group));
+  const initial = () => (record ? fromRecord(record) : { ...emptyInput(user.group), ...fromMap() });
 
   const [data, setData] = useState<SurveyInput>(initial);
   const [step, setStep] = useState(0);
@@ -126,7 +136,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     });
   }
 
-  // Functional so several colours added in one tap ("Add all") don't overwrite each other.
+  // Functional updates keep rapid colour picks from overwriting one another.
   function setColors(fn: (colors: string[]) => string[]) {
     dirty.current = true;
     setData((d) => {
@@ -175,8 +185,9 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       const raw = localStorage.getItem(draftKey);
       if (raw) {
         const draft = JSON.parse(raw) as { data: SurveyInput; step: number };
+        // A building picked on the map fills in only if the draft has no plot yet.
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setData({ ...initial(), ...draft.data });
+        setData({ ...initial(), ...draft.data, ...(draft.data.plotNo ? {} : fromMap()) });
         setStep(Math.min(draft.step ?? 0, STEPS.length - 1));
         setDraftRestored(true);
         dirty.current = true;
@@ -203,7 +214,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
   function exit() {
     resetLocal();
-    router.push(record ? `/r/${record.id}` : "/");
+    router.push(record ? `/r/${record.id}` : "/survey");
   }
 
   function startOver() {
@@ -373,7 +384,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   id="plot"
                   value={data.plotNo}
                   onChange={(e) => update({ plotNo: e.target.value })}
-                  placeholder="A-12"
+                  placeholder="Z01L-16A"
                   autoComplete="off"
                   autoCapitalize="characters"
                   enterKeyHint="next"
@@ -522,19 +533,23 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="occupancy" className="text-sm font-medium text-muted-foreground">
-                  {t("occupancy")}
-                </FieldLabel>
-                <Input
-                  id="occupancy"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={data.occupancy}
-                  // Whole people only: 0 is fine, minus signs and decimals are dropped.
-                  onChange={(e) => update({ occupancy: wholeNumber(e.target.value, 0) })}
-                  placeholder={t("occupancyHint")}
-                  className="mt-2 h-12 rounded-2xl bg-card px-4"
-                />
+                <p className="text-sm font-medium text-muted-foreground">{t("occupancy")}</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {OCCUPANCY.map((o) => {
+                    const on = occupancyCode(data.occupancy) === o.id;
+                    return (
+                      <Button
+                        key={o.id}
+                        variant={on ? "default" : "outline"}
+                        aria-pressed={on}
+                        onClick={() => update({ occupancy: o.id })}
+                        className={cn("h-auto min-h-12 rounded-2xl px-2 py-2 text-[15px] leading-tight whitespace-normal", on ? "border-foreground hover:bg-foreground" : "bg-card dark:bg-card")}
+                      >
+                        {L(o.label)}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t("jacked")}</p>
@@ -663,16 +678,8 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                         </button>
                       ))}
                     </div>
-                    <div className="mt-4 rounded-2xl bg-card p-3">
-                      <MainColours
-                        src={pixelUrl(colourFile, "thumb")}
-                        colors={data.colors}
-                        onAdd={(hexes) => setColors((cs) => [...cs, ...hexes.filter((h) => !cs.includes(h))])}
-                        onRemove={(hex) => setColors((cs) => cs.filter((c) => c !== hex))}
-                        // An empty scheme is filled straight away; unwanted colours can be deleted below.
-                        onFound={(swatches) => setColors((cs) => (cs.length ? cs : swatches.map((s) => s.hex)))}
-                      />
-                      <Button variant="link" onClick={() => setSampling(colourFile)} className="mt-2 h-auto p-0 text-sm text-brand">
+                    <div className="mt-4">
+                      <Button variant="link" onClick={() => setSampling(colourFile)} className="h-auto p-0 text-sm text-brand">
                         {t("pickByHand")}
                       </Button>
                     </div>
@@ -685,7 +692,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                     <button
                       key={c}
                       onClick={() => update({ colors: data.colors.filter((x) => x !== c) })}
-                      className="group relative h-12 w-12 rounded-xl border border-white/10"
+                      className="group relative h-12 w-12 rounded-xl border border-foreground/10"
                       style={{ background: c }}
                       aria-label={`Remove ${c}`}
                     >
@@ -727,7 +734,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               <ReviewRow label={`${t("buildYear")} / ${t("buildAge")}`} value={buildYearAge(data, t)} onEdit={() => setStep(1)} empty={t("notSet")} />
               <ReviewRow label={t("floors")} value={data.floors && `${data.floors} ${t("floorsUnit")}`} onEdit={() => setStep(1)} empty={t("notSet")} />
               <ReviewRow label={t("stepFunction")} value={functionLabel(data, lang)} onEdit={() => setStep(2)} empty={t("notSet")} />
-              <ReviewRow label={t("occupancy")} value={data.occupancy ? `${data.occupancy} ${t("people")}` : ""} onEdit={() => setStep(2)} empty={t("notSet")} />
+              <ReviewRow label={t("occupancy")} value={occupancyLabel(data, lang)} onEdit={() => setStep(2)} empty={t("notSet")} />
               <ReviewRow label={t("jacked")} value={jackedLabel(data, lang)} onEdit={() => setStep(2)} empty={t("notSet")} />
               <ReviewRow label={t("floodLine")} value={floodLinesLabel(data)} onEdit={() => setStep(2)} empty={t("notSet")} />
               <button onClick={() => setStep(3)} className="w-full rounded-2xl bg-card p-4 text-left">
@@ -775,10 +782,10 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       {/* Bottom actions */}
       <footer className="border-t border-border bg-background px-4 pt-3 pb-safe">
         <div className="mx-auto max-w-2xl">
-          {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
-          {failedCount > 0 && <p className="mb-2 text-sm text-red-400">{t("badPhotoFooter")}</p>}
+          {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
+          {failedCount > 0 && <p className="mb-2 text-sm text-destructive">{t("badPhotoFooter")}</p>}
           {waitingCount > 0 ? (
-            <p className="mb-2 text-sm text-yellow-300">
+            <p className="mb-2 text-sm text-amber-700">
               {waitingCount} {t("photosWaiting")}
             </p>
           ) : (
@@ -816,7 +823,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
       {sampling && (
         <ColorSampler
           src={pixelUrl(sampling)}
-          paletteSrc={pixelUrl(sampling, "thumb")}
           colors={data.colors}
           onAdd={(hexes) => setColors((cs) => [...cs, ...hexes.filter((h) => !cs.includes(h))])}
           onRemove={(hex) => setColors((cs) => cs.filter((c) => c !== hex))}
@@ -959,7 +965,7 @@ function ShotCard({
                     <button
                       onClick={() => onRemove(p.file)}
                       aria-label="Remove"
-                      className="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/80"
+                      className="absolute -top-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/80 text-white"
                     >
                       <IconX className="size-3.5" />
                     </button>
@@ -982,11 +988,11 @@ function ShotCard({
                 <button
                   onClick={() => onRemove(p.file)}
                   aria-label="Remove"
-                  className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70"
+                  className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white"
                 >
                   <IconX className="size-4" />
                 </button>
-                <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px]">{p.by}</span>
+                <span className="absolute inset-x-1 bottom-1 truncate rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">{p.by}</span>
               </div>
             ))}
             {pending.map((p) => (
@@ -995,10 +1001,10 @@ function ShotCard({
                 <img src={p.preview} alt="" className="h-full w-full rounded-xl object-cover opacity-40" />
                 {p.status === "uploading" ? (
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <span className="h-7 w-7 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
                   </span>
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-xl bg-black/55 p-1 text-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-xl bg-black/55 p-1 text-center text-white">
                     {p.status === "failed" ? (
                       <span className="text-[10px] leading-tight text-red-300">{t("badPhoto")}</span>
                     ) : (

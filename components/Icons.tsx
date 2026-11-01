@@ -81,3 +81,13 @@ export const IconPin = ({ className = "size-5" }: P) => (
     <circle cx="12" cy="10" r="2.5" />
   </svg>
 );
+export const IconLocate = ({ className = "size-5" }: P) => (
+  <svg {...base} className={className}>
+    <circle cx="12" cy="12" r="7" />
+    <circle cx="12" cy="12" r="2.5" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </svg>
+);
+export const IconDirections = ({ className = "size-5" }: P) => (
+  <svg {...base} className={className}><path d="M3 11l18-8-8 18-2-8z" /></svg>
+);

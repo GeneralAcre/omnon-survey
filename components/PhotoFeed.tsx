@@ -38,7 +38,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-1 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-1 sm:grid-cols-4 md:gap-2 lg:grid-cols-6">
         {items.slice(0, limit).map((p, i) => {
           const c = groupColor(p.group);
           return (
@@ -46,7 +46,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
               <span className="absolute inset-x-0 top-0 h-1" style={{ background: c.bg }} />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-1.5 pt-4 pb-1 text-left">
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-1.5 pt-4 pb-1 text-left text-white">
                 <span className="block truncate text-[11px] font-semibold">{p.plotNo}</span>
                 <span className="flex items-center gap-1 truncate text-[10px] text-white/70">
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.bg }} />

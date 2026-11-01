@@ -24,7 +24,8 @@ export default function FullscreenDialog({
         showCloseButton={false}
         onKeyDown={onKeyDown}
         className={cn(
-          "top-0 left-0 flex h-dvh w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none bg-black p-0 text-base ring-0 sm:max-w-none",
+          // .dark keeps photo viewers black on the light app.
+          "dark top-0 left-0 flex h-dvh w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none bg-black p-0 text-base text-foreground ring-0 sm:max-w-none",
           className,
         )}
       >

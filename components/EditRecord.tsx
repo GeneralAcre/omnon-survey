@@ -18,7 +18,7 @@ export default function EditRecord() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 text-muted-foreground">
         {t("notFound")}
-        <Link href="/" className={buttonVariants({ variant: "secondary", size: "xl" })}>
+        <Link href="/survey" className={buttonVariants({ variant: "secondary", size: "xl" })}>
           {t("backToList")}
         </Link>
       </main>

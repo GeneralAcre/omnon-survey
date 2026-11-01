@@ -2,23 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { loadImage, mainColours, type Swatch } from "@/lib/palette";
+import { loadImage } from "@/lib/palette";
 import { useT } from "./app-state";
 import FullscreenDialog from "./FullscreenDialog";
-import { IconCheck, IconPlus, IconX } from "./Icons";
+import { IconX } from "./Icons";
 
 export default function ColorSampler({
   src,
-  paletteSrc = src,
   colors,
   onAdd,
   onRemove,
   onClose,
 }: {
   src: string;
-  // Image the main colours are read from; pass the same one the colours step uses so the hexes match.
-  paletteSrc?: string;
   colors: string[];
   onAdd: (hexes: string[]) => void;
   onRemove: (hex: string) => void;
@@ -98,14 +94,12 @@ export default function ColorSampler({
       </div>
 
       <div className="space-y-3 px-4 pt-3 pb-safe">
-        <MainColours src={paletteSrc} colors={colors} onAdd={onAdd} onRemove={onRemove} />
-
         <section>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">{t("yourScheme")}</h3>
             {hover && (
               <span className="ml-auto flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                <span className="size-4 rounded border border-white/20" style={{ background: hover }} />
+                <span className="size-4 rounded border border-foreground/20" style={{ background: hover }} />
                 {hover}
               </span>
             )}
@@ -117,7 +111,7 @@ export default function ColorSampler({
                 key={c}
                 onClick={() => onRemove(c)}
                 aria-label={`${t("delete")} ${c}`}
-                className="relative size-9 shrink-0 rounded-lg border border-white/10"
+                className="relative size-9 shrink-0 rounded-lg border border-foreground/10"
                 style={{ background: c }}
               >
                 <span className="absolute -top-1.5 -right-1.5 flex size-4.5 items-center justify-center rounded-full bg-secondary text-foreground">
@@ -129,85 +123,5 @@ export default function ColorSampler({
         </section>
       </div>
     </FullscreenDialog>
-  );
-}
-
-// The few colours covering most of a photo, each tap toggling it in the scheme.
-// onFound fires once per photo with what was found (used to fill an empty scheme).
-export function MainColours({
-  src,
-  colors,
-  onAdd,
-  onRemove,
-  onFound,
-}: {
-  src: string;
-  colors: string[];
-  onAdd: (hexes: string[]) => void;
-  onRemove: (hex: string) => void;
-  onFound?: (swatches: Swatch[]) => void;
-}) {
-  const { t } = useT();
-  const [found, setFound] = useState<{ src: string; swatches: Swatch[] } | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
-  const main = found?.src === src ? found.swatches : null;
-
-  useEffect(() => {
-    let live = true;
-    loadImage(src)
-      .then((img) => {
-        if (!live) return;
-        const swatches = mainColours(img, 5);
-        setFound({ src, swatches });
-        onFound?.(swatches);
-      })
-      .catch(() => live && setFailed(src));
-    return () => {
-      live = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src]);
-
-  const missing = (main ?? []).filter((s) => !colors.includes(s.hex)).map((s) => s.hex);
-
-  return (
-    <section>
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{t("mainColours")}</h3>
-        <Button variant="secondary" size="sm" className="rounded-full" disabled={!missing.length} onClick={() => onAdd(missing)}>
-          <IconPlus className="size-3.5" /> {t("addAll")}
-        </Button>
-      </div>
-      <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto pt-1 pb-1 pl-1">
-        {main === null && <p className="text-xs text-muted-foreground">{failed === src ? t("loadError") : t("findingColours")}</p>}
-        {main?.map((s) => {
-          const added = colors.includes(s.hex);
-          return (
-            <button
-              key={s.hex}
-              onClick={() => (added ? onRemove(s.hex) : onAdd([s.hex]))}
-              aria-pressed={added}
-              aria-label={s.hex}
-              className="flex shrink-0 flex-col items-center gap-1"
-            >
-              <span
-                className={cn(
-                  "relative flex size-12 items-center justify-center rounded-xl border border-white/15",
-                  added && "ring-2 ring-foreground ring-offset-2 ring-offset-black",
-                )}
-                style={{ background: s.hex }}
-              >
-                {added && (
-                  <span className="flex size-5 items-center justify-center rounded-full bg-foreground text-background">
-                    <IconCheck className="size-3.5" />
-                  </span>
-                )}
-              </span>
-              <span className="font-mono text-[10px] text-muted-foreground">{Math.round(s.share * 100)}%</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
   );
 }

@@ -10,17 +10,24 @@ import { GROUPS } from "@/lib/schema";
 import { setLang, setUser, useT, useUser } from "./app-state";
 import { startUploads, useUploads } from "./uploads";
 
-// Gates the app behind a one-time "who are you" screen.
+// Wraps every page; photos still uploading keep going wherever the surveyor goes.
 export default function Shell({ children }: { children: React.ReactNode }) {
   const user = useUser();
-  if (user === undefined) return <div className="flex-1" />;
-  if (user === null) return <SignIn />;
   return (
     <>
       {children}
-      <BackgroundUploads />
+      {user && <BackgroundUploads />}
     </>
   );
+}
+
+// Gates the survey pages behind a one-time "who are you" screen.
+// The landing and About stay open, e.g. for an audience during a presentation.
+export function RequireUser({ children }: { children: React.ReactNode }) {
+  const user = useUser();
+  if (user === undefined) return <div className="flex-1" />;
+  if (user === null) return <SignIn />;
+  return children;
 }
 
 // Photos still uploading for buildings that were already saved, on every page.
@@ -84,21 +91,22 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
   const ready = name.trim() && group;
 
   return (
-    <main className="relative isolate mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-[max(env(safe-area-inset-top),1.5rem)] pb-safe">
-      {/* The canal photo behind the welcome text, fading to black behind the form. */}
-      <div aria-hidden="true" className="fixed inset-0 -z-20 bg-[url(/omnon.jpg)] bg-cover bg-[center_60%]" />
-      <div aria-hidden="true" className="fixed inset-0 -z-10 bg-gradient-to-b from-black/20 via-black/70 to-background to-75%" />
-      <div className="flex justify-end">
-        <LangToggle className="border-white/40 bg-black/30 backdrop-blur-sm" />
+    // Phones: the canal photo as a card above the form. Wide screens: photo half, form half.
+    <div className="flex flex-1 lg:grid lg:grid-cols-2">
+    <div aria-hidden="true" className="hidden bg-[url(/omnon.jpg)] bg-cover bg-[center_60%] lg:block" />
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-[max(env(safe-area-inset-top),1.25rem)] pb-safe lg:justify-center lg:py-12">
+      <div className="flex justify-end lg:fixed lg:top-6 lg:right-6">
+        <LangToggle />
       </div>
-      <div className="mt-24">
-        <p className="text-sm font-semibold tracking-[0.2em] text-white/85 uppercase drop-shadow">Khlong Om Non</p>
-        <h1 className="mt-2 text-4xl font-bold text-white drop-shadow-lg">{t("welcome")}</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-white/85 drop-shadow">{t("welcomeSub")}</p>
+      <div aria-hidden="true" className="mt-4 h-44 rounded-3xl bg-[url(/omnon.jpg)] bg-cover bg-[center_60%] sm:h-56 lg:hidden" />
+      <div className="mt-7 lg:mt-0">
+        <p className="text-xs font-semibold tracking-[0.2em] text-brand uppercase">Khlong Om Non</p>
+        <h1 className="mt-2 font-display text-5xl leading-none">{t("welcome")}</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{t("welcomeSub")}</p>
       </div>
 
       <form
-        className="mt-8 flex flex-1 flex-col"
+        className="mt-8 flex flex-1 flex-col lg:flex-none"
         onSubmit={(e) => {
           e.preventDefault();
           if (!ready) return;
@@ -111,7 +119,7 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
         </Label>
         <Input
           id="name"
-          className="mt-2 h-13 rounded-2xl bg-black/50 px-4 backdrop-blur-sm dark:bg-black/50"
+          className="mt-2 h-13 rounded-2xl bg-card px-4"
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
@@ -155,5 +163,6 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
         </div>
       </form>
     </main>
+    </div>
   );
 }

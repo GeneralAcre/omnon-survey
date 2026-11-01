@@ -1,14 +1,8 @@
-import RecordList from "@/components/RecordList";
-import WorkshopIntro from "@/components/WorkshopIntro";
+import Landing from "@/components/Landing";
 
-// Content waits for the signed-in user (see Shell), so there is nothing to validate on the server.
+// The public showcase; the survey itself is on /survey.
 export const instant = false;
 
 export default function Home() {
-  return (
-    <>
-      <WorkshopIntro />
-      <RecordList />
-    </>
-  );
+  return <Landing />;
 }

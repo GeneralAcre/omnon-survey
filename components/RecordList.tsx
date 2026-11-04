@@ -16,8 +16,9 @@ import { plotOf } from "@/lib/study-area";
 import { setUser, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
-import { IconBack, IconCamera, IconDownload, IconImage, IconPin, IconPlus, IconSearch, IconUser } from "./Icons";
+import { IconBack, IconDownload, IconPlus, IconSearch, IconUser } from "./Icons";
 import AreaHero from "./AreaHero";
+import { BuildingBox, boxGrid } from "./BuildingBox";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
 import { LangToggle } from "./Shell";
@@ -160,8 +161,8 @@ export default function RecordList() {
 
         <div className="mt-1 flex items-end justify-between gap-3 sm:mt-2">
           <div className="min-w-0">
-            <p className="text-xs font-semibold tracking-widest text-brand uppercase">Khlong Om Non · Field survey</p>
-            <h1 className="mt-1 flex items-center gap-3 font-display text-4xl leading-none sm:text-5xl">
+            <p className="tag">Khlong Om Non · Field survey</p>
+            <h1 className="mt-2 flex items-center gap-3 font-display text-4xl leading-none sm:text-5xl">
               {t("records")}
               <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 font-sans text-[11px] font-semibold tracking-normal text-ok">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
@@ -211,7 +212,7 @@ export default function RecordList() {
                   <ToggleGroupItem
                     key={v.id}
                     value={v.id}
-                    className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-foreground aria-pressed:text-background hover:aria-pressed:bg-foreground"
+                    className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-primary aria-pressed:text-background hover:aria-pressed:bg-primary"
                   >
                     {v.label}
                     <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-background/50">{records ? v.n : ""}</span>
@@ -242,7 +243,7 @@ export default function RecordList() {
                     aria-label={c.name}
                     className={cn(
                       "h-auto gap-1.5 rounded-full px-3 py-2",
-                      active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary text-foreground",
+                      active && !col ? "bg-primary text-background aria-pressed:bg-primary hover:bg-primary hover:text-background" : active ? "" : "bg-secondary text-foreground",
                     )}
                     style={active && col ? { background: col.bg, color: col.fg } : undefined}
                   >
@@ -271,10 +272,10 @@ export default function RecordList() {
             {records && view === "list" && (
               <>
                 {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
-                <ul className="mt-1 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-4">
+                <ul className={cn(boxGrid, "mt-1 grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4")}>
                   {visible.map((r) => (
                     <li key={r.id}>
-                      <Card r={r} highlight={fresh.has(r.id)} />
+                      <BuildingBox r={r} highlight={fresh.has(r.id)} />
                     </li>
                   ))}
                 </ul>
@@ -336,50 +337,6 @@ function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) 
   );
 }
 
-// Photo first, then the plot and its zone, like the landing page's "Recently documented".
-function Card({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }) {
-  const { t, lang } = useT();
-  const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
-  const type = typeLabel(r, lang);
-  const fn = functionLabel(r, lang);
-  const photos = allPhotos(r).length;
-  return (
-    <Link href={`/r/${r.id}`} className="group block">
-      <div
-        className={`relative aspect-[4/5] overflow-hidden rounded-2xl bg-card ${highlight ? "ring-2 ring-offset-2 ring-offset-background" : ""}`}
-        style={highlight ? ({ "--tw-ring-color": groupColor(r.group).bg } as React.CSSProperties) : undefined}
-      >
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photoUrl(cover.file, "thumb")}
-            onError={retryImage}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <IconImage className="size-8" />
-          </div>
-        )}
-        {photos > 0 && (
-          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur">
-            <IconCamera className="size-3.5" />
-            {photos}
-          </span>
-        )}
-      </div>
-      <div className="mt-2.5 flex items-center gap-2">
-        <span className="truncate font-semibold">{r.plotNo}</span>
-        <GroupBadge group={r.group} className="shrink-0" />
-        {r.lat != null && <IconPin className="size-4 shrink-0 text-muted-foreground" />}
-      </div>
-      <p className="mt-0.5 truncate text-xs text-muted-foreground">{[type, fn].filter(Boolean).join(" · ") || t("notSet")}</p>
-    </Link>
-  );
-}
-
 function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; onClose: () => void; defaultGroup: string; records: SurveyRecord[] }) {
   const { t, L } = useT();
   const [group, setGroup] = useState(defaultGroup);
@@ -414,7 +371,7 @@ function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; 
               value={g.id || "all"}
               className={cn(
                 "h-auto rounded-full px-4 py-2 font-semibold",
-                active && !col ? "bg-foreground text-background aria-pressed:bg-foreground hover:bg-foreground hover:text-background" : active ? "" : "bg-secondary",
+                active && !col ? "bg-primary text-background aria-pressed:bg-primary hover:bg-primary hover:text-background" : active ? "" : "bg-secondary",
               )}
               style={active && col ? { background: col.bg, color: col.fg } : undefined}
             >

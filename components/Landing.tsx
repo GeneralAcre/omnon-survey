@@ -9,17 +9,16 @@ import { GROUPS, allPhotos } from "@/lib/schema";
 import { plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
+import { BuildingBox, box, boxGrid } from "./BuildingBox";
 import { useRecords } from "./data";
-import { GroupBadge } from "./GroupBadge";
 import { IconNext, IconPlus } from "./Icons";
-import { photoUrl, retryImage } from "./images";
 import { LangToggle } from "./Shell";
 import omnon from "@/public/omnon.jpg";
 
 // Compact pills, like the top bar of an editorial site; still a comfortable tap.
 const pill = "h-11 rounded-full px-5 text-sm font-semibold";
-const wrap = "mx-auto w-full max-w-6xl px-5 sm:px-8";
-const eyebrow = "text-xs font-semibold tracking-[0.2em] text-brand uppercase";
+const wrap = "mx-auto w-full max-w-[96rem] px-5 sm:px-8";
+const eyebrow = "tag";
 
 // Leaflet touches `window`, so the map only loads in the browser.
 const StudyMap = dynamic(() => import("./StudyMap"), {
@@ -41,11 +40,8 @@ export default function Landing() {
     { label: t("statSurveyors"), n: new Set(all.flatMap((r) => [r.createdBy.name, ...allPhotos(r).map((p) => p.by)])).size },
   ];
 
-  // One cover per building, newest first (records arrive sorted by last update).
-  const recent = all
-    .map((r) => ({ r, cover: r.images.front?.photos[0] ?? allPhotos(r)[0] }))
-    .filter((x) => x.cover)
-    .slice(0, 8);
+  // Newest first (records arrive sorted by last update); seven plus the "add" box fill two rows.
+  const recent = all.filter((r) => allPhotos(r).length > 0).slice(0, 7);
 
   return (
     <main className="flex-1">
@@ -71,16 +67,16 @@ export default function Landing() {
         </div>
       </nav>
 
-      <section className="relative isolate min-h-[32rem] overflow-hidden bg-foreground text-white sm:min-h-[38rem] lg:min-h-[min(78svh,52rem)]">
+      <section className="relative isolate min-h-[32rem] overflow-hidden bg-black text-white sm:min-h-[38rem] lg:min-h-[min(78svh,52rem)]">
         <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/15 to-black/10" />
         <div className={cn(wrap, "flex min-h-[32rem] flex-col justify-end pb-10 pt-16 sm:min-h-[38rem] sm:pb-14 lg:min-h-[min(78svh,52rem)] lg:pb-16")}>
-          <p className="mb-4 text-xs font-semibold tracking-[0.22em] text-white/80 uppercase">Adaptive futures for Khlong Om Non</p>
-          <h1 className="max-w-5xl font-display text-6xl leading-[0.92] text-white sm:text-7xl lg:text-9xl">Fluid Heritage</h1>
+          <p className="tag mb-4 self-start">Adaptive futures for Khlong Om Non</p>
+          <h1 className="max-w-5xl font-display text-7xl leading-[0.95] text-white sm:text-8xl lg:text-[11rem]">Fluid Heritage</h1>
           {/* The main thing a visitor here should do. */}
           <Link
             href="/new"
-            className="mt-8 inline-flex h-14 w-full items-center justify-center gap-2 self-start rounded-full bg-white px-7 text-base font-semibold text-black shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition hover:bg-white/90 active:scale-95 sm:w-auto"
+            className="mt-8 inline-flex h-14 w-full items-center justify-center gap-2 self-start rounded-full bg-primary px-7 text-base font-semibold text-primary-foreground shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition hover:bg-primary/90 active:scale-95 sm:w-auto"
           >
             <IconPlus className="size-5" />
             {t("addBuilding")}
@@ -89,12 +85,12 @@ export default function Landing() {
       </section>
 
       {/* A taste of the history, with the full timeline on /about. */}
-      <section className="border-b border-border">
+      <section className="bg-brand text-primary-foreground">
         <div className={cn(wrap, "grid gap-6 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
-          <p className="font-display text-7xl leading-none text-brand sm:text-8xl">1636</p>
+          <p className="font-display text-8xl leading-none sm:text-9xl">1636</p>
           <div>
             <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
-            <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+            <p className="mt-4 text-[15px] leading-relaxed sm:text-base">
               {L({
                 en: "Khlong Om Non was once the main course of the Chao Phraya. When a shortcut was dug across its meander, the river moved on, and the old bend became a 17.5 km cultural landscape of temples, orchards and riverside houses.",
                 th: "คลองอ้อมนนท์เคยเป็นเส้นทางหลักของแม่น้ำเจ้าพระยา เมื่อมีการขุดคลองลัดตัดคุ้งน้ำ แม่น้ำจึงเปลี่ยนเส้นทาง และคุ้งเดิมกลายเป็นภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่เต็มไปด้วยวัด สวนผลไม้ และเรือนริมน้ำ",
@@ -146,7 +142,7 @@ export default function Landing() {
       {/* The three zones beside the study-area map. */}
       <section id="zones" className="scroll-mt-20 bg-card py-16 sm:py-24">
         <div className={cn(wrap, "grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-14")}>
-          <StudyMap records={all} zone={zone} className="aspect-[4/3] lg:aspect-[3/2]" />
+          <StudyMap records={all} zone={zone} preview className="aspect-[4/3] lg:aspect-[3/2]" />
           <div>
             <p className={eyebrow}>{t("studyArea")}</p>
             <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
@@ -157,7 +153,7 @@ export default function Landing() {
                     type="button"
                     onClick={() => setZone(zone === g.id ? undefined : g.id)}
                     aria-pressed={zone === g.id}
-                    className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background p-4 text-left transition hover:border-border aria-pressed:border-foreground"
+                    className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background p-4 text-left transition hover:border-border aria-pressed:border-primary"
                   >
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
                       {g.id}
@@ -176,45 +172,30 @@ export default function Landing() {
 
       {recent.length > 0 && (
         <section className={cn(wrap, "py-16 sm:py-24")}>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className={eyebrow}>{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
-              <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
-            </div>
-            <Link href="/new" className="hidden shrink-0 items-center gap-1 text-sm font-semibold hover:underline sm:flex">
-              <IconPlus className="size-4" /> {t("addBuilding")}
-            </Link>
-          </div>
-          <ul className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {recent.map(({ r, cover }) => (
+          <p className={eyebrow}>{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
+          <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
+          <ul className={cn(boxGrid, "mt-8 grid-cols-2 lg:grid-cols-4")}>
+            {recent.map((r) => (
               <li key={r.id}>
-                <Link href={`/r/${r.id}`} className="group block">
-                  <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-card">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoUrl(cover!.file, "thumb")}
-                      onError={retryImage}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                    />
-                  </div>
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <span className="font-semibold">{r.plotNo}</span>
-                    <GroupBadge group={r.group} />
-                  </div>
-                </Link>
+                <BuildingBox r={r} />
               </li>
             ))}
+            {/* The one coloured box in the grid. */}
+            <li>
+              <Link href="/new" className={cn(box, "h-full justify-between bg-brand text-primary-foreground transition-opacity hover:opacity-90")}>
+                <span className="font-display text-3xl leading-none sm:text-5xl">{t("addBuilding")}</span>
+                <IconPlus className="size-7 sm:size-9" />
+              </Link>
+            </li>
           </ul>
         </section>
       )}
 
       <section className={cn(wrap, "pb-16 sm:pb-24")}>
-        <div className="flex flex-col items-start gap-6 rounded-3xl bg-foreground p-8 text-background sm:p-12 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col items-start gap-6 rounded-3xl bg-primary p-8 text-primary-foreground sm:p-12 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "Help document Khlong Om Non", th: "ร่วมบันทึกคลองอ้อมนนท์" })}</h2>
-            <p className="mt-2 text-background/70">
+            <p className="mt-2">
               {L({
                 en: "Add a building with its photos, colours, flood lines and location.",
                 th: "เพิ่มอาคาร พร้อมภาพถ่าย สี ระดับน้ำท่วม และตำแหน่ง",

@@ -74,7 +74,7 @@ export function LangToggle({ className = "" }: { className?: string }) {
           key={o.id}
           aria-pressed={lang === o.id}
           onClick={() => setLang(o.id)}
-          className={cn("h-full rounded-full px-2.5 transition-colors", lang === o.id ? "bg-foreground text-background" : "text-muted-foreground")}
+          className={cn("h-full rounded-full px-2.5 transition-colors", lang === o.id ? "bg-primary text-background" : "text-muted-foreground")}
         >
           {o.label}
         </button>
@@ -100,7 +100,7 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
       </div>
       <div aria-hidden="true" className="mt-4 h-44 rounded-3xl bg-[url(/omnon.jpg)] bg-cover bg-[center_60%] sm:h-56 lg:hidden" />
       <div className="mt-7 lg:mt-0">
-        <p className="text-xs font-semibold tracking-[0.2em] text-brand uppercase">Khlong Om Non</p>
+        <p className="tag">Khlong Om Non</p>
         <h1 className="mt-2 font-display text-5xl leading-none">{t("welcome")}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{t("welcomeSub")}</p>
       </div>

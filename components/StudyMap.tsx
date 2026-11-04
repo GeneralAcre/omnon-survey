@@ -127,7 +127,7 @@ export default function StudyMap({
 
     m.on("locationfound", (e: L.LocationEvent) => {
       me.current?.remove();
-      me.current = L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 3, fillColor: "#0a84ff", fillOpacity: 1, interactive: false }).addTo(m);
+      me.current = L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 3, fillColor: "#000", fillOpacity: 1, interactive: false }).addTo(m);
     });
     m.on("locationerror", () => toast(t("locateFailed")));
 

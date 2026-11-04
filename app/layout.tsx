@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Kanit } from "next/font/google";
+import { Anton, Inter, Kanit } from "next/font/google";
 import { preconnect } from "react-dom";
 import Shell from "@/components/Shell";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,12 +7,19 @@ import { r2Origin } from "@/lib/r2";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const geist = Geist({
-  variable: "--font-geist",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-// Geist has no Thai glyphs, so Thai text falls through to Kanit.
+// Headlines (see font-display in globals.css).
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+// Inter and Anton have no Thai glyphs, so Thai text falls through to Kanit.
 const kanit = Kanit({
   variable: "--font-kanit",
   subsets: ["thai"],
@@ -27,11 +34,11 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Om Non Survey",
   description: "Field survey for the Khlong Om Non Workshop — XAUAT × Chulalongkorn University.",
-  appleWebApp: { capable: true, title: "Om Non Survey", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Om Non Survey", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -42,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   const r2 = r2Origin();
   if (r2) preconnect(r2);
   return (
-    <html lang="en" className={cn("h-full antialiased", geist.variable, kanit.variable)}>
+    <html lang="en" className={cn("dark h-full antialiased", inter.variable, anton.variable, kanit.variable)}>
       <body className="flex min-h-full flex-col">
         <Shell>{children}</Shell>
         <Toaster position="top-center" />

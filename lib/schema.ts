@@ -4,7 +4,7 @@ export type Label = Record<Lang, string>;
 export const GROUPS = [
   { id: "1", color: "#E07A5F", ink: "#000000", label: { en: "Zone 1", th: "โซน 1" }, zone: { en: "Canal & Road Urbanization", th: "คลองกับการขยายตัวของถนน" } },
   { id: "2", color: "#F2CC8F", ink: "#000000", label: { en: "Zone 2", th: "โซน 2" }, zone: { en: "Housing Estate & Orchard", th: "หมู่บ้านจัดสรรและสวนผลไม้" } },
-  { id: "3", color: "#3D405B", ink: "#ffffff", label: { en: "Zone 3", th: "โซน 3" }, zone: { en: "Cultural Heritage Enrichment", th: "มรดกทางวัฒนธรรม" } },
+  { id: "3", color: "#6E6E6E", ink: "#ffffff", label: { en: "Zone 3", th: "โซน 3" }, zone: { en: "Cultural Heritage Enrichment", th: "มรดกทางวัฒนธรรม" } },
 ] as const satisfies readonly { id: string; color: string; ink: string; label: Label; zone: Label }[];
 
 // Group colour + readable text colour on top of it.

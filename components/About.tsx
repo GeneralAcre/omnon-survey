@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { IconBack, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
 
-const TIMELINE: { when: Label; title: Label; body: Label }[] = [
+const TIMELINE: { when: Label; who?: Label; title: Label; body: Label }[] = [
   {
     when: { en: "Before 1636", th: "ก่อน พ.ศ. 2179" },
     title: { en: "A river, not a canal", th: "แม่น้ำ ไม่ใช่คลอง" },
@@ -18,7 +18,8 @@ const TIMELINE: { when: Label; title: Label; body: Label }[] = [
     },
   },
   {
-    when: { en: "1636 · King Prasat Thong", th: "พ.ศ. 2179 · สมเด็จพระเจ้าปราสาททอง" },
+    when: { en: "1636", th: "พ.ศ. 2179" },
+    who: { en: "King Prasat Thong", th: "สมเด็จพระเจ้าปราสาททอง" },
     title: { en: "The shortcut", th: "คลองลัด" },
     body: {
       en: "A bypass canal was dug across the neck of the meander to speed up ships heading to Ayutthaya.",
@@ -34,7 +35,8 @@ const TIMELINE: { when: Label; title: Label; body: Label }[] = [
     },
   },
   {
-    when: { en: "1665 · King Narai", th: "พ.ศ. 2208 · สมเด็จพระนารายณ์" },
+    when: { en: "1665", th: "พ.ศ. 2208" },
+    who: { en: "King Narai", th: "สมเด็จพระนารายณ์" },
     title: { en: "A strategic mouth", th: "ปากคลองเชิงยุทธศาสตร์" },
     body: {
       en: "A fortress was built at the canal mouth and Nonthaburi was moved there to monitor trade ships.",
@@ -59,6 +61,30 @@ const TIMELINE: { when: Label; title: Label; body: Label }[] = [
   },
 ];
 
+const OLD_COURSE = "M62 0C62 30 8 8 8 52C8 92 62 72 62 100";
+const NEW_COURSE = "M62 0V100";
+const ORCHARDS = [38, 48, 58].flatMap((y) => [20, 30, 40, 50].map((x) => ({ x, y })));
+
+// A schematic of the canal at one TIMELINE stage (by index), not a survey drawing.
+function StageMap({ stage }: { stage: number }) {
+  return (
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true" className="aspect-square w-full bg-card">
+      {stage < 2 ? (
+        <path d={OLD_COURSE} strokeWidth={5} />
+      ) : (
+        <>
+          <path d={NEW_COURSE} strokeWidth={5} />
+          <path d={OLD_COURSE} strokeWidth={1.5} />
+        </>
+      )}
+      {stage === 1 && <path d="M62 18V82" strokeWidth={1.5} strokeDasharray="3 3" />}
+      {stage >= 3 && <rect x={68} y={9} width={7} height={7} fill="currentColor" stroke="none" />}
+      {stage >= 4 && ORCHARDS.map((p) => <circle key={`${p.x}-${p.y}`} cx={p.x} cy={p.y} r={1.5} fill="currentColor" stroke="none" />)}
+      {stage === 5 && <path d="M0 86L100 80M84 0L88 100" strokeWidth={1} />}
+    </svg>
+  );
+}
+
 export default function About() {
   const { L, t } = useT();
   return (
@@ -72,28 +98,36 @@ export default function About() {
 
       <div aria-hidden="true" className="mx-4 h-40 rounded-3xl bg-[url(/omnon.jpg)] bg-cover bg-[center_60%] sm:mx-6 sm:h-56 lg:mx-8 lg:h-72" />
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12 lg:px-8">
-      <section className="px-5 pt-6 pb-10 sm:px-6 lg:sticky lg:top-20 lg:self-start lg:px-0 lg:pt-10">
-        <p className="text-xs font-semibold tracking-widest text-brand uppercase">Workshop Prompt</p>
+      <section className="px-5 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-10">
+        <p className="tag">Workshop Prompt</p>
         <h1 className="mt-3 font-display text-5xl leading-none sm:text-6xl">Fluid Heritage</h1>
         <p className="mt-1 text-xl text-foreground/80 sm:text-2xl">Adaptive Futures for Khlong Om Non</p>
         <p className="mt-4 text-sm text-muted-foreground">Adaptation · Continuity · Interdisciplinary</p>
         <p className="mt-4 text-sm text-muted-foreground">Xi&apos;an University of Architecture and Technology × Faculty of Architecture, Chulalongkorn University</p>
       </section>
 
-      <section className="px-5 sm:px-6 lg:px-0 lg:pt-10">
-        <ol className="relative space-y-6 border-l border-border pl-5 sm:space-y-8">
-          {TIMELINE.map((e) => (
-            <li key={e.title.en} className="relative">
-              <span className="absolute top-1.5 -left-[25px] h-2.5 w-2.5 rounded-full bg-brand" />
-              <p className="text-xs font-semibold text-brand">{L(e.when)}</p>
-              <h2 className="mt-0.5 font-bold">{L(e.title)}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{L(e.body)}</p>
+      {/* Swipes sideways on phones; all six stages fit across a desktop. */}
+      <section className="text-brand">
+        <ol
+          tabIndex={0}
+          aria-label={L({ en: "Timeline of Khlong Om Non", th: "ลำดับเหตุการณ์ของคลองอ้อมนนท์" })}
+          className="no-scrollbar grid snap-x snap-mandatory auto-cols-[72%] grid-flow-col overflow-x-auto sm:auto-cols-[15rem] lg:auto-cols-fr lg:px-5"
+        >
+          {TIMELINE.map((e, i) => (
+            <li key={e.title.en} className="flex snap-center flex-col items-center px-3 text-center">
+              <StageMap stage={i} />
+              <div className="relative -mx-3 mt-6 flex w-[calc(100%+1.5rem)] justify-center">
+                <span aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-current" />
+                <span className="relative rounded-full bg-brand px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-primary-foreground">{L(e.when)}</span>
+              </div>
+              <h2 className="mt-5 text-sm font-semibold">{L(e.title)}</h2>
+              {e.who && <p className="mt-0.5 text-xs text-muted-foreground">{L(e.who)}</p>}
+              <p className="mt-2 text-[13px] leading-relaxed text-foreground/85">{L(e.body)}</p>
             </li>
           ))}
         </ol>
+        <p className="mt-6 px-5 text-center text-xs text-muted-foreground sm:px-6 lg:px-8">{L({ en: "Schematic diagrams, not to scale.", th: "แผนภาพแสดงแนวคิด ไม่ได้มาตราส่วน" })}</p>
       </section>
-      </div>
 
       <section className="mt-10 grid grid-cols-1 gap-2 px-4 sm:px-6 md:grid-cols-3 md:gap-3 lg:mt-16 lg:px-8">
         {GROUPS.map((g) => (

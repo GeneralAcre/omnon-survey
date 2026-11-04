@@ -4,33 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* White, editorial theme. Full-screen photo viewers add .dark to stay black. */
-:root {
-  color-scheme: light;
-  --background: #ffffff;
-  --foreground: #141414;
-  --card: #f6f5f1;
-  --card-foreground: #141414;
-  --popover: #ffffff;
-  --popover-foreground: #141414;
-  --primary: #141414;
-  --primary-foreground: #ffffff;
-  --secondary: #efede7;
-  --secondary-foreground: #141414;
-  --muted: #efede7;
-  --muted-foreground: #6b6862;
-  --accent: #efede7;
-  --accent-foreground: #141414;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e5e2da;
-  --input: #dcd8cf;
-  --ring: #0e7490;
-  --radius: 0.75rem;
-  /* App-specific: canal-teal highlight and the "done" green. */
-  --brand: #0e7490;
-  --ok: #15803d;
-}
-
+/* Black and neon. <html> carries .dark too, so components' dark: variants apply. */
+:root,
 .dark {
   color-scheme: dark;
   --background: #000000;
@@ -39,19 +14,21 @@
   --card-foreground: #f5f5f5;
   --popover: #111111;
   --popover-foreground: #f5f5f5;
-  --primary: #f5f5f5;
+  --primary: #e5ff00;
   --primary-foreground: #000000;
   --secondary: #1c1c1c;
   --secondary-foreground: #f5f5f5;
   --muted: #1c1c1c;
-  --muted-foreground: #8f8f8f;
+  --muted-foreground: #a3a3a3;
   --accent: #1c1c1c;
   --accent-foreground: #f5f5f5;
   --destructive: oklch(0.704 0.191 22.216);
   --border: #2a2a2a;
-  --input: #2a2a2a;
-  --ring: #4cc9f0;
-  --brand: #4cc9f0;
+  --input: #333333;
+  --ring: #e5ff00;
+  --radius: 0.75rem;
+  /* App-specific: the neon highlight and the "done" green. */
+  --brand: #e5ff00;
   --ok: #4ade80;
 }
 
@@ -76,7 +53,7 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-ok: var(--ok);
-  --font-sans: var(--font-geist), var(--font-kanit), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: var(--font-inter), var(--font-kanit), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-heading: var(--font-sans);
   /* Keep Tailwind's default radius steps; the app's rounded-2xl/3xl cards depend on them. */
   --radius-sm: 0.25rem;
@@ -116,10 +93,13 @@
   scrollbar-width: none;
 }
 
-/* Leaflet, matched to the light theme */
+/* Leaflet, matched to the theme */
 .leaflet-container {
   background: var(--card);
   font-family: var(--font-sans);
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: inherit;
 }
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
@@ -217,9 +197,26 @@
   display: none;
 }
 
-/* Big headlines: heavier and tighter than body text. */
+/* Big headlines: heavy, condensed capitals. Anton has one weight, so 700 only picks
+   Kanit's bold for Thai; font-synthesis stops the browser thickening Anton. */
 @utility font-display {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  letter-spacing: -0.04em;
+  font-family: var(--font-anton), var(--font-kanit), system-ui, sans-serif;
+  font-weight: 700;
+  font-synthesis: none;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+/* A solid label that marks the start of a section. */
+@utility tag {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background: var(--brand);
+  color: var(--primary-foreground);
+  font-family: var(--font-anton), var(--font-kanit), system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  font-synthesis: none;
+  line-height: 1;
+  text-transform: uppercase;
 }

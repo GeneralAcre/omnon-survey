@@ -319,7 +319,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
               key={s}
               aria-label={t(s)}
               onClick={() => data.plotNo.trim() && data.group && setStep(i)}
-              className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-foreground" : "bg-border"}`}
+              className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-primary" : "bg-border"}`}
             />
           ))}
         </div>
@@ -543,7 +543,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                         variant={on ? "default" : "outline"}
                         aria-pressed={on}
                         onClick={() => update({ occupancy: o.id })}
-                        className={cn("h-auto min-h-12 rounded-2xl px-2 py-2 text-[15px] leading-tight whitespace-normal", on ? "border-foreground hover:bg-foreground" : "bg-card dark:bg-card")}
+                        className={cn("h-auto min-h-12 rounded-2xl px-2 py-2 text-[15px] leading-tight whitespace-normal", on ? "border-primary hover:bg-primary" : "bg-card dark:bg-card")}
                       >
                         {L(o.label)}
                       </Button>
@@ -563,7 +563,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                       variant={data.jacked === j.id ? "default" : "outline"}
                       aria-pressed={data.jacked === j.id}
                       onClick={() => update({ jacked: j.id })}
-                      className={cn("h-12 rounded-2xl text-[15px]", data.jacked === j.id ? "border-foreground hover:bg-foreground" : "bg-card dark:bg-card")}
+                      className={cn("h-12 rounded-2xl text-[15px]", data.jacked === j.id ? "border-primary hover:bg-primary" : "bg-card dark:bg-card")}
                     >
                       {L(j.label)}
                     </Button>
@@ -1030,7 +1030,7 @@ function ShotCard({
                 >
                   <span className="relative">
                     <IconCamera className="size-7" />
-                    <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-foreground p-0.5 text-background" />
+                    <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-primary p-0.5 text-background" />
                   </span>
                   {t("takeAnother")}
                 </button>

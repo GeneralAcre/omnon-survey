@@ -9,7 +9,7 @@ import { GROUPS, allPhotos } from "@/lib/schema";
 import { plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
-import { BuildingBox, box, boxGrid } from "./BuildingBox";
+import { BuildingBox, box, boxGrid, boxPad } from "./BuildingBox";
 import { useRecords } from "./data";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
@@ -70,17 +70,19 @@ export default function Landing() {
       <section className="relative isolate min-h-[32rem] overflow-hidden bg-black text-white sm:min-h-[38rem] lg:min-h-[min(78svh,52rem)]">
         <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/15 to-black/10" />
-        <div className={cn(wrap, "flex min-h-[32rem] flex-col justify-end pb-10 pt-16 sm:min-h-[38rem] sm:pb-14 lg:min-h-[min(78svh,52rem)] lg:pb-16")}>
+        <div className={cn(wrap, "flex min-h-[32rem] flex-col justify-end pb-10 pt-16 sm:min-h-[38rem] sm:pb-14 lg:min-h-[min(78svh,52rem)] lg:pb-10")}>
           <p className="tag mb-4 self-start">Adaptive futures for Khlong Om Non</p>
-          <h1 className="max-w-5xl font-display text-7xl leading-[0.95] text-white sm:text-8xl lg:text-[11rem]">Fluid Heritage</h1>
-          {/* The main thing a visitor here should do. */}
-          <Link
-            href="/new"
-            className="mt-8 inline-flex h-14 w-full items-center justify-center gap-2 self-start rounded-full bg-primary px-7 text-base font-semibold text-primary-foreground shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition hover:bg-primary/90 active:scale-95 sm:w-auto"
-          >
-            <IconPlus className="size-5" />
-            {t("addBuilding")}
-          </Link>
+          {/* Wide screens: the title along the bottom left, the main action across from it. */}
+          <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
+            <h1 className="font-display text-7xl leading-[0.95] text-white sm:text-8xl lg:text-[11rem]">Fluid Heritage</h1>
+            <Link
+              href="/new"
+              className="mt-8 inline-flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-7 text-base font-semibold text-primary-foreground shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition hover:bg-primary/90 active:scale-95 sm:w-auto lg:mt-0 lg:mb-4"
+            >
+              <IconPlus className="size-5" />
+              {t("addBuilding")}
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -182,7 +184,7 @@ export default function Landing() {
             ))}
             {/* The one coloured box in the grid. */}
             <li>
-              <Link href="/new" className={cn(box, "h-full justify-between bg-brand text-primary-foreground transition-opacity hover:opacity-90")}>
+              <Link href="/new" className={cn(box, boxPad, "h-full justify-between bg-brand text-primary-foreground transition-opacity hover:opacity-90")}>
                 <span className="font-display text-3xl leading-none sm:text-5xl">{t("addBuilding")}</span>
                 <IconPlus className="size-7 sm:size-9" />
               </Link>

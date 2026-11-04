@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
-import { GROUPS, allPhotos } from "@/lib/schema";
+import { GROUPS, IMAGE_SLOTS, allPhotos } from "@/lib/schema";
 import { plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
@@ -13,12 +13,19 @@ import { BuildingBox, box, boxGrid, boxPad } from "./BuildingBox";
 import { useRecords } from "./data";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
+import Timeline from "./Timeline";
 import omnon from "@/public/omnon.jpg";
 
 // Compact pills, like the top bar of an editorial site; still a comfortable tap.
 const pill = "h-11 rounded-full px-5 text-sm font-semibold";
 const wrap = "mx-auto w-full max-w-[96rem] px-5 sm:px-8";
 const eyebrow = "tag";
+
+const THEMES = [
+  { en: "Adaptation", th: "การปรับตัว" },
+  { en: "Continuity", th: "ความต่อเนื่อง" },
+  { en: "Interdisciplinary", th: "สหวิทยาการ" },
+];
 
 // Leaflet touches `window`, so the map only loads in the browser.
 const StudyMap = dynamic(() => import("./StudyMap"), {
@@ -52,17 +59,6 @@ export default function Landing() {
               khlong <span className="font-semibold">om non</span>
             </span>
           </Link>
-          <div className="hidden items-center gap-7 text-sm text-foreground/75 md:flex">
-            <Link href="/survey" className="hover:text-foreground">
-              {t("records")}
-            </Link>
-            <a href="#zones" className="hover:text-foreground">
-              {L({ en: "Zones", th: "โซน" })}
-            </a>
-            <Link href="/about" className="hover:text-foreground">
-              {t("about")}
-            </Link>
-          </div>
           <LangToggle />
         </div>
       </nav>
@@ -86,7 +82,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* A taste of the history, with the full timeline on /about. */}
+      {/* The history, with the full timeline just below. */}
       <section className="bg-brand text-primary-foreground">
         <div className={cn(wrap, "grid gap-6 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
           <p className="font-display text-8xl leading-none sm:text-9xl">1636</p>
@@ -98,24 +94,44 @@ export default function Landing() {
                 th: "คลองอ้อมนนท์เคยเป็นเส้นทางหลักของแม่น้ำเจ้าพระยา เมื่อมีการขุดคลองลัดตัดคุ้งน้ำ แม่น้ำจึงเปลี่ยนเส้นทาง และคุ้งเดิมกลายเป็นภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่เต็มไปด้วยวัด สวนผลไม้ และเรือนริมน้ำ",
               })}
             </p>
-            <Link href="/about" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold hover:underline">
-              {L({ en: "Read the full timeline", th: "อ่านลำดับเหตุการณ์ทั้งหมด" })} <IconNext className="size-4" />
-            </Link>
           </div>
         </div>
       </section>
 
-      <section className={cn(wrap, "grid gap-7 py-9 sm:py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-center md:gap-12 lg:py-16")}>
-        <p className="max-w-3xl text-xl leading-snug tracking-tight sm:text-2xl">
-          A field study along the water.
-        </p>
+      <section className={cn(wrap, "pt-16 sm:pt-24")}>
+        <p className={eyebrow}>{L({ en: "Timeline", th: "ลำดับเหตุการณ์" })}</p>
+        <div className="mt-6">
+          <Timeline className="-mx-5 px-2 sm:-mx-8 sm:px-5" />
+        </div>
+      </section>
+
+      {/* What the workshop is. */}
+      <section className={cn(wrap, "grid gap-8 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
         <div>
-          <p className="text-[15px] leading-relaxed text-muted-foreground">
+          <p className={eyebrow}>{t("about")}</p>
+          <h2 className="mt-4 font-display text-5xl leading-[1.05] sm:text-6xl">
+            {THEMES.map((theme) => (
+              <span key={theme.en} className="block">
+                {L(theme)}
+              </span>
+            ))}
+          </h2>
+        </div>
+        <div className="md:self-end">
+          <p className="text-[15px] leading-relaxed text-muted-foreground sm:text-base">
             {L({
-              en: "An architectural field study of a 17.5 km cultural landscape shaped by water, settlement and everyday life.",
-              th: "An architectural field study of a 17.5 km cultural landscape shaped by water, settlement and everyday life.",
+              en: "Fluid Heritage is a joint workshop between Xi'an University of Architecture and Technology and the Faculty of Architecture, Chulalongkorn University. It is an architectural field study of a 17.5 km cultural landscape shaped by water, settlement and everyday life.",
+              th: "Fluid Heritage เป็นเวิร์กช็อปร่วมระหว่าง Xi'an University of Architecture and Technology และคณะสถาปัตยกรรมศาสตร์ จุฬาลงกรณ์มหาวิทยาลัย เป็นการศึกษาภาคสนามทางสถาปัตยกรรมของภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่หล่อหลอมจากสายน้ำ การตั้งถิ่นฐาน และวิถีชีวิตประจำวัน",
             })}
           </p>
+          <p className="mt-6 text-sm font-semibold">{t("stepPhotos")}</p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {IMAGE_SLOTS.map((slot) => (
+              <li key={slot.key} className="rounded-full bg-secondary px-3 py-1.5 text-sm">
+                {L(slot.label)}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -139,6 +155,9 @@ export default function Landing() {
             </div>
           ))}
         </dl>
+        <Link href="/survey" className="mt-8 inline-flex items-center gap-1 text-sm font-semibold hover:underline">
+          {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />
+        </Link>
       </section>
 
       {/* The three zones beside the study-area map. */}

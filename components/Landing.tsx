@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
-import { GROUPS, IMAGE_SLOTS, allPhotos } from "@/lib/schema";
+import { GROUPS, allPhotos } from "@/lib/schema";
 import { plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
-import { BuildingBox, box, boxGrid, boxPad } from "./BuildingBox";
+import { BOX_PAGE, BuildingBox, SeeMore, box, boxGrid, boxPad } from "./BuildingBox";
 import { useRecords } from "./data";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
@@ -39,6 +39,7 @@ export default function Landing() {
   const { records } = useRecords();
   const all = records ?? [];
   const [zone, setZone] = useState<string>();
+  const [limit, setLimit] = useState(BOX_PAGE);
 
   const stats = [
     { label: t("records"), n: all.length },
@@ -47,8 +48,8 @@ export default function Landing() {
     { label: t("statSurveyors"), n: new Set(all.flatMap((r) => [r.createdBy.name, ...allPhotos(r).map((p) => p.by)])).size },
   ];
 
-  // Newest first (records arrive sorted by last update); seven plus the "add" box fill two rows.
-  const recent = all.filter((r) => allPhotos(r).length > 0).slice(0, 7);
+  // Newest first (records arrive sorted by last update). The "add" box takes the last spot of the limit.
+  const recent = all.filter((r) => allPhotos(r).length > 0);
 
   return (
     <main className="flex-1">
@@ -124,14 +125,6 @@ export default function Landing() {
               th: "Fluid Heritage เป็นเวิร์กช็อปร่วมระหว่าง Xi'an University of Architecture and Technology และคณะสถาปัตยกรรมศาสตร์ จุฬาลงกรณ์มหาวิทยาลัย เป็นการศึกษาภาคสนามทางสถาปัตยกรรมของภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่หล่อหลอมจากสายน้ำ การตั้งถิ่นฐาน และวิถีชีวิตประจำวัน",
             })}
           </p>
-          <p className="mt-6 text-sm font-semibold">{t("stepPhotos")}</p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {IMAGE_SLOTS.map((slot) => (
-              <li key={slot.key} className="rounded-full bg-secondary px-3 py-1.5 text-sm">
-                {L(slot.label)}
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
@@ -196,7 +189,7 @@ export default function Landing() {
           <p className={eyebrow}>{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
           <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
           <ul className={cn(boxGrid, "mt-8 grid-cols-2 lg:grid-cols-4")}>
-            {recent.map((r) => (
+            {recent.slice(0, limit - 1).map((r) => (
               <li key={r.id}>
                 <BuildingBox r={r} />
               </li>
@@ -209,6 +202,7 @@ export default function Landing() {
               </Link>
             </li>
           </ul>
+          {recent.length + 1 > limit && <SeeMore onClick={() => setLimit((n) => n + BOX_PAGE)} />}
         </section>
       )}
 
@@ -218,8 +212,8 @@ export default function Landing() {
             <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "Help document Khlong Om Non", th: "ร่วมบันทึกคลองอ้อมนนท์" })}</h2>
             <p className="mt-2">
               {L({
-                en: "Add a building with its photos, colours, flood lines and location.",
-                th: "เพิ่มอาคาร พร้อมภาพถ่าย สี ระดับน้ำท่วม และตำแหน่ง",
+                en: "Add a building with its photos, flood lines and location.",
+                th: "เพิ่มอาคาร พร้อมภาพถ่าย ระดับน้ำท่วม และตำแหน่ง",
               })}
             </p>
           </div>

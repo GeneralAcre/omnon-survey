@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GROUPS, IMAGE_SLOTS } from "@/lib/schema";
+import { GROUPS, SHOTS } from "@/lib/schema";
 import { useT } from "./app-state";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ export default function About() {
       <section className="mt-8 px-5 sm:px-6 lg:px-8">
         <h2 className="font-bold">{t("stepPhotos")}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          {IMAGE_SLOTS.map((s) => (
+          {SHOTS.map((s) => (
             <span key={s.key} className="rounded-full bg-secondary px-3 py-1.5 text-sm">
               {L(s.label)}
             </span>
@@ -62,8 +62,8 @@ export default function About() {
           <h2 className="text-xl font-bold sm:text-2xl">{L({ en: "Add to the survey", th: "ร่วมเพิ่มข้อมูลการสำรวจ" })}</h2>
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {L({
-              en: "Record a building: its photos, colours, flood lines and location.",
-              th: "บันทึกอาคาร ทั้งภาพถ่าย สี ระดับน้ำท่วม และตำแหน่ง",
+              en: "Record a building: its photos, flood lines and location.",
+              th: "บันทึกอาคาร ทั้งภาพถ่าย ระดับน้ำท่วม และตำแหน่ง",
             })}
           </p>
         </div>

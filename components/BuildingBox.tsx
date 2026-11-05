@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { allPhotos, functionLabel, groupColor, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
@@ -12,6 +13,20 @@ import { photoUrl, retryImage } from "./images";
 export const boxGrid = "grid gap-1.5 sm:gap-2";
 export const box = "flex aspect-[4/5] flex-col";
 export const boxPad = "p-2.5 sm:p-4";
+// Column counts that divide evenly into a page, so "See more" never leaves a part-filled
+// row. The survey list sits beside the map from lg up, hence two columns there.
+export const boxCols = "grid-cols-2 md:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4";
+// Boxes a gallery shows at first, and adds on each "See more".
+export const BOX_PAGE = 8;
+
+export function SeeMore({ onClick }: { onClick: () => void }) {
+  const { t } = useT();
+  return (
+    <Button variant="secondary" size="xl" onClick={onClick} className="mt-4 w-full">
+      {t("seeMore")}
+    </Button>
+  );
+}
 
 // One building in its own box: the photo fills the top edge to edge, details below.
 export function BuildingBox({ r, highlight = false }: { r: SurveyRecord; highlight?: boolean }) {

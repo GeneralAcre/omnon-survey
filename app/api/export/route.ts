@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { listRecords } from "@/lib/store";
-import { IMAGE_SLOTS, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyCode, typeLabel } from "@/lib/schema";
+import { SHOTS, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyCode, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { readPhoto } from "@/lib/photos";
 import { imageInfo, xlsxStream, type XlsxImage } from "@/lib/xlsx";
@@ -45,8 +45,7 @@ export async function GET(request: Request) {
     "Build Year",
     "Building Age (years)",
     "Floors",
-    ...IMAGE_SLOTS.flatMap((s) => [`${s.label.en} (photos)`, `${s.label.en} (taken by)`, `${s.label.en} (note)`]),
-    "Color Swatches",
+    ...SHOTS.flatMap((s) => [`${s.label.en} (photos)`, `${s.label.en} (taken by)`, `${s.label.en} (note)`]),
     "Function",
     "การใช้งาน",
     "Anyone living here (2 yes, 1 no, 0 not sure)",
@@ -70,7 +69,7 @@ export async function GET(request: Request) {
     r.buildYear ?? "",
     r.buildAge ?? "",
     r.floors ?? "",
-    ...IMAGE_SLOTS.flatMap((s) => {
+    ...SHOTS.flatMap((s) => {
       const photos = r.images[s.key]?.photos ?? [];
       return [
         photos.map((p, i) => `${url.origin}/api/photos/${p.file}?download=${encodeURIComponent(photoFileName(r, s.key, i, p))}`).join("\n"),
@@ -79,7 +78,6 @@ export async function GET(request: Request) {
         [r.images[s.key]?.note, ...photos.map((p, i) => p.note && `#${i + 1} ${p.note}`)].filter(Boolean).join("\n"),
       ];
     }),
-    r.colors.join(" "),
     functionLabel(r, "en"),
     functionLabel(r, "th"),
     occupancyCode(r.occupancy ?? ""),
@@ -95,12 +93,12 @@ export async function GET(request: Request) {
     r.updatedAt,
   ]);
   if (format === "xlsx") {
-    const firstSlotCol = header.indexOf(`${IMAGE_SLOTS[0].label.en} (photos)`);
-    const slotCols = IMAGE_SLOTS.map((_, i) => firstSlotCol + i * 3);
+    const firstSlotCol = header.indexOf(`${SHOTS[0].label.en} (photos)`);
+    const slotCols = SHOTS.map((_, i) => firstSlotCol + i * 3);
 
     // Thumbnails (480px), a few at a time; full photos would make the file huge.
     const jobs = records.flatMap((r, ri) =>
-      IMAGE_SLOTS.flatMap((s, si) => (r.images[s.key]?.photos ?? []).map((p, pi) => ({ r, ri, si, pi, p }))),
+      SHOTS.flatMap((s, si) => (r.images[s.key]?.photos ?? []).map((p, pi) => ({ r, ri, si, pi, p }))),
     );
     const thumbs = new Array<Uint8Array | null>(jobs.length);
     let next = 0;
@@ -137,7 +135,7 @@ export async function GET(request: Request) {
         y: GAP + Math.floor(pi / PER_ROW) * (BOX + GAP) + (BOX - h) / 2,
         w,
         h,
-        name: photoFileName(r, IMAGE_SLOTS[si].key, pi, p),
+        name: photoFileName(r, SHOTS[si].key, pi, p),
         link,
       });
     });
@@ -145,7 +143,7 @@ export async function GET(request: Request) {
     const colWidths = header.map((h, c) => {
       const slot = slotCols.indexOf(c);
       if (slot >= 0) {
-        const most = Math.max(0, ...records.map((r) => r.images[IMAGE_SLOTS[slot].key]?.photos.length ?? 0));
+        const most = Math.max(0, ...records.map((r) => r.images[SHOTS[slot].key]?.photos.length ?? 0));
         return Math.max(120, GAP + Math.min(most, PER_ROW) * (BOX + GAP));
       }
       const longest = Math.max(...[h, ...cells.map((row) => row[c])].flatMap((v) => v.split("\n")).map((l) => l.length));
@@ -154,7 +152,7 @@ export async function GET(request: Request) {
     const rowHeights = [
       undefined,
       ...records.map((r) => {
-        const most = Math.max(0, ...IMAGE_SLOTS.map((s) => r.images[s.key]?.photos.length ?? 0));
+        const most = Math.max(0, ...SHOTS.map((s) => r.images[s.key]?.photos.length ?? 0));
         return most ? GAP + Math.ceil(most / PER_ROW) * (BOX + GAP) : undefined;
       }),
     ];

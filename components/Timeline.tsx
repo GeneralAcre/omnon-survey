@@ -104,7 +104,6 @@ export default function Timeline({ className }: { className?: string }) {
           </li>
         ))}
       </ol>
-      <p className="mt-6 px-5 text-center text-xs text-muted-foreground sm:px-6 lg:px-8">{L({ en: "Schematic diagrams, not to scale.", th: "แผนภาพแสดงแนวคิด ไม่ได้มาตราส่วน" })}</p>
     </div>
   );
 }

@@ -77,10 +77,12 @@ export function occupancyLabel(r: Pick<SurveyRecord, "occupancy">, lang: Lang) {
   return OCCUPANCY.find((o) => o.id === occupancyCode(r.occupancy))?.label[lang] ?? "";
 }
 
-// Most photos one shot can hold (8 shots, so up to 160 per building).
+// Most photos one shot can hold.
 export const MAX_PHOTOS_PER_SHOT = 20;
 
-// The 8 shots every record asks for, in survey-sheet order.
+// Every photo slot a record can store, in survey-sheet order. The survey no longer
+// asks for Color scheme, but saving rebuilds images from this list, so it stays here
+// or photos already saved under it would be lost the next time a building is edited.
 export const IMAGE_SLOTS = [
   { key: "front", label: { en: "Front", th: "ด้านหน้า" }, hint: { en: "Whole building from the canal or street", th: "ถ่ายทั้งหลังจากฝั่งคลองหรือถนน" } },
   // Keys stay elevationA/B/rear so saved photos keep their shot; only the names changed.
@@ -92,6 +94,9 @@ export const IMAGE_SLOTS = [
   { key: "specialElements", label: { en: "Special elements", th: "องค์ประกอบพิเศษ" }, hint: { en: "Stairs to water, piers, shrines…", th: "บันไดลงน้ำ ท่าน้ำ ศาลพระภูมิ…" } },
   { key: "colorScheme", label: { en: "Color scheme", th: "โทนสี" }, hint: { en: "Main colours of the building", th: "สีหลักของอาคาร" } },
 ] as const satisfies readonly { key: string; label: Label; hint: Label }[];
+
+// The shots the survey asks for and shows.
+export const SHOTS = IMAGE_SLOTS.filter((s) => s.key !== "colorScheme");
 
 export type ImageSlotKey = (typeof IMAGE_SLOTS)[number]["key"];
 
@@ -290,7 +295,7 @@ export function allPhotos(r: Pick<SurveyRecord, "images">) {
 }
 
 export function shotsDone(r: Pick<SurveyRecord, "images">) {
-  return IMAGE_SLOTS.filter((s) => (r.images[s.key]?.photos.length ?? 0) > 0).length;
+  return SHOTS.filter((s) => (r.images[s.key]?.photos.length ?? 0) > 0).length;
 }
 
 const num = (v: unknown, min: number, max: number) =>

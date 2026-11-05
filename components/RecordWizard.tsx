@@ -11,7 +11,7 @@ import {
   OCCUPANCY,
   MAX_PHOTOS_PER_SHOT,
   PHOTO_NOTE_SLOTS,
-  IMAGE_SLOTS,
+  SHOTS,
   allPhotos,
   buildYearAge,
   coordsFromLink,
@@ -43,13 +43,12 @@ import { useT, useUser } from "./app-state";
 import ConfirmDialog from "./ConfirmDialog";
 import { LangToggle } from "./Shell";
 import { saveRecord, useRecords } from "./data";
-import { photoUrl, pixelUrl, retryImage } from "./images";
-import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPalette, IconPin, IconPlus, IconX } from "./Icons";
-import ColorSampler from "./ColorSampler";
+import { photoUrl, retryImage } from "./images";
+import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPin, IconPlus, IconX } from "./Icons";
 import JackedDiagram from "./JackedDiagram";
 import { addPhotos, discardContext, finishUpload, handBack, handOff, release, retryUpload, useUploads, type Upload } from "./uploads";
 
-const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "stepColors", "stepReview"] as const;
+const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "notes", "stepReview"] as const;
 
 // "Survey" on the study map opens /new?plot=Z01L-16A. The wizard only renders
 // in the browser (after the surveyor is known), so `window` is there.
@@ -80,8 +79,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const [error, setError] = useState("");
   const [draftRestored, setDraftRestored] = useState(false);
   const [justSaved, setJustSaved] = useState<{ id: string; plotNo: string; photos: number } | null>(null);
-  const [sampling, setSampling] = useState<string | null>(null);
-  const [colourFrom, setColourFrom] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -131,16 +128,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     dirty.current = true;
     setData((d) => {
       const next = { ...d, images: { ...d.images, [key]: fn(d.images[key]) } };
-      persist(next);
-      return next;
-    });
-  }
-
-  // Functional updates keep rapid colour picks from overwriting one another.
-  function setColors(fn: (colors: string[]) => string[]) {
-    dirty.current = true;
-    setData((d) => {
-      const next = { ...d, colors: fn(d.colors).slice(0, 12) };
       persist(next);
       return next;
     });
@@ -287,9 +274,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     step === 2 ? Boolean(data.occupancy.trim() && data.jacked) : true;
   const isLast = step === STEPS.length - 1;
   const optionalStep = step === 1;
-  // Colour-scheme shots first, then every other photo of the building.
-  const colourPhotos = [...data.images.colorScheme.photos, ...allPhotos(data).filter((p) => p.slot !== "colorScheme")];
-  const colourFile = colourPhotos.find((p) => p.file === colourFrom)?.file ?? colourPhotos[0]?.file;
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background">
@@ -628,9 +612,9 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
           {step === 3 && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                {shotsDone(data)}/{IMAGE_SLOTS.length} {t("shots")} · {t("multiHint")}
+                {shotsDone(data)}/{SHOTS.length} {t("shots")} · {t("multiHint")}
               </p>
-              {IMAGE_SLOTS.map((s, i) => (
+              {SHOTS.map((s, i) => (
                 <ShotCard
                   key={s.key}
                   index={i + 1}
@@ -656,63 +640,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
           {step === 4 && (
             <div className="space-y-7">
               <section>
-                <h2 className="flex items-center gap-2 font-semibold">
-                  <IconPalette /> {L(IMAGE_SLOTS[7].label)}
-                </h2>
-                {colourPhotos.length > 0 && colourFile ? (
-                  <>
-                    <p className="mt-1 text-sm text-muted-foreground">{t("pickFromPhoto")}</p>
-                    <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 py-1">
-                      {colourPhotos.map((p) => (
-                        <button
-                          key={p.file}
-                          onClick={() => setColourFrom(p.file)}
-                          aria-pressed={p.file === colourFile}
-                          className={cn(
-                            "ml-1 h-20 w-20 shrink-0 overflow-hidden rounded-xl transition",
-                            p.file === colourFile ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : "opacity-60",
-                          )}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={photoUrl(p.file, "thumb")} onError={retryImage} alt="" className="h-full w-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <Button variant="link" onClick={() => setSampling(colourFile)} className="h-auto p-0 text-sm text-brand">
-                        {t("pickByHand")}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <p className="mt-1 text-sm text-muted-foreground">{t("colorsNoPhoto")}</p>
-                )}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {data.colors.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => update({ colors: data.colors.filter((x) => x !== c) })}
-                      className="group relative h-12 w-12 rounded-xl border border-foreground/10"
-                      style={{ background: c }}
-                      aria-label={`Remove ${c}`}
-                    >
-                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-foreground">
-                        <IconX className="size-3" />
-                      </span>
-                    </button>
-                  ))}
-                  <label className="flex h-12 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-3 text-sm text-muted-foreground">
-                    <input
-                      type="color"
-                      className="h-0 w-0 opacity-0"
-                      onChange={(e) => !data.colors.includes(e.target.value) && update({ colors: [...data.colors, e.target.value].slice(0, 12) })}
-                    />
-                    + {t("addSwatch")}
-                  </label>
-                </div>
-              </section>
-              <section>
-                <FieldLabel htmlFor="notes" className="text-base font-semibold">
+                <FieldLabel htmlFor="notes" className="sr-only">
                   {t("notes")}
                 </FieldLabel>
                 <Textarea
@@ -741,11 +669,11 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{t("stepPhotos")}</span>
                   <span className="text-sm font-semibold">
-                    {shotsDone(data)}/{IMAGE_SLOTS.length}
+                    {shotsDone(data)}/{SHOTS.length}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-4 gap-1.5">
-                  {IMAGE_SLOTS.map((s) => {
+                  {SHOTS.map((s) => {
                     const p = data.images[s.key].photos[0];
                     return (
                       <div key={s.key} className="relative aspect-square overflow-hidden rounded-lg bg-secondary">
@@ -763,12 +691,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 </div>
               </button>
               <button onClick={() => setStep(4)} className="w-full rounded-2xl bg-card p-4 text-left">
-                <span className="text-sm text-muted-foreground">{t("stepColors")}</span>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {data.colors.map((c) => (
-                    <span key={c} className="h-6 w-6 rounded-md" style={{ background: c }} />
-                  ))}
-                </div>
+                <span className="text-sm text-muted-foreground">{t("notes")}</span>
                 {data.notes && <p className="mt-2 line-clamp-3 text-sm whitespace-pre-line">{data.notes}</p>}
               </button>
               <p className="pt-2 text-center text-xs text-muted-foreground">
@@ -820,15 +743,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
 
       <ConfirmDialog open={confirmLeave} onOpenChange={setConfirmLeave} title={t("discard")} confirmLabel={t("leave")} onConfirm={exit} />
 
-      {sampling && (
-        <ColorSampler
-          src={pixelUrl(sampling)}
-          colors={data.colors}
-          onAdd={(hexes) => setColors((cs) => [...cs, ...hexes.filter((h) => !cs.includes(h))])}
-          onRemove={(hex) => setColors((cs) => cs.filter((c) => c !== hex))}
-          onClose={() => setSampling(null)}
-        />
-      )}
     </div>
   );
 }

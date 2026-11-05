@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { IMAGE_SLOTS, allPhotos, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyLabel, shotsDone, typeLabel } from "@/lib/schema";
+import { SHOTS, allPhotos, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyLabel, shotsDone, typeLabel } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { cn } from "@/lib/utils";
 import { timeAgo, useT, useUser } from "./app-state";
@@ -55,7 +55,7 @@ export default function RecordDetail() {
     );
   }
 
-  const items: LightboxItem[] = IMAGE_SLOTS.flatMap((s) =>
+  const items: LightboxItem[] = SHOTS.flatMap((s) =>
     record.images[s.key].photos.map((p, i) => ({
       ...p,
       title: [record.plotNo, L(s.label), p.note].filter(Boolean).join(" · "),
@@ -138,28 +138,14 @@ export default function RecordDetail() {
           </a>
         )}
 
-        {(record.colors.length > 0 || record.notes) && (
-          <div className="rounded-2xl bg-card p-4">
-            {record.colors.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {record.colors.map((c) => (
-                  <span key={c} className="flex items-center gap-1.5 rounded-full bg-secondary py-1 pr-2.5 pl-1">
-                    <span className="h-5 w-5 rounded-full border border-foreground/10" style={{ background: c }} />
-                    <span className="font-mono text-xs text-muted-foreground">{c}</span>
-                  </span>
-                ))}
-              </div>
-            )}
-            {record.notes && <p className={`text-[15px] leading-relaxed whitespace-pre-line ${record.colors.length ? "mt-3" : ""}`}>{record.notes}</p>}
-          </div>
-        )}
+        {record.notes && <p className="rounded-2xl bg-card p-4 text-[15px] leading-relaxed whitespace-pre-line">{record.notes}</p>}
       </div>
       </div>
 
       <div className="space-y-3 px-4 pt-4 lg:px-0 lg:pt-0">
         <div className="flex items-center justify-between pt-3 lg:pt-0">
           <h2 className="text-lg font-bold">
-            {t("stepPhotos")} <span className="text-sm font-normal text-muted-foreground">{shotsDone(record)}/{IMAGE_SLOTS.length}</span>
+            {t("stepPhotos")} <span className="text-sm font-normal text-muted-foreground">{shotsDone(record)}/{SHOTS.length}</span>
           </h2>
           {items.length > 0 && (
             <a href={`/api/export/photos?id=${record.id}`} download className="flex items-center gap-1.5 text-sm text-brand">
@@ -168,7 +154,7 @@ export default function RecordDetail() {
           )}
         </div>
 
-        {IMAGE_SLOTS.map((s) => {
+        {SHOTS.map((s) => {
           const photos = record.images[s.key].photos;
           const note = record.images[s.key].note;
           return (

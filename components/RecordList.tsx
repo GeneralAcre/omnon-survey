@@ -18,7 +18,7 @@ import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
 import { IconBack, IconDownload, IconPlus, IconSearch, IconUser } from "./Icons";
 import AreaHero from "./AreaHero";
-import { BuildingBox, boxGrid } from "./BuildingBox";
+import { BOX_PAGE, BuildingBox, SeeMore, boxCols, boxGrid } from "./BuildingBox";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
 import { LangToggle } from "./Shell";
@@ -69,6 +69,7 @@ export default function RecordList() {
   // Wide screens keep the map beside the list, so there is no map tab.
   const view: View = wide && picked === "map" ? "list" : picked;
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(BOX_PAGE);
   const [exporting, setExporting] = useState(false);
   const results = useRef<HTMLDivElement>(null);
 
@@ -272,13 +273,14 @@ export default function RecordList() {
             {records && view === "list" && (
               <>
                 {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
-                <ul className={cn(boxGrid, "mt-1 grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4")}>
-                  {visible.map((r) => (
+                <ul className={cn(boxGrid, boxCols, "mt-1")}>
+                  {visible.slice(0, limit).map((r) => (
                     <li key={r.id}>
                       <BuildingBox r={r} highlight={fresh.has(r.id)} />
                     </li>
                   ))}
                 </ul>
+                {visible.length > limit && <SeeMore onClick={() => setLimit((n) => n + BOX_PAGE)} />}
               </>
             )}
             {records && view === "photos" && <PhotoFeed records={visible} />}

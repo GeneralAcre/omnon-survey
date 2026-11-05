@@ -14,7 +14,6 @@ import {
   SHOTS,
   allPhotos,
   buildYearAge,
-  coordsFromLink,
   emptyInput,
   floodLinesLabel,
   functionIds,
@@ -23,7 +22,6 @@ import {
   occupancyCode,
   occupancyLabel,
   groupOf,
-  mapsLink,
   shotsDone,
   typeLabel,
   wholeNumber,
@@ -44,7 +42,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { LangToggle } from "./Shell";
 import { saveRecord, useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
-import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPin, IconPlus, IconX } from "./Icons";
+import { IconAlert, IconBack, IconCamera, IconCheck, IconImage, IconNext, IconPlus, IconX } from "./Icons";
 import JackedDiagram from "./JackedDiagram";
 import { addPhotos, discardContext, finishUpload, handBack, handOff, release, retryUpload, useUploads, type Upload } from "./uploads";
 
@@ -79,8 +77,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const [error, setError] = useState("");
   const [draftRestored, setDraftRestored] = useState(false);
   const [justSaved, setJustSaved] = useState<{ id: string; plotNo: string; photos: number } | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [locError, setLocError] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
   const dirty = useRef(false);
   const stepRef = useRef(0);
@@ -209,28 +205,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
     setData(initial());
     setStep(0);
     setDraftRestored(false);
-  }
-
-  function useMyLocation() {
-    setLocError("");
-    if (!("geolocation" in navigator) || !window.isSecureContext) {
-      setLocError(t("locationNeedsHttps"));
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = Math.round(pos.coords.latitude * 1e6) / 1e6;
-        const lng = Math.round(pos.coords.longitude * 1e6) / 1e6;
-        update({ lat, lng, mapLink: mapsLink(lat, lng) });
-        setLocating(false);
-      },
-      () => {
-        setLocError(t("locationFailed"));
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 },
-    );
   }
 
   async function save() {
@@ -389,53 +363,6 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                     </AlertDescription>
                   </Alert>
                 )}
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{t("location")}</p>
-                <Button
-                  variant="secondary"
-                  size="xl"
-                  onClick={useMyLocation}
-                  disabled={locating}
-                  className="mt-2 min-h-14 w-full rounded-2xl"
-                >
-                  <IconPin />
-                  {locating ? t("locating") : t("useMyLocation")}
-                </Button>
-                <Input                  value={data.mapLink}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    const c = coordsFromLink(v);
-                    update({ mapLink: v, lat: c?.lat ?? null, lng: c?.lng ?? null });
-                  }}
-                  placeholder={t("pasteMapLink")}
-                  inputMode="url"
-                  autoComplete="off"
-                  className="mt-2 h-12 rounded-2xl bg-card px-4 md:text-sm"
-                />
-                {locError && <p className="mt-2 text-sm text-brand">{locError}</p>}
-                <div className="mt-2 flex items-center justify-between gap-3 text-sm">
-                  {data.mapLink ? (
-                    <>
-                      <span className="truncate text-muted-foreground">
-                        {data.lat !== null ? `${data.lat}, ${data.lng}` : t("linkSaved")}
-                      </span>
-                      <a
-                        href={/^https?:\/\//i.test(data.mapLink) ? data.mapLink : data.lat !== null ? mapsLink(data.lat, data.lng!) : "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 font-semibold text-brand"
-                      >
-                        {t("openMaps")} ↗
-                      </a>
-                    </>
-                  ) : (
-                    <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" className="text-muted-foreground underline">
-                      {t("findOnMaps")}
-                    </a>
-                  )}
-                </div>
               </div>
             </div>
           )}

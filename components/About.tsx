@@ -62,8 +62,8 @@ export default function About() {
           <h2 className="text-xl font-bold sm:text-2xl">{L({ en: "Add to the survey", th: "ร่วมเพิ่มข้อมูลการสำรวจ" })}</h2>
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             {L({
-              en: "Record a building: its photos, flood lines and location.",
-              th: "บันทึกอาคาร ทั้งภาพถ่าย ระดับน้ำท่วม และตำแหน่ง",
+              en: "Record a building: its photos and flood lines.",
+              th: "บันทึกอาคาร ทั้งภาพถ่ายและระดับน้ำท่วม",
             })}
           </p>
         </div>

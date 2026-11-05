@@ -307,7 +307,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
           </div>
           {pending.length > 0 && (
             <span className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">
-              <span className={`h-2 w-2 rounded-full ${waitingCount ? "bg-yellow-400" : "animate-pulse bg-brand"}`} />
+              <span className={`h-2 w-2 rounded-full ${waitingCount ? "bg-brand" : "animate-pulse bg-brand"}`} />
               {pending.length}
             </span>
           )}
@@ -785,7 +785,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
           {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
           {failedCount > 0 && <p className="mb-2 text-sm text-destructive">{t("badPhotoFooter")}</p>}
           {waitingCount > 0 ? (
-            <p className="mb-2 text-sm text-amber-700">
+            <p className="mb-2 text-sm text-brand">
               {waitingCount} {t("photosWaiting")}
             </p>
           ) : (
@@ -1009,7 +1009,7 @@ function ShotCard({
                       <span className="text-[10px] leading-tight text-red-300">{t("badPhoto")}</span>
                     ) : (
                       <>
-                        <span className="text-[10px] leading-tight text-yellow-300">{t("onPhone")}</span>
+                        <span className="text-[10px] leading-tight text-brand">{t("onPhone")}</span>
                         <button onClick={() => onRetry(p)} className="text-[11px] font-semibold">
                           {t("retry")}
                         </button>

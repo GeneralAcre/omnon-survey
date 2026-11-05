@@ -54,7 +54,7 @@ function BackgroundUploads() {
       role="status"
       className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+6.5rem)] left-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full bg-secondary/95 px-3.5 py-2 text-xs font-semibold shadow-lg backdrop-blur"
     >
-      <span className={`h-2 w-2 shrink-0 rounded-full ${waiting ? "bg-yellow-400" : "animate-pulse bg-brand"}`} />
+      <span className={`h-2 w-2 shrink-0 rounded-full ${waiting ? "bg-brand" : "animate-pulse bg-brand"}`} />
       {(waiting ? t("waitingBg") : t("uploadingBg")).replace("{n}", String(waiting || saved.length))}
     </div>
   );

@@ -1,4 +1,4 @@
-import { IMAGE_SLOTS, allPhotos, type ImageSlotKey, type Photo, type SurveyRecord } from "./schema";
+import { IMAGE_SLOTS, SHOTS, allPhotos, groupOf, type ImageSlotKey, type Photo, type SurveyRecord } from "./schema";
 import { safeSegment } from "./zip";
 
 // Human-readable download name, e.g. Zone2_Plot-A01_Front_1_Somchai.jpg
@@ -11,6 +11,21 @@ export function photoFileName(r: Pick<SurveyRecord, "group" | "plotNo">, slot: I
 export function slotFolder(slot: ImageSlotKey) {
   const i = IMAGE_SLOTS.findIndex((s) => s.key === slot);
   return `${String(i + 1).padStart(2, "0")}-${safeSegment(IMAGE_SLOTS[i].label.en)}`;
+}
+
+// Every photo of a building with where it belongs, so the ZIP export and the
+// Google Drive copy use the same layout:
+//   Zone-2_Housing-Estate-&-Orchard/Plot-A01/01-Front/Zone2_Plot-A01_Front_1_Somchai.jpg
+export function photoEntries(r: SurveyRecord) {
+  const zoneDir = safeSegment(`Zone-${r.group}_${groupOf(r.group)?.zone.en ?? ""}`);
+  const plotDir = `Plot-${safeSegment(r.plotNo)}`;
+  return SHOTS.flatMap((s) =>
+    (r.images[s.key]?.photos ?? []).map((photo, i) => ({
+      photo,
+      dirs: [zoneDir, plotDir, slotFolder(s.key)],
+      name: photoFileName(r, s.key, i, photo),
+    })),
+  );
 }
 
 // Photo ZIPs are split into parts of about this many photos (~400 MB), so each

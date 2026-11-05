@@ -95,8 +95,8 @@ export default function Timeline({ className }: { className?: string }) {
           <li key={e.title.en} className="flex snap-center flex-col items-center px-3 text-center">
             <StageMap stage={i} />
             <div className="relative -mx-3 mt-6 flex w-[calc(100%+1.5rem)] justify-center">
-              <span aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-current" />
-              <span className="relative rounded-full bg-brand px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-primary-foreground">{L(e.when)}</span>
+              <span aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-[#EF2300]" />
+              <span className="relative rounded-full bg-[#EF2300] px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-primary-foreground">{L(e.when)}</span>
             </div>
             <h2 className="mt-5 text-sm font-semibold">{L(e.title)}</h2>
             {e.who && <p className="mt-0.5 text-xs text-muted-foreground">{L(e.who)}</p>}

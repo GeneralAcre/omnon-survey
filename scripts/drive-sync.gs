@@ -16,6 +16,13 @@ function setup() {
 }
 
 function syncPhotos() {
+  // Two runs at once would copy the same photos twice, so the later one exits.
+  // Google releases the lock when the run ends.
+  if (!LockService.getScriptLock().tryLock(0)) {
+    console.log("Another run is still going; skipping this one");
+    return;
+  }
+
   const started = Date.now();
   const root = DriveApp.getFolderById(FOLDER_ID);
   const log = syncedLog(root);

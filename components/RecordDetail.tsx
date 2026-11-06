@@ -67,7 +67,7 @@ export default function RecordDetail() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 pb-32">
+    <main className="mx-auto w-full max-w-6xl flex-1 pb-32 lg:max-w-[96rem]">
       <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/85 px-2 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 backdrop-blur-xl sm:px-4 lg:px-6">
         <Link href="/survey" aria-label={t("backToList")} className={buttonVariants({ variant: "ghost", size: "icon-xl" })}>
           <IconBack />

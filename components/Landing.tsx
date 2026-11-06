@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { GROUPS, allPhotos } from "@/lib/schema";
-import { plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
 import { BOX_PAGE, BuildingBox, SeeMore, box, boxGrid, boxPad } from "./BuildingBox";
@@ -14,7 +13,9 @@ import { useRecords } from "./data";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
 import Timeline from "./Timeline";
+import chula from "@/public/Chula.webp";
 import omnon from "@/public/omnon.jpg";
+import xian from "@/public/XIan.svg";
 
 // Compact pills, like the top bar of an editorial site; still a comfortable tap.
 const pill = "h-11 rounded-full px-5 text-sm font-semibold";
@@ -40,13 +41,6 @@ export default function Landing() {
   const all = records ?? [];
   const [zone, setZone] = useState<string>();
   const [limit, setLimit] = useState(BOX_PAGE);
-
-  const stats = [
-    { label: t("records"), n: all.length },
-    { label: t("viewPhotos"), n: all.reduce((n, r) => n + allPhotos(r).length, 0) },
-    { label: t("statMapped"), n: all.filter((r) => r.lat != null || plotOf(r).length > 0).length },
-    { label: t("statSurveyors"), n: new Set(all.flatMap((r) => [r.createdBy.name, ...allPhotos(r).map((p) => p.by)])).size },
-  ];
 
   // Newest first (records arrive sorted by last update). The "add" box takes the last spot of the limit.
   const recent = all.filter((r) => allPhotos(r).length > 0);
@@ -130,28 +124,14 @@ export default function Landing() {
 
       {/* The partners, set like a logo strip. */}
       <div className="border-y border-border">
-        <div className={cn(wrap, "flex flex-wrap items-center justify-center gap-x-10 gap-y-3 py-5 text-muted-foreground sm:justify-between")}>
-          <span className="text-xs tracking-[0.2em] uppercase">{L({ en: "In collaboration", th: "ความร่วมมือ" })}</span>
-          <span className="text-lg font-semibold tracking-tight">Xi&apos;an University of Architecture and Technology</span>
-          <span className="text-lg font-semibold tracking-tight">Chulalongkorn University</span>
+        <div className={cn(wrap, "flex flex-col items-center gap-8 py-12 text-muted-foreground sm:gap-10 sm:py-16 lg:py-20")}>
+          <span className="text-sm tracking-[0.2em] uppercase">{L({ en: "In collaboration", th: "ความร่วมมือ" })}</span>
+          <div className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-56">
+            <Image src={xian} alt="Xi'an University of Architecture and Technology" className="h-32 w-auto sm:h-48 lg:h-64" />
+            <Image src={chula} alt="Chulalongkorn University" className="h-32 w-auto sm:h-48 lg:h-64" />
+          </div>
         </div>
       </div>
-
-      {/* The survey so far, live from the database. */}
-      <section className={cn(wrap, "py-16 sm:py-24")}>
-        <p className={eyebrow}>{L({ en: "The survey so far", th: "ผลการสำรวจจนถึงตอนนี้" })}</p>
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.label} className="flex flex-col-reverse gap-2 border-t border-border pt-5">
-              <dt className="text-sm text-muted-foreground">{s.label}</dt>
-              <dd className="font-display text-5xl leading-none tabular-nums sm:text-6xl">{records ? s.n.toLocaleString() : "–"}</dd>
-            </div>
-          ))}
-        </dl>
-        <Link href="/survey" className="mt-8 inline-flex items-center gap-1 text-sm font-semibold hover:underline">
-          {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />
-        </Link>
-      </section>
 
       {/* The three zones beside the study-area map. */}
       <section id="zones" className="scroll-mt-20 bg-card py-16 sm:py-24">
@@ -180,6 +160,9 @@ export default function Landing() {
                 </li>
               ))}
             </ol>
+            <Link href="/survey" className={cn(buttonVariants(), pill, "mt-6 gap-1.5")}>
+              {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />
+            </Link>
           </div>
         </div>
       </section>

@@ -14,10 +14,10 @@ export const boxGrid = "grid gap-1.5 sm:gap-2";
 export const box = "flex aspect-[4/5] flex-col";
 export const boxPad = "p-2.5 sm:p-4";
 // Column counts that divide evenly into a page, so "See more" never leaves a part-filled
-// row. The survey list sits beside the map from lg up, hence two columns there.
-export const boxCols = "grid-cols-2 md:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4";
+// row. The survey list sits beside the map from lg up, hence fewer columns there.
+export const boxCols = "grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3";
 // Boxes a gallery shows at first, and adds on each "See more".
-export const BOX_PAGE = 8;
+export const BOX_PAGE = 12;
 
 export function SeeMore({ onClick }: { onClick: () => void }) {
   const { t } = useT();

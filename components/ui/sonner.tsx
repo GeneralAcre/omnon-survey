@@ -3,11 +3,11 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
-// The app is dark-only, so the theme is fixed instead of read from next-themes.
+// The app is light-only, so the theme is fixed instead of read from next-themes.
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
-      theme="dark"
+      theme="light"
       className="toaster group"
       icons={{
         success: (

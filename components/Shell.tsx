@@ -147,7 +147,7 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
             >
               <span
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold"
-                style={group === g.id ? { background: "rgba(0,0,0,0.85)", color: g.color } : { background: g.color, color: g.ink }}
+                style={group === g.id ? { background: g.ink, color: g.color } : { background: g.color, color: g.ink }}
               >
                 {g.id}
               </span>

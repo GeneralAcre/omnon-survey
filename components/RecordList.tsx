@@ -18,6 +18,7 @@ import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
 import { IconBack, IconDownload, IconPlus, IconSearch, IconUser } from "./Icons";
 import AreaHero from "./AreaHero";
+import BuildingPanel, { type MapPick } from "./BuildingPanel";
 import { BOX_PAGE, BuildingBox, SeeMore, boxCols, boxGrid } from "./BuildingBox";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
@@ -71,6 +72,8 @@ export default function RecordList() {
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(BOX_PAGE);
   const [exporting, setExporting] = useState(false);
+  // The place tapped on the map beside the list (wide screens only).
+  const [mapPick, setMapPick] = useState<MapPick | null>(null);
   const results = useRef<HTMLDivElement>(null);
 
   const openMap = () => {
@@ -115,6 +118,10 @@ export default function RecordList() {
   const zone = GROUPS.some((g) => g.id === filter) ? filter : undefined;
 
   const me = groupColor(user.group);
+
+  // Looked up each render, so live updates show and a deleted building falls back to the list.
+  const pickedRecord = mapPick?.recordId ? records?.find((r) => r.id === mapPick.recordId) : undefined;
+  const panel = wide && mapPick && (!mapPick.recordId || pickedRecord) ? mapPick : null;
 
   // Whole-survey totals, whatever the filter, for the headline numbers.
   const all = records ?? [];
@@ -198,16 +205,17 @@ export default function RecordList() {
       </div>
 
       {/* Wide screens: the list on the left, the map held beside it. */}
-      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6 lg:px-8">
-        <div className="min-w-0">
+      <div className="lg:mt-5 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-6 lg:px-8">
+        {panel && <BuildingPanel pick={panel} record={pickedRecord} onClose={() => setMapPick(null)} />}
+        <div className={cn("min-w-0", panel && "hidden")}>
           <div ref={results} className="sticky top-0 z-20 scroll-mt-0 bg-background/85 px-4 pt-3 pb-3 backdrop-blur-xl sm:px-6 lg:px-0 lg:pt-0">
-            <div className="md:flex md:items-center md:gap-3">
+            <div className="md:flex md:items-center md:gap-3 lg:block xl:flex">
               <ToggleGroup
                 aria-label={t("viewList")}
                 value={[view]}
                 onValueChange={(v) => v[0] && setView(v[0] as View)}
                 spacing={1}
-                className={cn("grid w-full rounded-2xl bg-card p-1 md:shrink-0", wide ? "grid-cols-2 md:w-[18rem]" : "grid-cols-3 md:w-[26rem]")}
+                className={cn("grid w-full rounded-2xl bg-card p-1 md:shrink-0", wide ? "grid-cols-2 xl:w-[15rem]" : "grid-cols-3 md:w-[26rem]")}
               >
                 {views.map((v) => (
                   <ToggleGroupItem
@@ -222,7 +230,7 @@ export default function RecordList() {
               </ToggleGroup>
 
               {view !== "map" && (
-                <div className="relative mt-3 md:mt-0 md:flex-1">
+                <div className="relative mt-3 md:mt-0 md:flex-1 lg:mt-3 xl:mt-0">
                   <IconSearch className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
                   <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} className="h-12 rounded-2xl bg-card pr-4 pl-11" />
                 </div>
@@ -290,7 +298,7 @@ export default function RecordList() {
 
         {wide && (
           <div className="sticky top-4 self-start">
-            <StudyMap records={visible} zone={zone} className="h-[calc(100dvh-2rem)]" />
+            <StudyMap records={visible} zone={zone} className="h-[calc(100dvh-2rem)]" onPick={setMapPick} pickOpen={!!panel} />
           </div>
         )}
       </div>

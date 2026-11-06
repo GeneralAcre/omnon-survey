@@ -34,11 +34,11 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Om Non Survey",
   description: "Field survey for the Khlong Om Non Workshop — XAUAT × Chulalongkorn University.",
-  appleWebApp: { capable: true, title: "Om Non Survey", statusBarStyle: "black" },
+  appleWebApp: { capable: true, title: "Om Non Survey", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -49,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   const r2 = r2Origin();
   if (r2) preconnect(r2);
   return (
-    <html lang="en" className={cn("dark h-full antialiased", inter.variable, anton.variable, kanit.variable)}>
+    <html lang="en" className={cn("h-full antialiased", inter.variable, anton.variable, kanit.variable)}>
       <body className="flex min-h-full flex-col">
         <Shell>{children}</Shell>
         <Toaster position="top-center" />

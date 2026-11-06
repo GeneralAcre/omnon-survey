@@ -4,11 +4,12 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { allPhotos, groupColor, mapsLink, type SurveyRecord } from "@/lib/schema";
 import { STUDY_PLOTS, STUDY_ZONES, buildingId, plotId, plotOf, type StudyPlot } from "@/lib/study-area";
 import { useT } from "./app-state";
+import type { MapPick } from "./BuildingPanel";
 import { GroupBadge } from "./GroupBadge";
 import { photoUrl, retryImage } from "./images";
 import { IconDirections, IconLocate, IconPlus, IconX } from "./Icons";
@@ -24,6 +25,8 @@ const boundsOf = (zone?: string) =>
 
 // The map stops a little past the zones (~300 m): no tiles load, and no panning, outside it.
 const AREA = boundsOf().pad(0.12);
+
+const byCode = (a: string, b: string) => a.length - b.length || a.localeCompare(b);
 
 // Records matched to plots by their plot number ("Z01L-16A"); the rest with a GPS pin stay loose.
 function matchRecords(records: SurveyRecord[]) {
@@ -44,17 +47,23 @@ function matchRecords(records: SurveyRecord[]) {
 
 // The study area on a plain light map: zone banks outlined, one dot per land plot,
 // building chips when zoomed in. Tapping one opens its buildings and survey status.
-// `preview` is a still thumbnail (no panning, no taps).
+// `preview` is a still thumbnail (no panning, no taps). With `onPick`, the buildings
+// open beside the map instead of on their own page; `pickOpen` says one still is, so
+// closing it there also clears the selection here.
 export default function StudyMap({
   records,
   zone,
   preview = false,
   className = "h-[62dvh] lg:h-[72dvh]",
+  onPick,
+  pickOpen = false,
 }: {
   records: SurveyRecord[];
   zone?: string;
   preview?: boolean;
   className?: string;
+  onPick?: (pick: MapPick | null) => void;
+  pickOpen?: boolean;
 }) {
   const { t } = useT();
   const router = useRouter();
@@ -63,9 +72,21 @@ export default function StudyMap({
   const plotsLayer = useRef<L.LayerGroup | null>(null);
   const buildingsLayer = useRef<L.LayerGroup | null>(null);
   const me = useRef<L.CircleMarker | null>(null);
-  const [picked, setPicked] = useState<{ key: string; code?: string } | null>(null);
+  const [chosen, setPicked] = useState<{ key: string; code?: string } | null>(null);
+  const picked = onPick && !pickOpen ? null : chosen;
 
   const { byPlot, loose } = useMemo(() => matchRecords(records), [records]);
+
+  // A whole plot opens its first surveyed building; a single building opens itself.
+  const pick = useCallback(
+    (p: StudyPlot, code?: string) => {
+      setPicked({ key: p.key, code });
+      const done = byPlot.get(p.key);
+      const r = code === undefined ? done?.get([...done.keys()].sort(byCode)[0]) : done?.get(code);
+      onPick?.({ id: code === undefined ? plotId(p) : buildingId(p, code), group: p.zone, code, recordId: r?.id });
+    },
+    [byPlot, onPick],
+  );
 
   useEffect(() => {
     if (!el.current || map.current) return;
@@ -90,7 +111,7 @@ export default function StudyMap({
     }).addTo(m);
 
     for (const z of STUDY_ZONES) {
-      const c = groupColor(z.zone).bg;
+      const { bg: c, fg } = groupColor(z.zone);
       L.polygon(z.ring, { color: c, weight: 1.5, opacity: 0.9, fillColor: c, fillOpacity: 0.1, interactive: false }).addTo(m);
       // "Z01 L" in the middle of each bank, until plot numbers take over.
       const ps = STUDY_PLOTS.filter((p) => p.zone === z.zone && p.side === z.side);
@@ -99,7 +120,7 @@ export default function StudyMap({
       L.marker(at, {
         interactive: false,
         keyboard: false,
-        icon: L.divIcon({ className: "sm-anchor", iconSize: [0, 0], html: `<span class="sm-zone" style="color:${c}">Z${z.zone.padStart(2, "0")} ${z.side}</span>` }),
+        icon: L.divIcon({ className: "sm-anchor", iconSize: [0, 0], html: `<span class="sm-zone" style="background:${c};color:${fg}">Z${z.zone.padStart(2, "0")} ${z.side}</span>` }),
       }).addTo(m);
     }
 
@@ -168,7 +189,7 @@ export default function StudyMap({
         title: plotId(p),
         icon: icon(`<span class="sm-dot" style="${dot}"></span><span class="sm-label">${esc(p.plot)}</span>`, isPicked ? "sm-picked" : ""),
       });
-      if (!preview) plot.on("click", () => setPicked({ key: p.key }));
+      if (!preview) plot.on("click", () => pick(p));
       plots.addLayer(plot);
 
       for (const [code, lat, lng] of p.buildings) {
@@ -180,7 +201,7 @@ export default function StudyMap({
           title: buildingId(p, code),
           icon: icon(`<span class="sm-chip" style="${style}">${esc(p.plot + code)}</span>`, isPicked && picked?.code === code ? "sm-picked" : ""),
         });
-        if (!preview) chip.on("click", () => setPicked({ key: p.key, code }));
+        if (!preview) chip.on("click", () => pick(p, code));
         buildings.addLayer(chip);
       }
     }
@@ -194,11 +215,15 @@ export default function StudyMap({
         title: r.plotNo,
         icon: icon(`<span class="sm-dot sm-loose" style="background:${c.bg}"></span><span class="sm-label">${esc(r.plotNo)}</span>`),
       });
-      if (!preview) pin.on("click", () => router.push(`/r/${r.id}`));
+      if (!preview) pin.on("click", () => {
+          if (!onPick) return router.push(`/r/${r.id}`);
+          setPicked(null);
+          onPick({ id: r.plotNo, group: r.group, recordId: r.id });
+        });
       plots.addLayer(pin);
       buildings.addLayer(L.marker([r.lat!, r.lng!], { interactive: false, icon: icon(`<span class="sm-chip" style="background:${c.bg};color:${c.fg};border-color:#000">${esc(r.plotNo)}</span>`) }));
     }
-  }, [byPlot, loose, picked, preview, router]);
+  }, [byPlot, loose, onPick, pick, picked, preview, router]);
 
   const plot = picked ? STUDY_PLOTS.find((p) => p.key === picked.key) : undefined;
 
@@ -221,17 +246,38 @@ export default function StudyMap({
           <IconLocate />
         </button>
       )}
-      {plot && <PlotCard plot={plot} code={picked?.code} surveyed={byPlot.get(plot.key)} onClose={() => setPicked(null)} />}
+      {plot && (
+        <PlotCard
+          plot={plot}
+          code={picked?.code}
+          surveyed={byPlot.get(plot.key)}
+          onOpen={onPick ? (code) => pick(plot, code) : undefined}
+          onClose={() => {
+            setPicked(null);
+            onPick?.(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function PlotCard({ plot, code, surveyed, onClose }: { plot: StudyPlot; code?: string; surveyed?: Map<string, SurveyRecord>; onClose: () => void }) {
+function PlotCard({
+  plot,
+  code,
+  surveyed,
+  onOpen,
+  onClose,
+}: {
+  plot: StudyPlot;
+  code?: string;
+  surveyed?: Map<string, SurveyRecord>;
+  onOpen?: (code: string) => void;
+  onClose: () => void;
+}) {
   const { t } = useT();
   // Letters from the map, plus any a surveyor typed that the map doesn't have.
-  const codes = [...plot.buildings.map(([c]) => c), ...[...(surveyed?.keys() ?? [])].filter((c) => !plot.buildings.some(([b]) => b === c))].sort(
-    (a, b) => a.length - b.length || a.localeCompare(b),
-  );
+  const codes = [...plot.buildings.map(([c]) => c), ...[...(surveyed?.keys() ?? [])].filter((c) => !plot.buildings.some(([b]) => b === c))].sort(byCode);
   const done = codes.filter((c) => surveyed?.has(c)).length;
   const c = groupColor(plot.zone);
 
@@ -270,17 +316,29 @@ function PlotCard({ plot, code, surveyed, onClose }: { plot: StudyPlot; code?: s
           const ring = code2 === code ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : "";
           if (r) {
             const cover = r.images.front?.photos[0] ?? allPhotos(r)[0];
+            const thumb = (
+              <>
+                {cover && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoUrl(cover.file, "thumb")} onError={retryImage} alt="" className="h-full w-full object-cover" />
+                )}
+                <span className="absolute bottom-0.5 left-0.5 rounded-md px-1 py-0.5 text-[10px] font-bold" style={{ background: c.bg, color: c.fg }}>
+                  {label}
+                </span>
+              </>
+            );
+            const box = `relative block aspect-square w-full overflow-hidden rounded-xl ${ring}`;
             return (
               <li key={code2}>
-                <Link href={`/r/${r.id}`} className={`relative block aspect-square overflow-hidden rounded-xl ${ring}`} style={{ background: c.bg }}>
-                  {cover && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photoUrl(cover.file, "thumb")} onError={retryImage} alt="" className="h-full w-full object-cover" />
-                  )}
-                  <span className="absolute bottom-0.5 left-0.5 rounded-md px-1 py-0.5 text-[10px] font-bold" style={{ background: c.bg, color: c.fg }}>
-                    {label}
-                  </span>
-                </Link>
+                {onOpen ? (
+                  <button type="button" onClick={() => onOpen(code2)} aria-label={label} className={box} style={{ background: c.bg }}>
+                    {thumb}
+                  </button>
+                ) : (
+                  <Link href={`/r/${r.id}`} className={box} style={{ background: c.bg }}>
+                    {thumb}
+                  </Link>
+                )}
               </li>
             );
           }

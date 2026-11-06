@@ -322,7 +322,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                   const g = groupOf(record?.group ?? user.group)!;
                   return (
                     <div className="mt-2 flex items-center gap-3 rounded-2xl p-3" style={{ background: g.color, color: g.ink }}>
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/85 text-lg font-bold" style={{ color: g.color }}>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.ink, color: g.color }}>
                         {g.id}
                       </span>
                       <span className="min-w-0">
@@ -850,7 +850,7 @@ function ShotCard({
                       <span className="text-[10px] leading-tight text-red-300">{t("badPhoto")}</span>
                     ) : (
                       <>
-                        <span className="text-[10px] leading-tight text-brand">{t("onPhone")}</span>
+                        <span className="text-[10px] leading-tight text-white">{t("onPhone")}</span>
                         <button onClick={() => onRetry(p)} className="text-[11px] font-semibold">
                           {t("retry")}
                         </button>

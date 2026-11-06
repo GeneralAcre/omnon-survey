@@ -119,6 +119,8 @@ const DICT = {
   bankR: { en: "Right bank (R)", th: "ฝั่งขวา (R)" },
   surveyedOf: { en: "buildings surveyed", th: "อาคารที่สำรวจแล้ว" },
   surveyThis: { en: "Survey", th: "สำรวจ" },
+  notSurveyed: { en: "Not surveyed yet", th: "ยังไม่ได้สำรวจ" },
+  openFull: { en: "Full page", th: "เปิดเต็มหน้า" },
   directions: { en: "Directions in Google Maps", th: "นำทางด้วย Google Maps" },
   locateMe: { en: "Show where I am", th: "แสดงตำแหน่งของฉัน" },
   locateFailed: { en: "Can't find your location. Allow location access and try again.", th: "หาตำแหน่งไม่ได้ อนุญาตการเข้าถึงตำแหน่งแล้วลองใหม่" },

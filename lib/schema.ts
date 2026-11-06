@@ -2,9 +2,9 @@ export type Lang = "en" | "th";
 export type Label = Record<Lang, string>;
 
 export const GROUPS = [
-  { id: "1", color: "#EF2300", ink: "#000000", label: { en: "Zone 1", th: "โซน 1" }, zone: { en: "Canal & Road Urbanization", th: "คลองกับการขยายตัวของถนน" } },
-  { id: "2", color: "#2F4D8D", ink: "#ffffff", label: { en: "Zone 2", th: "โซน 2" }, zone: { en: "Housing Estate & Orchard", th: "หมู่บ้านจัดสรรและสวนผลไม้" } },
-  { id: "3", color: "#C9184A", ink: "#ffffff", label: { en: "Zone 3", th: "โซน 3" }, zone: { en: "Cultural Heritage Enrichment", th: "มรดกทางวัฒนธรรม" } },
+  { id: "1", color: "#4F5538", ink: "#ffffff", label: { en: "Zone 1", th: "โซน 1" }, zone: { en: "Canal & Road Urbanization", th: "คลองกับการขยายตัวของถนน" } },
+  { id: "2", color: "#E88F40", ink: "#000000", label: { en: "Zone 2", th: "โซน 2" }, zone: { en: "Housing Estate & Orchard", th: "หมู่บ้านจัดสรรและสวนผลไม้" } },
+  { id: "3", color: "#CE3E1B", ink: "#ffffff", label: { en: "Zone 3", th: "โซน 3" }, zone: { en: "Cultural Heritage Enrichment", th: "มรดกทางวัฒนธรรม" } },
 ] as const satisfies readonly { id: string; color: string; ink: string; label: Label; zone: Label }[];
 
 // Group colour + readable text colour on top of it.

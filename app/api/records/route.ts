@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { ForbiddenError, createRecord, listRecords, recordChanges } from "@/lib/store";
+import { IdTakenError, createRecord, listRecords, recordChanges } from "@/lib/store";
 import { sanitizeInput, sanitizePerson, type SurveyRecord } from "@/lib/schema";
 
 // GET /api/records               → every record
@@ -28,11 +28,10 @@ export async function POST(request: Request) {
   if (!input.plotNo) return Response.json({ error: "Plot number is required" }, { status: 400 });
   // The phone may choose the id (so photos still uploading know where they go).
   const id = typeof body.id === "string" && UUID_RE.test(body.id) ? body.id.toLowerCase() : undefined;
-  // New buildings always belong to the surveyor's own group (set in createRecord).
   try {
     return Response.json(await createRecord(input, by, id), { status: 201 });
   } catch (e) {
-    if (e instanceof ForbiddenError) return Response.json({ error: "This id is already taken" }, { status: 409 });
+    if (e instanceof IdTakenError) return Response.json({ error: "This id is already taken" }, { status: 409 });
     throw e;
   }
 }

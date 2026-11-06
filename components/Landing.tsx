@@ -189,26 +189,6 @@ export default function Landing() {
         </section>
       )}
 
-      <section className={cn(wrap, "pb-16 sm:pb-24")}>
-        <div className="flex flex-col items-start gap-6 rounded-3xl bg-primary p-8 text-primary-foreground sm:p-12 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "Help document Khlong Om Non", th: "ร่วมบันทึกคลองอ้อมนนท์" })}</h2>
-            <p className="mt-2">
-              {L({
-                en: "Add a building with its photos and flood lines.",
-                th: "เพิ่มอาคาร พร้อมภาพถ่ายและระดับน้ำท่วม",
-              })}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/new" className={cn(buttonVariants({ variant: "secondary" }), pill, "gap-2")}>
-              <IconPlus className="size-4" />
-              {t("addBuilding")}
-            </Link>
-          </div>
-        </div>
-      </section>
-
     </main>
   );
 }

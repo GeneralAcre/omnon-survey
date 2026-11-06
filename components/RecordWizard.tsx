@@ -21,6 +21,7 @@ import {
   jackedLabel,
   occupancyCode,
   occupancyLabel,
+  GROUPS,
   groupOf,
   shotsDone,
   typeLabel,
@@ -31,6 +32,7 @@ import {
   type SurveyInput,
   type SurveyRecord,
 } from "@/lib/schema";
+import { parsePlotNo } from "@/lib/study-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,11 +50,17 @@ import { addPhotos, discardContext, finishUpload, handBack, handOff, release, re
 
 const STEPS = ["stepPlot", "stepType", "stepFunction", "stepPhotos", "notes", "stepReview"] as const;
 
+// A building ID names its zone (Z02L-16A is Zone 2), so the two can't disagree.
+function plotFields(plotNo: string): Partial<SurveyInput> {
+  const zone = groupOf(parsePlotNo(plotNo)?.zone ?? "");
+  return zone ? { plotNo, group: zone.id } : { plotNo };
+}
+
 // "Survey" on the study map opens /new?plot=Z01L-16A. The wizard only renders
 // in the browser (after the surveyor is known), so `window` is there.
 function fromMap(): Partial<SurveyInput> {
   const plotNo = new URLSearchParams(window.location.search).get("plot")?.slice(0, 50);
-  return plotNo ? { plotNo } : {};
+  return plotNo ? plotFields(plotNo) : {};
 }
 
 function fromRecord(record: SurveyRecord): SurveyInput {
@@ -317,22 +325,31 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
             <div className="space-y-7">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{t("group")}</p>
-                {/* Buildings belong to the surveyor's group (option B), so this is fixed. */}
-                {(() => {
-                  const g = groupOf(record?.group ?? user.group)!;
-                  return (
-                    <div className="mt-2 flex items-center gap-3 rounded-2xl p-3" style={{ background: g.color, color: g.ink }}>
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.ink, color: g.color }}>
-                        {g.id}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block font-semibold">{L(g.label)}</span>
-                        <span className="block truncate text-sm opacity-80">{L(g.zone)}</span>
-                      </span>
-                    </div>
-                  );
-                })()}
-                <p className="mt-2 text-xs text-muted-foreground">{t("groupOwns")}</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {GROUPS.map((g) => {
+                    const active = data.group === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => update({ group: g.id })}
+                        aria-pressed={active}
+                        aria-label={L(g.label)}
+                        className={cn("flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 p-2 font-semibold transition active:scale-[0.98]", !active && "border-border bg-card")}
+                        style={active ? { background: g.color, borderColor: g.color, color: g.ink } : undefined}
+                      >
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                          style={active ? { background: g.ink, color: g.color } : { background: g.color, color: g.ink }}
+                        >
+                          {g.id}
+                        </span>
+                        <span className="hidden sm:inline">{L(g.label)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {groupOf(data.group) && <p className="mt-2 text-sm text-muted-foreground">{L(groupOf(data.group)!.zone)}</p>}
               </div>
               <div>
                 <FieldLabel htmlFor="plot" className="text-muted-foreground">
@@ -341,7 +358,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 <Input
                   id="plot"
                   value={data.plotNo}
-                  onChange={(e) => update({ plotNo: e.target.value })}
+                  onChange={(e) => update(plotFields(e.target.value))}
                   placeholder="Z01L-16A"
                   autoComplete="off"
                   autoCapitalize="characters"

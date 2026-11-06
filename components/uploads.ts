@@ -88,7 +88,7 @@ async function attachIfSaved(id: string) {
     attachedListeners.forEach((l) => l(record));
     return;
   }
-  if (res.status === 400 || res.status === 403 || res.status === 404) {
+  if (res.status === 400 || res.status === 404) {
     // The building is gone: hand the photo to the new-building form rather than lose it.
     set(id, { context: "new" });
     await persist(id);

@@ -52,8 +52,6 @@ export default function RecordDetail() {
   }
 
   const g = groupOf(record.group)!;
-  // Option B: only the building's own group can edit or delete it.
-  const canEdit = record.group === user.group;
 
   async function del() {
     setDeleting(true);
@@ -82,25 +80,16 @@ export default function RecordDetail() {
       </header>
 
       <BuildingDetail record={record}>
-        {canEdit && (
-          <Button variant="destructive" size="xl" onClick={() => setConfirming(true)} disabled={deleting} className="w-full">
-            <IconTrash /> {t("delete")}
-          </Button>
-        )}
+        <Button variant="destructive" size="xl" onClick={() => setConfirming(true)} disabled={deleting} className="w-full">
+          <IconTrash /> {t("delete")}
+        </Button>
       </BuildingDetail>
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6 pb-safe">
         <div className="mx-auto max-w-2xl">
-          {canEdit ? (
-            <Link href={`/r/${record.id}/edit`} className={cn(buttonVariants({ size: "xl" }), "w-full")}>
-              {t("edit")}
-            </Link>
-          ) : (
-            <div className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-secondary px-4 text-center text-sm text-muted-foreground">
-              <GroupBadge group={record.group} />
-              {t("viewOnly").replace("{n}", record.group)}
-            </div>
-          )}
+          <Link href={`/r/${record.id}/edit`} className={cn(buttonVariants({ size: "xl" }), "w-full")}>
+            {t("edit")}
+          </Link>
         </div>
       </div>
 

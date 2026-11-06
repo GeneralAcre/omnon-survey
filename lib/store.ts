@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
-import { IMAGE_SLOTS, MAX_PHOTOS_PER_SHOT, allPhotos, type ImageSlotKey, type Person, type Photo, type SurveyInput, type SurveyRecord } from "./schema";
+import { IMAGE_SLOTS, MAX_PHOTOS_PER_SHOT, allPhotos, groupOf, type ImageSlotKey, type Person, type Photo, type SurveyInput, type SurveyRecord } from "./schema";
 import { deletePhotos } from "./photos";
 
 type Backend = {
@@ -161,12 +161,8 @@ export const listRecords = () => backend().list();
 export const recordChanges = (since: string) => backend().changes(since);
 export const getRecord = (id: string) => backend().get(id);
 
-// Each group owns its buildings: only that group may edit or delete them.
-export class ForbiddenError extends Error {
-  constructor(public group: string) {
-    super(`Only Zone ${group} can change this building`);
-  }
-}
+// Someone else already saved a building under the id this phone picked.
+export class IdTakenError extends Error {}
 
 // `id` lets the phone pick the id up front, so photos still uploading know which
 // building they belong to. Sending the same save twice returns the first one.
@@ -174,12 +170,12 @@ export async function createRecord(input: SurveyInput, by: Person, id: string = 
   const existing = await backend().get(id);
   if (existing) {
     if (existing.createdBy.name === by.name && existing.createdBy.group === by.group) return existing;
-    throw new ForbiddenError(existing.group);
+    throw new IdTakenError();
   }
   const now = new Date().toISOString();
   const record: SurveyRecord = {
     ...input,
-    group: by.group,
+    group: groupOf(input.group)?.id ?? by.group,
     id,
     createdBy: by,
     updatedBy: by,
@@ -216,11 +212,10 @@ function mergePhotos(current: SurveyRecord["images"], sent: SurveyInput["images"
 export async function updateRecord(id: string, input: SurveyInput, by: Person, baseFiles?: string[]) {
   const now = new Date().toISOString();
   const result = await backend().modify(id, (before) => {
-    if (before.group !== by.group) throw new ForbiddenError(before.group);
     return {
       ...before,
       ...input,
-      group: before.group,
+      group: groupOf(input.group)?.id ?? before.group,
       images: baseFiles ? mergePhotos(before.images, input.images, baseFiles) : input.images,
       id,
       updatedBy: by,
@@ -237,9 +232,8 @@ export async function updateRecord(id: string, input: SurveyInput, by: Person, b
 
 // A photo that finished uploading after its building was saved. Appending in one
 // step means it can't overwrite anyone's edits made in the meantime.
-export async function addPhoto(id: string, slot: ImageSlotKey, photo: Photo, by: Person) {
+export async function addPhoto(id: string, slot: ImageSlotKey, photo: Photo) {
   const result = await backend().modify(id, (before) => {
-    if (before.group !== by.group) throw new ForbiddenError(before.group);
     const current = before.images[slot] ?? { photos: [], note: "" };
     if (current.photos.some((p) => p.file === photo.file) || current.photos.length >= MAX_PHOTOS_PER_SHOT) return before;
     return {
@@ -251,10 +245,7 @@ export async function addPhoto(id: string, slot: ImageSlotKey, photo: Photo, by:
   return result?.[1] ?? null;
 }
 
-export async function deleteRecord(id: string, by: Person) {
-  const current = await backend().get(id);
-  if (!current) return false;
-  if (current.group !== by.group) throw new ForbiddenError(current.group);
+export async function deleteRecord(id: string) {
   const removed = await backend().remove(id);
   if (!removed) return false;
   await deletePhotos(allPhotos(removed).map((p) => p.file));

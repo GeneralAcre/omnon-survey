@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { groupOf, type SurveyRecord } from "@/lib/schema";
 import { cn } from "@/lib/utils";
-import { useT, useUser } from "./app-state";
+import { useT } from "./app-state";
 import BuildingDetail from "./BuildingDetail";
 import { GroupBadge } from "./GroupBadge";
 import { IconX } from "./Icons";
@@ -17,7 +17,6 @@ export type MapPick = { id: string; group: string; code?: string; recordId?: str
 // Stands in for the list on wide screens, showing the place tapped on the map beside it.
 export default function BuildingPanel({ pick, record, onClose }: { pick: MapPick; record?: SurveyRecord; onClose: () => void }) {
   const { t, L } = useT();
-  const user = useUser()!;
   const top = useRef<HTMLElement>(null);
   const g = groupOf(pick.group);
 
@@ -40,7 +39,7 @@ export default function BuildingPanel({ pick, record, onClose }: { pick: MapPick
             {t("openFull")}
           </Link>
         )}
-        {record?.group === user.group && (
+        {record && (
           <Link href={`/r/${record.id}/edit`} className={buttonVariants({ size: "lg" })}>
             {t("edit")}
           </Link>

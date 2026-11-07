@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { IdTakenError, createRecord, listRecords, recordChanges } from "@/lib/store";
-import { sanitizeInput, sanitizePerson, type SurveyRecord } from "@/lib/schema";
+import { groupOf, sanitizeInput, sanitizePerson, type SurveyRecord } from "@/lib/schema";
 
 // GET /api/records               → every record
 // GET /api/records?since=<ISO>   → { records changed since, count, now } for live polling
@@ -24,8 +24,9 @@ export async function POST(request: Request) {
   const body = await request.json();
   const by = sanitizePerson(body.by);
   const input = sanitizeInput(body.record);
-  if (!by) return Response.json({ error: "Missing surveyor name or group" }, { status: 400 });
+  if (!by) return Response.json({ error: "Missing surveyor name" }, { status: 400 });
   if (!input.plotNo) return Response.json({ error: "Plot number is required" }, { status: 400 });
+  if (!groupOf(input.group)) return Response.json({ error: "Zone is required" }, { status: 400 });
   // The phone may choose the id (so photos still uploading know where they go).
   const id = typeof body.id === "string" && UUID_RE.test(body.id) ? body.id.toLowerCase() : undefined;
   try {

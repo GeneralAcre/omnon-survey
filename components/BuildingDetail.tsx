@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { SHOTS, allPhotos, floodLinesLabel, functionLabel, groupOf, jackedLabel, occupancyLabel, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
+import { SHOTS, allPhotos, floodLinesLabel, functionLabel, jackedLabel, occupancyLabel, shotsDone, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { cn } from "@/lib/utils";
 import { timeAgo, useT } from "./app-state";
 import { photoUrl, retryImage } from "./images";
 import { IconCamera, IconDownload, IconPin } from "./Icons";
 import Lightbox, { type LightboxItem } from "./Lightbox";
-import { GroupBadge } from "./GroupBadge";
 
 // A building's photos and facts, on its own page and beside the map on wide screens.
 // `stacked` is the one-column form for narrow spaces, with the cover photo uncropped.
@@ -21,13 +20,13 @@ export default function BuildingDetail({ record, stacked = false, children }: { 
   const items: LightboxItem[] = SHOTS.flatMap((s) =>
     record.images[s.key].photos.map((p, i) => ({
       ...p,
+      group: record.group,
       title: [record.plotNo, L(s.label), p.note].filter(Boolean).join(" · "),
       downloadName: photoFileName(record, s.key, i, p),
     })),
   );
   const cover = record.images.front.photos[0] ?? allPhotos(record)[0];
-  const contributors = [...new Map(allPhotos(record).map((p) => [p.by, p.group])).entries()];
-  const g = groupOf(record.group)!;
+  const contributors = [...new Set(allPhotos(record).map((p) => p.by))];
 
   let flatIndex = 0;
 
@@ -124,15 +123,15 @@ export default function BuildingDetail({ record, stacked = false, children }: { 
           })}
 
           <section className="rounded-2xl bg-card p-4 text-sm">
-            <Row label={t("filledBy")} value={`${record.createdBy.name} · ${L(groupOf(record.createdBy.group)?.label ?? g.label)}`} sub={timeAgo(record.createdAt, lang)} />
-            <Row label={t("editedBy")} value={`${record.updatedBy.name} · ${L(groupOf(record.updatedBy.group)?.label ?? g.label)}`} sub={timeAgo(record.updatedAt, lang)} />
+            <Row label={t("filledBy")} value={record.createdBy.name} sub={timeAgo(record.createdAt, lang)} />
+            <Row label={t("editedBy")} value={record.updatedBy.name} sub={timeAgo(record.updatedAt, lang)} />
             {contributors.length > 0 && (
               <div className="border-t border-border py-3">
                 <p className="text-muted-foreground">{t("takenBy")}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {contributors.map(([name, grp]) => (
+                  {contributors.map((name) => (
                     <span key={name} className="rounded-full bg-secondary px-3 py-1">
-                      {name} <GroupBadge group={grp} className="ml-1" />
+                      {name}
                     </span>
                   ))}
                 </div>
@@ -149,7 +148,7 @@ export default function BuildingDetail({ record, stacked = false, children }: { 
                     {[...record.history].reverse().map((h, i) => (
                       <li key={i} className="flex justify-between gap-3">
                         <span>
-                          {h.by} <span className="text-muted-foreground">{L(groupOf(h.group)?.label ?? g.label)} · {t(h.action)}</span>
+                          {h.by} <span className="text-muted-foreground">{t(h.action)}</span>
                         </span>
                         <span className="shrink-0 text-muted-foreground">{timeAgo(h.at, lang)}</span>
                       </li>

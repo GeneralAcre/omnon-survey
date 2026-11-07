@@ -54,7 +54,7 @@ const userStore = createStore<Person | null | undefined>(
   (raw) => {
     try {
       const p = JSON.parse(raw ?? "null");
-      return p && typeof p.name === "string" && typeof p.group === "string" ? p : null;
+      return p && typeof p.name === "string" ? { name: p.name } : null;
     } catch {
       return null;
     }
@@ -90,7 +90,6 @@ const DICT = {
   edited: { en: "edited", th: "แก้ไข" },
   // sign-in
   yourName: { en: "Your name", th: "ชื่อของคุณ" },
-  yourGroup: { en: "Which zone you're exploring", th: "โซนที่คุณสำรวจ" },
   start: { en: "Start surveying", th: "เริ่มสำรวจ" },
   welcome: { en: "Who's surveying?", th: "ใครกำลังสำรวจ?" },
   welcomeSub: {

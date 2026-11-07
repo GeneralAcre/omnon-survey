@@ -22,6 +22,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
           SHOTS.flatMap((s) =>
             (r.images[s.key]?.photos ?? []).map((p, i) => ({
               ...p,
+              group: r.group,
               plotNo: r.plotNo,
               title: `${r.plotNo} · ${L(s.label)}`,
               downloadName: photoFileName(r, s.key, i, p),

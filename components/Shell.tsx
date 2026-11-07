@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { GROUPS } from "@/lib/schema";
 import { setLang, setUser, useT, useUser } from "./app-state";
 import { startUploads, useUploads } from "./uploads";
 
@@ -84,11 +82,10 @@ export function LangToggle({ className = "" }: { className?: string }) {
 }
 
 export function SignIn({ onDone }: { onDone?: () => void }) {
-  const { t, L } = useT();
+  const { t } = useT();
   const current = useUser();
   const [name, setName] = useState(current?.name ?? "");
-  const [group, setGroup] = useState(current?.group ?? "");
-  const ready = name.trim() && group;
+  const ready = name.trim();
 
   return (
     // Phones: the canal photo as a card above the form. Wide screens: photo half, form half.
@@ -110,7 +107,7 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!ready) return;
-          setUser({ name: name.trim(), group });
+          setUser({ name: name.trim() });
           onDone?.();
         }}
       >
@@ -126,35 +123,6 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
           autoFocus
           maxLength={80}
         />
-
-        <p className="mt-6 text-sm font-medium text-muted-foreground">{t("yourGroup")}</p>
-        <ToggleGroup
-          aria-label={t("yourGroup")}
-          orientation="vertical"
-          value={group ? [group] : []}
-          onValueChange={(v) => setGroup(v[0] ?? "")}
-          className="mt-2 w-full"
-        >
-          {GROUPS.map((g) => (
-            <ToggleGroupItem
-              key={g.id}
-              value={g.id}
-              className={cn(
-                "h-auto w-full justify-start gap-4 rounded-2xl border-2 p-4 text-left text-base",
-                group === g.id ? "" : "border-border bg-card",
-              )}
-              style={group === g.id ? { background: g.color, borderColor: g.color, color: g.ink } : undefined}
-            >
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold"
-                style={group === g.id ? { background: g.ink, color: g.color } : { background: g.color, color: g.ink }}
-              >
-                {g.id}
-              </span>
-              <span className="font-semibold whitespace-normal">{L(g.label)}</span>
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
 
         <div className="mt-auto pt-8">
           <Button type="submit" size="xl" className="w-full" disabled={!ready}>

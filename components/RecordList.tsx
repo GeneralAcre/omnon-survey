@@ -117,7 +117,6 @@ export default function RecordList() {
   ];
   const zone = GROUPS.some((g) => g.id === filter) ? filter : undefined;
 
-  const me = groupColor(user.group);
 
   // Looked up each render, so live updates show and a deleted building falls back to the list.
   const pickedRecord = mapPick?.recordId ? records?.find((r) => r.id === mapPick.recordId) : undefined;
@@ -135,15 +134,12 @@ export default function RecordList() {
   // Who is signed in, with the way back to the sign-in screen in plain sight.
   const surveyor = (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: me.bg, color: me.fg }}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-background">
         {user.name.slice(0, 1).toUpperCase()}
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] text-muted-foreground">{t("surveyingAs")}</p>
-        <p className="flex items-center gap-1.5 text-sm font-semibold">
-          <span className="truncate">{user.name}</span>
-          <GroupBadge group={user.group} className="shrink-0" />
-        </p>
+        <p className="truncate text-sm font-semibold">{user.name}</p>
       </div>
       <Button variant="secondary" onClick={() => setUser(null)} className="h-9 shrink-0 gap-1.5 rounded-full px-3">
         <IconUser className="size-4" />
@@ -314,7 +310,7 @@ export default function RecordList() {
         {t("newRecord")}
       </Link>
 
-      <ExportSheet open={exporting} onClose={() => setExporting(false)} defaultGroup={user.group} records={records ?? []} />
+      <ExportSheet open={exporting} onClose={() => setExporting(false)} records={records ?? []} />
     </main>
   );
 }
@@ -347,9 +343,9 @@ function ArrivalToast({ r, justAdded }: { r: SurveyRecord; justAdded: string }) 
   );
 }
 
-function ExportSheet({ open, onClose, defaultGroup, records }: { open: boolean; onClose: () => void; defaultGroup: string; records: SurveyRecord[] }) {
+function ExportSheet({ open, onClose, records }: { open: boolean; onClose: () => void; records: SurveyRecord[] }) {
   const { t, L } = useT();
-  const [group, setGroup] = useState(defaultGroup);
+  const [group, setGroup] = useState("");
   const q = group ? `group=${group}` : "";
   const parts = useMemo(() => zipParts(records.filter((r) => !group || r.group === group)), [records, group]);
   const items = [

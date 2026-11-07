@@ -77,7 +77,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   const { records, reload } = useRecords();
   const context = record?.id ?? "new";
   const draftKey = record ? `omnon.draft.${record.id}` : "omnon.draft";
-  const initial = () => (record ? fromRecord(record) : { ...emptyInput(user.group), ...fromMap() });
+  const initial = () => (record ? fromRecord(record) : { ...emptyInput(), ...fromMap() });
 
   const [data, setData] = useState<SurveyInput>(initial);
   const [step, setStep] = useState(0);
@@ -142,7 +142,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
   useEffect(() => {
     for (const u of mine) {
       if (!u.file) continue;
-      const photo = { file: u.file, by: u.by?.name ?? user.name, group: u.by?.group ?? user.group, at: new Date(u.createdAt).toISOString() };
+      const photo = { file: u.file, by: u.by?.name ?? user.name, at: new Date(u.createdAt).toISOString() };
       // Copies finished uploads (an external store) into the form.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       updateSlot(u.slot, (s) => (s.photos.some((x) => x.file === photo.file) ? s : { ...s, photos: [...s.photos, photo] }));
@@ -639,7 +639,7 @@ export default function RecordWizard({ record }: { record?: SurveyRecord }) {
                 {data.notes && <p className="mt-2 line-clamp-3 text-sm whitespace-pre-line">{data.notes}</p>}
               </button>
               <p className="pt-2 text-center text-xs text-muted-foreground">
-                {t("filledBy")} {user.name} · {L(groupOf(user.group)!.label)}
+                {t("filledBy")} {user.name}
               </p>
             </div>
           )}

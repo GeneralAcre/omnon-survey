@@ -169,17 +169,16 @@ export class IdTakenError extends Error {}
 export async function createRecord(input: SurveyInput, by: Person, id: string = randomUUID()) {
   const existing = await backend().get(id);
   if (existing) {
-    if (existing.createdBy.name === by.name && existing.createdBy.group === by.group) return existing;
+    if (existing.createdBy.name === by.name) return existing;
     throw new IdTakenError();
   }
   const now = new Date().toISOString();
   const record: SurveyRecord = {
     ...input,
-    group: groupOf(input.group)?.id ?? by.group,
     id,
     createdBy: by,
     updatedBy: by,
-    history: [{ by: by.name, group: by.group, at: now, action: "created" }],
+    history: [{ by: by.name, at: now, action: "created" }],
     createdAt: now,
     updatedAt: now,
   };
@@ -220,7 +219,7 @@ export async function updateRecord(id: string, input: SurveyInput, by: Person, b
       id,
       updatedBy: by,
       updatedAt: now,
-      history: [...(before.history ?? []), { by: by.name, group: by.group, at: now, action: "edited" as const }].slice(-50),
+      history: [...(before.history ?? []), { by: by.name, at: now, action: "edited" as const }].slice(-50),
     };
   });
   if (!result) return null;

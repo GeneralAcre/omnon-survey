@@ -100,12 +100,11 @@ export const SHOTS = IMAGE_SLOTS.filter((s) => s.key !== "colorScheme");
 
 export type ImageSlotKey = (typeof IMAGE_SLOTS)[number]["key"];
 
-export type Person = { name: string; group: string };
+export type Person = { name: string };
 
 export type Photo = {
   file: string;
   by: string;
-  group: string;
   at: string;
   // Caption for this one photo, e.g. "Wall: teak" on a Materials shot.
   note?: string;
@@ -119,7 +118,7 @@ export type FloodLine = { year: string; level: string };
 
 export type ImageSlot = { photos: Photo[]; note: string };
 
-export type HistoryEntry = { by: string; group: string; at: string; action: "created" | "edited" };
+export type HistoryEntry = { by: string; at: string; action: "created" | "edited" };
 
 export type SurveyRecord = {
   id: string;
@@ -196,11 +195,8 @@ export const FILE_RE = /^[a-z0-9-]+\.(jpg|jpeg|png|webp)$/i;
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 export function sanitizePerson(raw: unknown): Person | null {
-  const p = (raw ?? {}) as Record<string, unknown>;
-  const name = str(p.name, 80).trim();
-  const group = str(p.group, 10);
-  if (!name || !GROUPS.some((g) => g.id === group)) return null;
-  return { name, group };
+  const name = str(((raw ?? {}) as Record<string, unknown>).name, 80).trim();
+  return name ? { name } : null;
 }
 
 // Normalises untrusted JSON from the client into a SurveyInput.
@@ -219,7 +215,6 @@ export function sanitizeInput(raw: unknown): SurveyInput {
         .map((p) => ({
           file: p.file as string,
           by: str(p.by, 80),
-          group: str(p.group, 10),
           at: str(p.at, 40),
           note: str(p.note, 200),
         })),

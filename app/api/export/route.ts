@@ -73,7 +73,7 @@ export async function GET(request: Request) {
       const photos = r.images[s.key]?.photos ?? [];
       return [
         photos.map((p, i) => `${url.origin}/api/photos/${p.file}?download=${encodeURIComponent(photoFileName(r, s.key, i, p))}`).join("\n"),
-        [...new Set(photos.map((p) => `${p.by} (Zone ${p.group})`))].join(", "),
+        [...new Set(photos.map((p) => p.by))].join(", "),
         // Slot note, then any per-photo captions ("#2 Roof: zinc").
         [r.images[s.key]?.note, ...photos.map((p, i) => p.note && `#${i + 1} ${p.note}`)].filter(Boolean).join("\n"),
       ];
@@ -87,8 +87,8 @@ export async function GET(request: Request) {
     r.mapLink ?? "",
     r.lat != null ? String(r.lat) : "",
     r.lng != null ? String(r.lng) : "",
-    `${r.createdBy.name} (Zone ${r.createdBy.group})`,
-    `${r.updatedBy.name} (Zone ${r.updatedBy.group})`,
+    r.createdBy.name,
+    r.updatedBy.name,
     r.createdAt,
     r.updatedAt,
   ]);

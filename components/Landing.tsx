@@ -49,10 +49,8 @@ export default function Landing() {
     <main className="flex-1">
       <nav className="sticky top-0 z-30 border-b border-transparent bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className={cn(wrap, "flex h-16 items-center justify-between gap-3")}>
-          <Link href="/" className="text-[17px] tracking-tight">
-            <span>
-              khlong <span className="font-semibold">om non</span>
-            </span>
+          <Link href="/" className="font-display text-3xl leading-none">
+            omnon
           </Link>
           <LangToggle />
         </div>

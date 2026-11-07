@@ -160,8 +160,8 @@ export default function RecordList() {
             <Link href="/" aria-label={t("back")} className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <IconBack />
             </Link>
-            <Link href="/" className="text-[17px] tracking-tight">
-              khlong <span className="font-semibold">om non</span>
+            <Link href="/" className="font-display text-3xl leading-none">
+              omnon
             </Link>
           </div>
           <LangToggle />

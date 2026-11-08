@@ -3,13 +3,15 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { animate, createTimeline, onScroll, splitText, stagger, utils } from "animejs";
+import { useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
-import { GROUPS, allPhotos } from "@/lib/schema";
+import { GROUPS, allPhotos, type SurveyRecord } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
 import { BOX_PAGE, BuildingBox, SeeMore, box, boxGrid, boxPad } from "./BuildingBox";
 import { useRecords } from "./data";
+import { onView, scrollReveals, useAnime } from "./motion";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
 import Timeline from "./Timeline";
@@ -28,6 +30,9 @@ const THEMES = [
   { en: "Interdisciplinary", th: "สหวิทยาการ" },
 ];
 
+// One period is 300 units; the path spans two screens' worth so sliding it by half loops seamlessly.
+const WAVE = `M0 20${Array.from({ length: 8 }, (_, i) => ` Q${i * 300 + 75} 4 ${i * 300 + 150} 20 T${i * 300 + 300} 20`).join("")} V40 H0Z`;
+
 // Leaflet touches `window`, so the map only loads in the browser.
 const StudyMap = dynamic(() => import("./StudyMap"), {
   ssr: false,
@@ -40,13 +45,51 @@ export default function Landing() {
   const { records } = useRecords();
   const all = records ?? [];
   const [zone, setZone] = useState<string>();
-  const [limit, setLimit] = useState(BOX_PAGE);
 
   // Newest first (records arrive sorted by last update). The "add" box takes the last spot of the limit.
   const recent = all.filter((r) => allPhotos(r).length > 0);
 
+  const root = useRef<HTMLElement>(null);
+  useAnime(root, () => {
+    // The hero: photo settles in, title rises letter by letter, then the button springs up.
+    const title = splitText("[data-hero-title]", { chars: { wrap: "clip" } });
+    createTimeline({ defaults: { ease: "out(4)" } })
+      .add("[data-hero-img]", { opacity: [0, 1], scale: [1.18, 1], duration: 2600, ease: "out(3)" }, 0)
+      .add("[data-hero-tag]", { opacity: [0, 1], y: [16, 0], duration: 700 }, 250)
+      .add("[data-hero-title]", { opacity: [0, 1], duration: 1 }, 300)
+      .add(title.chars, { y: ["110%", "0%"], rotate: [6, 0], duration: 1200, delay: stagger(45) }, 300)
+      .add("[data-hero-cta]", { opacity: [0, 1], y: [24, 0], scale: [0.9, 1], duration: 1000, ease: "outElastic(1, .6)" }, 1000);
+
+    // Slow parallax on the photo while the hero scrolls away.
+    const [hero] = utils.$("[data-hero]");
+    animate("[data-hero-img]", { y: ["0%", "16%"], ease: "linear", autoplay: onScroll({ target: hero, enter: "top top", leave: "top bottom", sync: true }) });
+
+    // The canal water drifting along the bottom of the history band.
+    animate("[data-wave]", { x: ["0%", "-50%"], duration: 14000, ease: "linear", loop: true });
+    animate("[data-wave-slow]", { x: ["-50%", "0%"], duration: 22000, ease: "linear", loop: true });
+
+    // 1636 counts up from 1500 when it comes into view.
+    const [year] = utils.$("[data-count]");
+    const n = { v: 1500 };
+    animate(n, {
+      v: 1636,
+      duration: 2000,
+      ease: "out(4)",
+      onUpdate: () => {
+        year.textContent = String(Math.round(n.v));
+      },
+      autoplay: onView(year),
+    });
+
+    scrollReveals(root.current);
+    return () => {
+      title.revert();
+      year.textContent = "1636";
+    };
+  });
+
   return (
-    <main className="flex-1">
+    <main ref={root} data-scope className="flex-1">
       <nav className="sticky top-0 z-30 border-b border-transparent bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className={cn(wrap, "flex h-16 items-center justify-between gap-3")}>
           <Link href="/" className="font-display text-3xl leading-none">
@@ -56,16 +99,18 @@ export default function Landing() {
         </div>
       </nav>
 
-      <section className="relative isolate min-h-[32rem] overflow-hidden bg-black text-white sm:min-h-[38rem] lg:min-h-[min(78svh,52rem)]">
-        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
+      <section data-hero className="relative isolate min-h-[32rem] overflow-hidden bg-black text-white sm:min-h-[38rem] lg:min-h-[min(78svh,52rem)]">
+        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" data-intro data-hero-img className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/15 to-black/10" />
         <div className={cn(wrap, "flex min-h-[32rem] flex-col justify-end pb-10 pt-16 sm:min-h-[38rem] sm:pb-14 lg:min-h-[min(78svh,52rem)] lg:pb-10")}>
-          <p className="tag mb-4 self-start">Adaptive futures for Khlong Om Non</p>
+          <p data-intro data-hero-tag className="tag mb-4 self-start">Adaptive futures for Khlong Om Non</p>
           {/* Wide screens: the title along the bottom left, the main action across from it. */}
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-            <h1 className="font-display text-7xl leading-[0.95] text-white sm:text-8xl lg:text-[11rem]">Fluid Heritage</h1>
+            <h1 data-intro data-hero-title className="font-display text-7xl leading-[0.95] text-white sm:text-8xl lg:text-[11rem]">Fluid Heritage</h1>
             <Link
               href="/new"
+              data-intro
+              data-hero-cta
               className="mt-8 inline-flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-7 text-base font-semibold text-primary-foreground shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition hover:bg-primary/90 active:scale-95 sm:w-auto lg:mt-0 lg:mb-4"
             >
               <IconPlus className="size-5" />
@@ -76,10 +121,12 @@ export default function Landing() {
       </section>
 
       {/* The history, with the full timeline just below. */}
-      <section className="bg-brand text-primary-foreground">
-        <div className={cn(wrap, "grid gap-6 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
-          <p className="font-display text-8xl leading-none sm:text-9xl">1636</p>
-          <div>
+      <section className="relative overflow-hidden bg-brand text-primary-foreground">
+        <div className={cn(wrap, "grid gap-6 pt-16 pb-24 sm:pt-24 sm:pb-32 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
+          <p data-count className="font-display text-8xl leading-none tabular-nums sm:text-9xl">
+            1636
+          </p>
+          <div data-reveal>
             <h2 className="font-display text-3xl leading-tight sm:text-4xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
             <p className="mt-4 text-[15px] leading-relaxed sm:text-base">
               {L({
@@ -88,6 +135,14 @@ export default function Landing() {
               })}
             </p>
           </div>
+        </div>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-10 overflow-hidden sm:h-14">
+          <svg data-wave-slow viewBox="0 0 2400 40" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-full w-[200%] text-background opacity-40">
+            <path d={WAVE} fill="currentColor" />
+          </svg>
+          <svg data-wave viewBox="0 0 2400 40" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-3/4 w-[200%] text-background">
+            <path d={WAVE} fill="currentColor" />
+          </svg>
         </div>
       </section>
 
@@ -102,7 +157,7 @@ export default function Landing() {
       <section className={cn(wrap, "grid gap-8 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
         <div>
           <p className={eyebrow}>{t("about")}</p>
-          <h2 className="mt-4 font-display text-5xl leading-[1.05] sm:text-6xl">
+          <h2 data-stagger className="mt-4 font-display text-5xl leading-[1.05] sm:text-6xl">
             {THEMES.map((theme) => (
               <span key={theme.en} className="block">
                 {L(theme)}
@@ -110,7 +165,7 @@ export default function Landing() {
             ))}
           </h2>
         </div>
-        <div className="md:self-end">
+        <div data-reveal className="md:self-end">
           <p className="text-[15px] leading-relaxed text-muted-foreground sm:text-base">
             {L({
               en: "Fluid Heritage is a joint workshop between Xi'an University of Architecture and Technology and the Faculty of Architecture, Chulalongkorn University. It is an architectural field study of a 17.5 km cultural landscape shaped by water, settlement and everyday life.",
@@ -124,7 +179,7 @@ export default function Landing() {
       <div className="border-y border-border">
         <div className={cn(wrap, "flex flex-col items-center gap-8 py-12 text-muted-foreground sm:gap-10 sm:py-16 lg:py-20")}>
           <span className="text-sm tracking-[0.2em] uppercase">{L({ en: "In collaboration", th: "ความร่วมมือ" })}</span>
-          <div className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-56">
+          <div data-stagger className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-56">
             <Image src={xian} alt="Xi'an University of Architecture and Technology" className="h-32 w-auto sm:h-48 lg:h-64" />
             <Image src={chula} alt="Chulalongkorn University" className="h-32 w-auto sm:h-48 lg:h-64" />
           </div>
@@ -134,20 +189,28 @@ export default function Landing() {
       {/* The three zones beside the study-area map. */}
       <section id="zones" className="scroll-mt-20 bg-card py-16 sm:py-24">
         <div className={cn(wrap, "grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-14")}>
-          <StudyMap records={all} zone={zone} preview className="aspect-[4/3] lg:aspect-[3/2]" />
+          <div data-reveal>
+            <StudyMap records={all} zone={zone} preview className="aspect-[4/3] lg:aspect-[3/2]" />
+          </div>
           <div>
             <p className={eyebrow}>{t("studyArea")}</p>
             <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
-            <ol className="mt-8 space-y-3">
+            <ol data-stagger className="mt-8 space-y-3">
               {GROUPS.map((g) => (
                 <li key={g.id}>
                   <button
                     type="button"
-                    onClick={() => setZone(zone === g.id ? undefined : g.id)}
+                    onClick={(e) => {
+                      setZone(zone === g.id ? undefined : g.id);
+                      const badge = e.currentTarget.querySelector("[data-badge]");
+                      if (badge && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                        animate(badge, { scale: [0.7, 1], rotate: [-20, 0], duration: 900, ease: "outElastic(1, .5)" });
+                      }
+                    }}
                     aria-pressed={zone === g.id}
                     className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background p-4 text-left transition hover:border-border aria-pressed:border-primary"
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
+                    <span data-badge className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
                       {g.id}
                     </span>
                     <span>
@@ -165,28 +228,37 @@ export default function Landing() {
         </div>
       </section>
 
-      {recent.length > 0 && (
-        <section className={cn(wrap, "py-16 sm:py-24")}>
-          <p className={eyebrow}>{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
-          <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
-          <ul className={cn(boxGrid, "mt-8 grid-cols-2 lg:grid-cols-4")}>
-            {recent.slice(0, limit - 1).map((r) => (
-              <li key={r.id}>
-                <BuildingBox r={r} />
-              </li>
-            ))}
-            {/* The one coloured box in the grid. */}
-            <li>
-              <Link href="/new" className={cn(box, boxPad, "h-full justify-between bg-brand text-primary-foreground transition-opacity hover:opacity-90")}>
-                <span className="font-display text-3xl leading-none sm:text-5xl">{t("addBuilding")}</span>
-                <IconPlus className="size-7 sm:size-9" />
-              </Link>
-            </li>
-          </ul>
-          {recent.length + 1 > limit && <SeeMore onClick={() => setLimit((n) => n + BOX_PAGE)} />}
-        </section>
-      )}
+      {recent.length > 0 && <Recent recent={recent} />}
 
     </main>
+  );
+}
+
+// Records arrive after the page mounts, so this grid gets its own reveal once it exists.
+function Recent({ recent }: { recent: SurveyRecord[] }) {
+  const { t, L } = useT();
+  const [limit, setLimit] = useState(BOX_PAGE);
+  const root = useRef<HTMLElement>(null);
+  useAnime(root, () => scrollReveals(root.current));
+  return (
+    <section ref={root} data-scope className={cn(wrap, "py-16 sm:py-24")}>
+      <p className={eyebrow}>{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
+      <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
+      <ul data-stagger className={cn(boxGrid, "mt-8 grid-cols-2 lg:grid-cols-4")}>
+        {recent.slice(0, limit - 1).map((r) => (
+          <li key={r.id}>
+            <BuildingBox r={r} />
+          </li>
+        ))}
+        {/* The one coloured box in the grid. */}
+        <li>
+          <Link href="/new" className={cn(box, boxPad, "h-full justify-between bg-brand text-primary-foreground transition-opacity hover:opacity-90")}>
+            <span className="font-display text-3xl leading-none sm:text-5xl">{t("addBuilding")}</span>
+            <IconPlus className="size-7 sm:size-9" />
+          </Link>
+        </li>
+      </ul>
+      {recent.length + 1 > limit && <SeeMore onClick={() => setLimit((n) => n + BOX_PAGE)} />}
+    </section>
   );
 }

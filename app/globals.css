@@ -243,3 +243,14 @@
   line-height: 1;
   text-transform: uppercase;
 }
+
+/* Motion (components/motion.ts). The hero starts hidden so it doesn't flash before anime.js runs. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-intro] {
+    opacity: 0;
+  }
+}
+[data-timeline] svg :is(circle, rect) {
+  transform-box: fill-box;
+  transform-origin: center;
+}

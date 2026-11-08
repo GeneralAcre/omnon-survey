@@ -231,10 +231,18 @@
   letter-spacing: 0;
 }
 
-/* Motion (components/motion.ts). The hero starts hidden so it doesn't flash before anime.js runs. */
+/* Motion (components/motion.ts). The hero starts hidden so it doesn't flash before anime.js runs.
+   If the intro never plays (a script error, a hot reload cut short), the fallback shows it anyway
+   after 3s; by then the intro has finished, so it never interrupts a running animation. */
 @media (prefers-reduced-motion: no-preference) {
   [data-intro] {
     opacity: 0;
+    animation: intro-fallback 0s 3s forwards;
+  }
+}
+@keyframes intro-fallback {
+  to {
+    opacity: 1;
   }
 }
 [data-timeline] svg :is(circle, rect),

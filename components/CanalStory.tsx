@@ -1,6 +1,5 @@
 "use client";
 
-import { House, Landmark, Sailboat, TreePalm } from "lucide-react";
 import { animate, onScroll, stagger, svg, utils } from "animejs";
 import { useRef } from "react";
 import { GROUPS, allPhotos, type Label, type SurveyRecord } from "@/lib/schema";
@@ -99,51 +98,6 @@ const FACTS: { value: number; decimals?: number; prefix?: string; unit: Label; l
   { value: 3, unit: { en: "districts", th: "อำเภอ" }, label: { en: "Mueang Nonthaburi, Bang Yai, Bang Kruai", th: "เมืองนนทบุรี บางใหญ่ บางกรวย" } },
 ];
 
-const EXPLORE: { icon: typeof Landmark; title: Label; body: Label }[] = [
-  {
-    icon: Landmark,
-    title: { en: "Temples by the water", th: "วัดริมน้ำ" },
-    body: {
-      en: "Ayutthaya-era temples face the canal, among them Wat Prang Luang and its 21 m prang, one of the oldest around Bangkok.",
-      th: "วัดสมัยอยุธยาหันหน้าสู่คลอง รวมถึงวัดปรางค์หลวงกับพระปรางค์สูง 21 เมตร หนึ่งในวัดที่เก่าแก่ที่สุดของกรุงเทพฯ และปริมณฑล",
-    },
-  },
-  {
-    icon: TreePalm,
-    title: { en: "Orchard country", th: "ถิ่นสวนผลไม้" },
-    body: {
-      en: "Low, fertile land laced with ditches grows Nonthaburi's famous durian, with mangosteen, pomelo, sapodilla and rose apple.",
-      th: "ที่ราบลุ่มอุดมสมบูรณ์ร่องสวนเรียงราย ปลูกทุเรียนนนท์อันลือชื่อ มังคุด ส้มโอ ละมุด และชมพู่",
-    },
-  },
-  {
-    icon: Sailboat,
-    title: { en: "Best seen by boat", th: "ชมได้ดีที่สุดทางเรือ" },
-    body: {
-      en: "Boat trips leave from temple piers such as Wat Rat Prakhong Tham in Bang Yai, gliding past stilt houses and orchards.",
-      th: "ล่องเรือได้จากท่าน้ำวัด เช่น วัดราษฎร์ประคองธรรม อำเภอบางใหญ่ ผ่านเรือนใต้ถุนสูงและสวนผลไม้",
-    },
-  },
-  {
-    icon: House,
-    title: { en: "Houses that rise", th: "บ้านที่ยกตัวหนีน้ำ" },
-    body: {
-      en: "Riverside homes are jacked up on taller posts to stay above floods. This survey records each one and its flood lines.",
-      th: "บ้านริมน้ำถูกดีดให้สูงขึ้นเพื่อพ้นน้ำท่วม การสำรวจนี้บันทึกทุกหลังพร้อมระดับน้ำท่วม",
-    },
-  },
-];
-
-const FRUIT: Label[] = [
-  { en: "Durian", th: "ทุเรียน" },
-  { en: "Mangosteen", th: "มังคุด" },
-  { en: "Pomelo", th: "ส้มโอ" },
-  { en: "Santol", th: "กระท้อน" },
-  { en: "Sapodilla", th: "ละมุด" },
-  { en: "Rose apple", th: "ชมพู่" },
-  { en: "Banana", th: "กล้วย" },
-];
-
 const fmt = (n: number, decimals = 0) => n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
 // The story of the canal, told for visitors: a map, the numbers, and what to go and see.
@@ -162,8 +116,6 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
       ease: "linear",
       autoplay: onScroll({ target: map, enter: "bottom top", leave: "top bottom", sync: 0.25 }),
     });
-    // The fruit list drifts sideways forever.
-    animate("[data-marquee]", { x: ["0%", "-50%"], duration: 30000, ease: "linear", loop: true });
     countUps(root.current);
     scrollReveals(root.current);
     return undraw;
@@ -215,36 +167,6 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* What to go and see. */}
-      <div className={cn(wrap, "mt-16 sm:mt-24")}>
-        <h3 data-reveal className="font-display text-4xl leading-tight sm:text-5xl">{L({ en: "What to see", th: "สิ่งที่ควรไปชม" })}</h3>
-        <ul data-stagger className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {EXPLORE.map(({ icon: Icon, title, body }) => (
-            <li key={title.en} className="group rounded-3xl bg-background p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(60,30,20,0.35)]">
-              <span className="flex size-12 items-center justify-center rounded-full bg-brand text-primary-foreground transition-transform duration-500 group-hover:rotate-[-8deg] group-hover:scale-110">
-                <Icon className="size-6" />
-              </span>
-              <p className="mt-5 text-lg font-semibold">{L(title)}</p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{L(body)}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Fruit of the orchards, drifting past. */}
-      <div aria-hidden="true" className="mt-16 overflow-hidden border-y border-border py-5 sm:mt-24">
-        <div data-marquee className="flex w-max gap-10 font-display text-4xl whitespace-nowrap text-foreground/80 sm:text-6xl">
-          {[0, 1].map((copy) =>
-            FRUIT.map((f, i) => (
-              <span key={`${copy}-${f.en}`} className="flex items-center gap-10">
-                {L(f)}
-                <span className="inline-block size-3 rotate-45" style={{ background: GROUPS[i % 3].color }} />
-              </span>
-            )),
-          )}
-        </div>
       </div>
 
       {records && <SurveySoFar records={records} />}

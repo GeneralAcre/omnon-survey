@@ -23,8 +23,7 @@ export default function About() {
       <div aria-hidden="true" className="mx-4 h-40 rounded-3xl bg-[url(/omnon.jpg)] bg-cover bg-[center_60%] sm:mx-6 sm:h-56 lg:mx-8 lg:h-72" />
 
       <section className="px-5 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-10">
-        <p className="tag">Workshop Prompt</p>
-        <h1 className="mt-3 font-display text-5xl leading-none sm:text-6xl">Fluid Heritage</h1>
+        <h1 className="font-display text-5xl leading-none sm:text-6xl">Fluid Heritage</h1>
         <p className="mt-1 text-xl text-foreground/80 sm:text-2xl">Adaptive Futures for Khlong Om Non</p>
         <p className="mt-4 text-sm text-muted-foreground">Adaptation · Continuity · Interdisciplinary</p>
         <p className="mt-4 text-sm text-muted-foreground">Xi&apos;an University of Architecture and Technology × Faculty of Architecture, Chulalongkorn University</p>

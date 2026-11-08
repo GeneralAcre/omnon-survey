@@ -231,20 +231,6 @@
   letter-spacing: 0;
 }
 
-/* A solid label that marks the start of a section. */
-@utility tag {
-  display: inline-block;
-  padding: 0.375rem 0.75rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font-family: var(--font-anton), var(--font-kanit), system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  font-synthesis: none;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
 /* Motion (components/motion.ts). The hero starts hidden so it doesn't flash before anime.js runs. */
 @media (prefers-reduced-motion: no-preference) {
   [data-intro] {

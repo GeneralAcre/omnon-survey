@@ -55,7 +55,6 @@ export default function Landing() {
     const title = splitText("[data-hero-title]", { chars: { wrap: "clip" } });
     createTimeline({ defaults: { ease: "out(4)" } })
       .add("[data-hero-img]", { opacity: [0, 1], scale: [1.18, 1], duration: 2600, ease: "out(3)" }, 0)
-      .add("[data-hero-tag]", { opacity: [0, 1], y: [16, 0], duration: 700 }, 250)
       .add("[data-hero-title]", { opacity: [0, 1], duration: 1 }, 300)
       .add(title.chars, { y: ["110%", "0%"], rotate: [6, 0], duration: 1200, delay: stagger(45) }, 300)
       .add("[data-hero-cta]", { opacity: [0, 1], y: [24, 0], scale: [0.9, 1], duration: 1000, ease: "outElastic(1, .6)" }, 1000);
@@ -100,9 +99,6 @@ export default function Landing() {
         <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" data-intro data-hero-img className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-foreground via-foreground/20 to-foreground/10" />
         <div className={cn(wrap, "flex min-h-[34rem] flex-col justify-end pt-16 pb-10 sm:min-h-[40rem] sm:pb-14 lg:min-h-[min(82svh,54rem)] lg:pb-12")}>
-          <p data-intro data-hero-tag className="tag mb-4 self-start">
-            {L({ en: "Adaptive futures for Khlong Om Non", th: "อนาคตที่ปรับตัวได้ของคลองอ้อมนนท์" })}
-          </p>
           {/* Wide screens: the title along the bottom left, the main action across from it. */}
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
             <h1 data-intro data-hero-title className="font-display text-7xl leading-[0.95] sm:text-8xl lg:text-[11rem]">
@@ -129,8 +125,7 @@ export default function Landing() {
             1636
           </p>
           <div data-reveal>
-            <p className="tag">{L({ en: "Timeline", th: "ลำดับเหตุการณ์" })}</p>
-            <h2 className="mt-4 font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
+            <h2 className="font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
           </div>
         </div>
         <div className={cn(wrap, "mt-12 sm:mt-16")}>
@@ -143,8 +138,7 @@ export default function Landing() {
         <div className={cn(wrap, "grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-14")}>
           <div className="lg:order-2">
             <div data-reveal>
-              <p className="tag">{t("studyArea")}</p>
-              <h2 className="mt-4 font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
+              <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
             </div>
             <ol data-stagger className="mt-8 space-y-3">
               {GROUPS.map((g) => (
@@ -189,10 +183,7 @@ export default function Landing() {
       <section className={cn(section, "border-t border-border")}>
         <div className={cn(wrap, "grid gap-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
           <div>
-            <p data-reveal className="tag">
-              {t("about")}
-            </p>
-            <h2 data-stagger className="mt-4 font-display text-5xl leading-[1.02] sm:text-6xl">
+            <h2 data-stagger className="font-display text-5xl leading-[1.02] sm:text-6xl">
               {THEMES.map((theme) => (
                 <span key={theme.en} className="block">
                   {L(theme)}
@@ -213,7 +204,6 @@ export default function Landing() {
           </div>
         </div>
         <div className={cn(wrap, "mt-16 flex flex-col items-center gap-8 sm:mt-20")}>
-          <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">{L({ en: "In collaboration", th: "ความร่วมมือ" })}</span>
           <div data-stagger className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-48">
             <Image src={xian} alt="Xi'an University of Architecture and Technology" className="h-28 w-auto sm:h-40 lg:h-52" />
             <Image src={chula} alt="Chulalongkorn University" className="h-28 w-auto sm:h-40 lg:h-52" />
@@ -225,8 +215,7 @@ export default function Landing() {
       <footer className="bg-foreground text-background">
         <div className={cn(wrap, "py-20 sm:py-28")}>
           <div data-reveal className="max-w-3xl">
-            <p className="tag">{L({ en: "Join the survey", th: "ร่วมสำรวจ" })}</p>
-            <h2 className="mt-4 font-display text-5xl leading-[1.02] sm:text-7xl">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
+            <h2 className="font-display text-5xl leading-[1.02] sm:text-7xl">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-background/75 sm:text-lg">
               {L({
                 en: "Add its photos and flood lines. Every record helps show how people along Khlong Om Non live with the water.",
@@ -265,8 +254,7 @@ function Recent({ recent }: { recent: SurveyRecord[] }) {
     <div ref={root} data-scope className={cn(wrap, "mt-20 sm:mt-28")}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div data-reveal>
-          <p className="tag">{L({ en: "From the field", th: "จากภาคสนาม" })}</p>
-          <h2 className="mt-4 font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
+          <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
         </div>
         <Link href="/survey" className={cn(ghost, "h-11 border-border text-sm hover:bg-card")}>
           {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />

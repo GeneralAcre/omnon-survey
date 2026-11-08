@@ -117,8 +117,7 @@ export function StoryIntro() {
     <section ref={root} id="discover" data-scope className="scroll-mt-16 overflow-hidden py-20 sm:py-28">
       <div className={cn(wrap, "grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-16")}>
         <div>
-          <p data-reveal className="tag self-start">{L({ en: "Discover", th: "ค้นพบ" })}</p>
-          <h2 data-reveal className="mt-4 font-display text-5xl leading-[1.02] sm:text-7xl">
+          <h2 data-reveal className="font-display text-5xl leading-[1.02] sm:text-7xl">
             {L({ en: "Take the long way round", th: "ล่องตามทางอ้อม" })}
           </h2>
           <div data-reveal className="mt-6 space-y-4 text-[15px] leading-relaxed text-foreground/85 sm:text-base">
@@ -177,8 +176,7 @@ export function ThenPhotos() {
             <Image src={boatsFar} alt={L({ en: "A line of boats travelling the canal past riverside houses, archival photograph", th: "ขบวนเรือล่องผ่านบ้านริมคลอง ภาพถ่ายในอดีต" })} fill sizes="(min-width: 768px) 42vw, 100vw" placeholder="blur" className="object-cover" />
           </div>
           <figcaption data-reveal className="mt-5 px-1">
-            <p className="tag inline-block">{L({ en: "Then", th: "วันวาน" })}</p>
-            <p className="mt-4 font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
+            <p className="font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
             <p className="mt-3 text-[15px] leading-relaxed text-background/75">
               {L({
                 en: "Before the roads arrived, boats carried people, fruit and goods along Khlong Om Non, between temple piers, orchards and the houses that faced the water.",
@@ -275,8 +273,7 @@ export function SurveySoFar({ records }: { records: SurveyRecord[] }) {
       {/* Wide screens: the words sit in the open ground below the canal's bend. */}
       <div className="grid gap-8 lg:absolute lg:bottom-0 lg:left-8 lg:w-[44%] lg:gap-6">
         <div data-reveal>
-          <p className="tag self-start">{L({ en: "Live from the field", th: "สดจากภาคสนาม" })}</p>
-          <p className="mt-5 font-display text-4xl leading-[1.05] sm:text-5xl xl:text-6xl">
+          <p className="font-display text-4xl leading-[1.05] sm:text-5xl xl:text-6xl">
             <span className="text-brand" data-count-to={s.buildings}>
               {fmt(s.buildings)}
             </span>{" "}

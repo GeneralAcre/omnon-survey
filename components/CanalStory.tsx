@@ -88,7 +88,7 @@ function CanalMap() {
   );
 }
 
-// --- Facts, each from a published source (listed under the section). ---
+// --- Facts, each from a published source (Wikipedia, Matichon, Bangkok Biz News, JS100). ---
 
 const FACTS: { value: number; decimals?: number; prefix?: string; unit: Label; label: Label }[] = [
   { value: 17.5, decimals: 1, unit: { en: "km", th: "กม." }, label: { en: "of the old Chao Phraya, now a canal", th: "ของแม่น้ำเจ้าพระยาสายเดิมที่กลายเป็นคลอง" } },
@@ -142,14 +142,6 @@ const FRUIT: Label[] = [
   { en: "Sapodilla", th: "ละมุด" },
   { en: "Rose apple", th: "ชมพู่" },
   { en: "Banana", th: "กล้วย" },
-];
-
-const SOURCES = [
-  { label: "Wikipedia: Khlong Om Non", href: "https://en.wikipedia.org/wiki/Khlong_Om_Non" },
-  { label: "Wikipedia: Nonthaburi province", href: "https://en.wikipedia.org/wiki/Nonthaburi_province" },
-  { label: "Matichon", href: "https://www.matichon.co.th/local/news_3081471" },
-  { label: "Bangkok Biz News", href: "https://www.bangkokbiznews.com/lifestyle/travel/1176442" },
-  { label: "JS100", href: "https://www.js100.com/en/site/post_share/view/64637" },
 ];
 
 const fmt = (n: number, decimals = 0) => n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
@@ -256,18 +248,6 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
       </div>
 
       {records && <SurveySoFar records={records} />}
-
-      <p className={cn(wrap, "mt-12 text-xs text-muted-foreground")}>
-        {L({ en: "Sources: ", th: "แหล่งข้อมูล: " })}
-        {SOURCES.map((s, i) => (
-          <span key={s.href}>
-            {i > 0 && " · "}
-            <a href={s.href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-foreground">
-              {s.label}
-            </a>
-          </span>
-        ))}
-      </p>
     </section>
   );
 }

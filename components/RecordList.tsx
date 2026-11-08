@@ -160,31 +160,23 @@ export default function RecordList() {
               omnon
             </Link>
           </div>
-          <LangToggle />
-        </nav>
-
-        <div className="mt-1 flex items-end justify-between gap-3 sm:mt-2">
-          <div className="min-w-0">
-            <p className="tag">Khlong Om Non · Field survey</p>
-            <h1 className="mt-2 flex items-center gap-3 font-display text-4xl leading-none sm:text-5xl">
-              {t("records")}
-              <span className="flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 font-sans text-[11px] font-semibold tracking-normal text-ok">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
-                {t("live")}
-              </span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden w-[24rem] lg:block">{surveyor}</div>
-            <Button variant="secondary" onClick={() => setExporting(true)} className="h-11 shrink-0 gap-2 rounded-full px-4 font-semibold" aria-label={t("export")} title={t("export")}>
-              <IconDownload className="size-5" />
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => setExporting(true)} className="h-9 shrink-0 gap-2 rounded-full px-3 text-xs font-semibold sm:px-4" aria-label={t("export")} title={t("export")}>
+              <IconDownload className="size-4" />
               <span className="hidden sm:inline">{t("export")}</span>
             </Button>
+            <LangToggle />
           </div>
+        </nav>
+
+        {/* The page heading is for screen readers only; the numbers below say what this is. */}
+        <h1 className="sr-only">{t("records")}</h1>
+        <div className="mt-2 hidden justify-end lg:flex">
+          <div className="w-[24rem]">{surveyor}</div>
         </div>
 
         {/* Phones: tiles over the surveyor and a map preview. Wide screens: one slim strip of numbers. */}
-        <dl className="mt-3 grid grid-cols-4 gap-2 sm:mt-4 lg:mt-5 lg:gap-3">
+        <dl className="mt-2 grid grid-cols-4 gap-2 sm:mt-3 lg:mt-5 lg:gap-3">
           {stats.map((s) => (
             // Label first for <dl> order; shown under (or after) the number.
             <div key={s.label} className="flex min-w-0 flex-col-reverse justify-between rounded-2xl border border-border bg-card px-3 py-2.5 lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2 lg:px-5 lg:py-3">
@@ -220,7 +212,7 @@ export default function RecordList() {
                     className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary"
                   >
                     {v.label}
-                    <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-background/50">{records ? v.n : ""}</span>
+                    <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-primary-foreground/60">{records ? v.n : ""}</span>
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>

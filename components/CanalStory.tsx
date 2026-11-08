@@ -1,12 +1,15 @@
 "use client";
 
 import { animate, onScroll, stagger, svg, utils } from "animejs";
+import Image from "next/image";
 import { useRef } from "react";
 import { GROUPS, allPhotos, type Label, type SurveyRecord } from "@/lib/schema";
 import { STUDY_PLOTS, plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
 import { countUps, drawIn, onView, scrollReveals, useAnime } from "./motion";
+import boats from "@/public/omnon-2.jpg";
+import boatsFar from "@/public/omnon-3.jpg";
 
 const wrap = "mx-auto w-full max-w-[96rem] px-5 sm:px-8";
 
@@ -107,6 +110,14 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
     });
     countUps(root.current);
     scrollReveals(root.current);
+    // The archive photos open like a curtain lifting, the picture settling as it does, then drift on scroll.
+    for (const frame of utils.$("[data-photo]")) {
+      const img = frame.querySelector("img")!;
+      utils.set(frame, { clipPath: "inset(100% 0% 0% 0%)" });
+      animate(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 1400, ease: "inOut(4)", autoplay: onView(frame) });
+      animate(img, { scale: [1.3, 1.08], duration: 2200, ease: "out(3)", autoplay: onView(frame) });
+      animate(img, { y: ["-4%", "4%"], ease: "linear", autoplay: onScroll({ target: frame, enter: "bottom top", leave: "top bottom", sync: true }) });
+    }
     return undraw;
   });
 
@@ -136,6 +147,30 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
         <div data-reveal className="mx-auto w-full max-w-md lg:max-w-lg">
           <CanalMap />
         </div>
+      </div>
+
+      {/* Then: the canal when boats were the road. */}
+      <div className={cn(wrap, "mt-16 grid gap-3 sm:mt-24 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:items-end")}>
+        <figure>
+          <div data-photo className="relative aspect-[923/590] overflow-hidden rounded-3xl bg-foreground/10">
+            <Image src={boats} alt={L({ en: "Passenger boats on Khlong Om Non, archival photograph", th: "เรือโดยสารในคลองอ้อมนนท์ ภาพถ่ายในอดีต" })} fill sizes="(min-width: 768px) 58vw, 100vw" placeholder="blur" className="object-cover" />
+          </div>
+        </figure>
+        <figure>
+          <div data-photo className="relative aspect-[419/279] overflow-hidden rounded-3xl bg-foreground/10">
+            <Image src={boatsFar} alt={L({ en: "A line of boats travelling the canal past riverside houses, archival photograph", th: "ขบวนเรือล่องผ่านบ้านริมคลอง ภาพถ่ายในอดีต" })} fill sizes="(min-width: 768px) 42vw, 100vw" placeholder="blur" className="object-cover" />
+          </div>
+          <figcaption data-reveal className="mt-5 px-1">
+            <p className="tag inline-block">{L({ en: "Then", th: "วันวาน" })}</p>
+            <p className="mt-3 font-display text-3xl leading-tight sm:text-4xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {L({
+                en: "Before the roads arrived, boats carried people, fruit and goods along Khlong Om Non, between temple piers, orchards and the houses that faced the water.",
+                th: "ก่อนจะมีถนน เรือคือพาหนะที่พาผู้คน ผลไม้ และสินค้า ล่องไปตามคลองอ้อมนนท์ ระหว่างท่าน้ำวัด สวนผลไม้ และบ้านเรือนที่หันหน้าสู่สายน้ำ",
+              })}
+            </p>
+          </figcaption>
+        </figure>
       </div>
 
       {records && <SurveySoFar records={records} />}

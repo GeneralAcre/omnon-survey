@@ -888,7 +888,7 @@ function ShotCard({
                 >
                   <span className="relative">
                     <IconCamera className="size-7" />
-                    <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-primary p-0.5 text-background" />
+                    <IconPlus className="absolute -top-1.5 -right-2.5 size-4 rounded-full bg-primary p-0.5 text-primary-foreground" />
                   </span>
                   {t("takeAnother")}
                 </button>

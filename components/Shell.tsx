@@ -72,7 +72,7 @@ export function LangToggle({ className = "" }: { className?: string }) {
           key={o.id}
           aria-pressed={lang === o.id}
           onClick={() => setLang(o.id)}
-          className={cn("h-full rounded-full px-2.5 transition-colors", lang === o.id ? "bg-primary text-background" : "text-muted-foreground")}
+          className={cn("h-full rounded-full px-2.5 transition-colors", lang === o.id ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
         >
           {o.label}
         </button>

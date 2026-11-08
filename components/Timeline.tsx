@@ -67,7 +67,7 @@ const ORCHARDS = [38, 48, 58].flatMap((y) => [20, 30, 40, 50].map((x) => ({ x, y
 // A schematic of the canal at one TIMELINE stage (by index), not a survey drawing.
 function StageMap({ stage }: { stage: number }) {
   return (
-    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true" className="aspect-square w-full bg-card">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true" className="aspect-square w-full rounded-2xl bg-card text-brand">
       {stage < 2 ? (
         <path data-draw d={OLD_COURSE} strokeWidth={5} />
       ) : (
@@ -108,7 +108,7 @@ export default function Timeline({ className }: { className?: string }) {
     return undraw;
   });
   return (
-    <div ref={root} data-scope data-timeline className="text-brand">
+    <div ref={root} data-scope data-timeline>
       <ol
         tabIndex={0}
         aria-label={L({ en: "Timeline of Khlong Om Non", th: "ลำดับเหตุการณ์ของคลองอ้อมนนท์" })}
@@ -118,8 +118,8 @@ export default function Timeline({ className }: { className?: string }) {
           <li key={e.title.en} className="flex snap-center flex-col items-center px-3 text-center">
             <StageMap stage={i} />
             <div className="relative -mx-3 mt-6 flex w-[calc(100%+1.5rem)] justify-center">
-              <span aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-[#A66E5E]" />
-              <span data-when className="relative rounded-full bg-[#A66E5E] px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-primary-foreground">{L(e.when)}</span>
+              <span aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-primary" />
+              <span data-when className="relative rounded-full bg-primary px-3 py-1.5 text-[11px] leading-none font-semibold whitespace-nowrap text-primary-foreground">{L(e.when)}</span>
             </div>
             <h2 className="mt-5 text-sm font-semibold">{L(e.title)}</h2>
             {e.who && <p className="mt-0.5 text-xs text-muted-foreground">{L(e.who)}</p>}

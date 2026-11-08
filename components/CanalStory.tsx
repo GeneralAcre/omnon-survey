@@ -92,8 +92,8 @@ function CanalMap() {
 
 const fmt = (n: number, decimals = 0) => n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
-// The story of the canal, told for visitors: a map, the numbers, and what to go and see.
-export default function CanalStory({ records }: { records?: SurveyRecord[] | null }) {
+// The opening story for visitors: how the river became a canal, beside a map that draws itself.
+export function StoryIntro() {
   const { L } = useT();
   const root = useRef<HTMLElement>(null);
   useAnime(root, () => {
@@ -110,19 +110,11 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
     });
     countUps(root.current);
     scrollReveals(root.current);
-    // The archive photos open like a curtain lifting, the picture settling as it does, then drift on scroll.
-    for (const frame of utils.$("[data-photo]")) {
-      const img = frame.querySelector("img")!;
-      utils.set(frame, { clipPath: "inset(100% 0% 0% 0%)" });
-      animate(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 1400, ease: "inOut(4)", autoplay: onView(frame) });
-      animate(img, { scale: [1.3, 1.08], duration: 2200, ease: "out(3)", autoplay: onView(frame) });
-      animate(img, { y: ["-4%", "4%"], ease: "linear", autoplay: onScroll({ target: frame, enter: "bottom top", leave: "top bottom", sync: true }) });
-    }
     return undraw;
   });
 
   return (
-    <section ref={root} id="discover" data-scope className="scroll-mt-16 overflow-hidden bg-card py-16 sm:py-24">
+    <section ref={root} id="discover" data-scope className="scroll-mt-16 overflow-hidden py-20 sm:py-28">
       <div className={cn(wrap, "grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-16")}>
         <div>
           <p data-reveal className="tag self-start">{L({ en: "Discover", th: "ค้นพบ" })}</p>
@@ -148,22 +140,46 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
           <CanalMap />
         </div>
       </div>
+    </section>
+  );
+}
 
-      {/* Then: the canal when boats were the road. */}
-      <div className={cn(wrap, "mt-16 grid gap-3 sm:mt-24 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:items-end")}>
+// One period is 300 units; the path spans two screens' worth so sliding it by half loops seamlessly.
+const WAVE = `M0 20${Array.from({ length: 8 }, (_, i) => ` Q${i * 300 + 75} 4 ${i * 300 + 150} 20 T${i * 300 + 300} 20`).join("")} V40 H0Z`;
+
+// The dark band: archive photos of the canal when boats were the road, with water running along its foot.
+export function ThenPhotos() {
+  const { L } = useT();
+  const root = useRef<HTMLElement>(null);
+  useAnime(root, () => {
+    // The photos open like a curtain lifting, the picture settling as it does, then drift on scroll.
+    for (const frame of utils.$("[data-photo]")) {
+      const img = frame.querySelector("img")!;
+      utils.set(frame, { clipPath: "inset(100% 0% 0% 0%)" });
+      animate(frame, { clipPath: "inset(0% 0% 0% 0%)", duration: 1400, ease: "inOut(4)", autoplay: onView(frame) });
+      animate(img, { scale: [1.3, 1.08], duration: 2200, ease: "out(3)", autoplay: onView(frame) });
+      animate(img, { y: ["-4%", "4%"], ease: "linear", autoplay: onScroll({ target: frame, enter: "bottom top", leave: "top bottom", sync: true }) });
+    }
+    animate("[data-wave]", { x: ["0%", "-50%"], duration: 14000, ease: "linear", loop: true });
+    animate("[data-wave-slow]", { x: ["-50%", "0%"], duration: 22000, ease: "linear", loop: true });
+    scrollReveals(root.current);
+  });
+  return (
+    <section ref={root} data-scope className="relative overflow-hidden bg-foreground pt-20 pb-28 text-background sm:pt-28 sm:pb-36">
+      <div className={cn(wrap, "grid gap-3 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:items-end")}>
         <figure>
-          <div data-photo className="relative aspect-[923/590] overflow-hidden rounded-3xl bg-foreground/10">
+          <div data-photo className="relative aspect-[923/590] overflow-hidden rounded-3xl bg-background/10">
             <Image src={boats} alt={L({ en: "Passenger boats on Khlong Om Non, archival photograph", th: "เรือโดยสารในคลองอ้อมนนท์ ภาพถ่ายในอดีต" })} fill sizes="(min-width: 768px) 58vw, 100vw" placeholder="blur" className="object-cover" />
           </div>
         </figure>
         <figure>
-          <div data-photo className="relative aspect-[419/279] overflow-hidden rounded-3xl bg-foreground/10">
+          <div data-photo className="relative aspect-[419/279] overflow-hidden rounded-3xl bg-background/10">
             <Image src={boatsFar} alt={L({ en: "A line of boats travelling the canal past riverside houses, archival photograph", th: "ขบวนเรือล่องผ่านบ้านริมคลอง ภาพถ่ายในอดีต" })} fill sizes="(min-width: 768px) 42vw, 100vw" placeholder="blur" className="object-cover" />
           </div>
           <figcaption data-reveal className="mt-5 px-1">
             <p className="tag inline-block">{L({ en: "Then", th: "วันวาน" })}</p>
-            <p className="mt-3 font-display text-3xl leading-tight sm:text-4xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-4 font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
+            <p className="mt-3 text-[15px] leading-relaxed text-background/75">
               {L({
                 en: "Before the roads arrived, boats carried people, fruit and goods along Khlong Om Non, between temple piers, orchards and the houses that faced the water.",
                 th: "ก่อนจะมีถนน เรือคือพาหนะที่พาผู้คน ผลไม้ และสินค้า ล่องไปตามคลองอ้อมนนท์ ระหว่างท่าน้ำวัด สวนผลไม้ และบ้านเรือนที่หันหน้าสู่สายน้ำ",
@@ -173,7 +189,14 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
         </figure>
       </div>
 
-      {records && <SurveySoFar records={records} />}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-10 overflow-hidden sm:h-14">
+        <svg data-wave-slow viewBox="0 0 2400 40" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-full w-[200%] text-background opacity-30">
+          <path d={WAVE} fill="currentColor" />
+        </svg>
+        <svg data-wave viewBox="0 0 2400 40" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-3/4 w-[200%] text-background">
+          <path d={WAVE} fill="currentColor" />
+        </svg>
+      </div>
     </section>
   );
 }
@@ -221,7 +244,7 @@ function surveyStats(records: SurveyRecord[]) {
 }
 
 // Mounted once records arrive, so the lit buildings and counters start from real numbers.
-function SurveySoFar({ records }: { records: SurveyRecord[] }) {
+export function SurveySoFar({ records }: { records: SurveyRecord[] }) {
   const { L } = useT();
   const s = surveyStats(records);
   const root = useRef<HTMLDivElement>(null);
@@ -248,7 +271,7 @@ function SurveySoFar({ records }: { records: SurveyRecord[] }) {
   const lit = DOTS.filter((d) => s.lit.has(d.key));
 
   return (
-    <div ref={root} data-scope className={cn(wrap, "relative mt-20 sm:mt-28")}>
+    <div ref={root} data-scope className={cn(wrap, "relative")}>
       {/* Wide screens: the words sit in the open ground below the canal's bend. */}
       <div className="grid gap-8 lg:absolute lg:bottom-0 lg:left-8 lg:w-[44%] lg:gap-6">
         <div data-reveal>
@@ -269,7 +292,7 @@ function SurveySoFar({ records }: { records: SurveyRecord[] }) {
             <div key={g.id} className="flex items-baseline gap-3 border-b border-foreground/10 pb-3">
               <span className="size-2.5 shrink-0 translate-y-[-1px] rounded-full" style={{ background: g.color }} />
               <dt className="flex-1">
-                <span className="font-semibold">{L(g.label)}</span> <span className="text-muted-foreground">{L(g.zone)}</span>
+                <span className="font-semibold">{L(g.label)}</span>
               </dt>
               <dd className="tabular-nums">
                 <span className="font-semibold">{fmt(s.zone[g.id] ?? 0)}</span>

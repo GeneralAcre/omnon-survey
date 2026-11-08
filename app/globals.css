@@ -4,30 +4,31 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* White, with the zone palette: sand #D4BC9A, caramel #D0935A, clay #A66E5E. */
+/* 60-30-10: cream for the page (60), espresso for text and the dark bands (30),
+   caramel for actions and highlights (10). The zone colours (sand, caramel, clay) are kept for zone data. */
 :root {
   color-scheme: light;
-  --background: #ffffff;
-  --foreground: #211a16;
-  --card: #faf6f1;
-  --card-foreground: #211a16;
-  --popover: #ffffff;
-  --popover-foreground: #211a16;
-  --primary: #a66e5e;
-  --primary-foreground: #ffffff;
-  --secondary: #f3ece4;
-  --secondary-foreground: #211a16;
-  --muted: #f3ece4;
-  --muted-foreground: #6e5f55;
-  --accent: #f3ece4;
-  --accent-foreground: #211a16;
+  --background: #faf6f0;
+  --foreground: #2a201b;
+  --card: #f2eadf;
+  --card-foreground: #2a201b;
+  --popover: #fffdf9;
+  --popover-foreground: #2a201b;
+  --primary: #d0935a;
+  --primary-foreground: #2a201b;
+  --secondary: #efe6da;
+  --secondary-foreground: #2a201b;
+  --muted: #efe6da;
+  --muted-foreground: #74655a;
+  --accent: #efe6da;
+  --accent-foreground: #2a201b;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e8ddd1;
-  --input: #d9cab9;
-  --ring: #a66e5e;
+  --border: #e5dacb;
+  --input: #d8c9b6;
+  --ring: #d0935a;
   --radius: 0.75rem;
-  /* App-specific: the highlight colour and the "done" colour. */
-  --brand: #a66e5e;
+  /* App-specific: accent text and icons on cream (caramel deepened to stay readable), and the "done" colour. */
+  --brand: #9a5a2e;
   --ok: #7d5245;
 }
 
@@ -41,7 +42,7 @@
   --popover: #111111;
   --popover-foreground: #f5f5f5;
   --primary: #d0935a;
-  --primary-foreground: #000000;
+  --primary-foreground: #2a201b;
   --secondary: #1c1c1c;
   --secondary-foreground: #f5f5f5;
   --muted: #1c1c1c;
@@ -234,7 +235,7 @@
 @utility tag {
   display: inline-block;
   padding: 0.375rem 0.75rem;
-  background: var(--brand);
+  background: var(--primary);
   color: var(--primary-foreground);
   font-family: var(--font-anton), var(--font-kanit), system-ui, sans-serif;
   font-size: 1rem;

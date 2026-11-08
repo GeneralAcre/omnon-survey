@@ -134,7 +134,7 @@ export default function RecordList() {
   // Who is signed in, with the way back to the sign-in screen in plain sight.
   const surveyor = (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-background">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
         {user.name.slice(0, 1).toUpperCase()}
       </span>
       <div className="min-w-0 flex-1">
@@ -217,7 +217,7 @@ export default function RecordList() {
                   <ToggleGroupItem
                     key={v.id}
                     value={v.id}
-                    className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-primary aria-pressed:text-background hover:aria-pressed:bg-primary"
+                    className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary"
                   >
                     {v.label}
                     <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-background/50">{records ? v.n : ""}</span>
@@ -248,7 +248,7 @@ export default function RecordList() {
                     aria-label={c.name}
                     className={cn(
                       "h-auto gap-1.5 rounded-full px-3 py-2",
-                      active && !col ? "bg-primary text-background aria-pressed:bg-primary hover:bg-primary hover:text-background" : active ? "" : "bg-secondary text-foreground",
+                      active && !col ? "bg-primary text-primary-foreground aria-pressed:bg-primary hover:bg-primary hover:text-primary-foreground" : active ? "" : "bg-secondary text-foreground",
                     )}
                     style={active && col ? { background: col.bg, color: col.fg } : undefined}
                   >
@@ -377,7 +377,7 @@ function ExportSheet({ open, onClose, records }: { open: boolean; onClose: () =>
               value={g.id || "all"}
               className={cn(
                 "h-auto rounded-full px-4 py-2 font-semibold",
-                active && !col ? "bg-primary text-background aria-pressed:bg-primary hover:bg-primary hover:text-background" : active ? "" : "bg-secondary",
+                active && !col ? "bg-primary text-primary-foreground aria-pressed:bg-primary hover:bg-primary hover:text-primary-foreground" : active ? "" : "bg-secondary",
               )}
               style={active && col ? { background: col.bg, color: col.fg } : undefined}
             >

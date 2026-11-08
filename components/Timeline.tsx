@@ -46,7 +46,7 @@ const TIMELINE: { when: Label; who?: Label; title: Label; body: Label }[] = [
     when: { en: "Suan Nai era", th: "ยุคสวนใน" },
     title: { en: "Inner orchards", th: "สวนใน" },
     body: {
-      en: "Floating markets and orchards supplied the capital with fine fruit — notably durian and santol.",
+      en: "Floating markets and orchards supplied the capital with fine fruit, especially durian and santol.",
       th: "ตลาดน้ำและสวนผลไม้ส่งผลผลิตชั้นดีเข้าเมืองหลวง โดยเฉพาะทุเรียนและกระท้อน",
     },
   },
@@ -54,7 +54,7 @@ const TIMELINE: { when: Label; who?: Label; title: Label; body: Label }[] = [
     when: { en: "Today", th: "ปัจจุบัน" },
     title: { en: "A 17.5 km cultural landscape", th: "ภูมิทัศน์วัฒนธรรมยาว 17.5 กม." },
     body: {
-      en: "Ayutthaya-era temples and riverside houses line the banks — now pressured by roads, ecological decline and urban growth.",
+      en: "Ayutthaya-era temples and riverside houses line the banks. Today they are under pressure from roads, a declining ecosystem and a growing city.",
       th: "วัดสมัยอยุธยาและเรือนริมน้ำเรียงรายสองฝั่ง แต่กำลังเผชิญแรงกดดันจากถนน ระบบนิเวศที่เสื่อมลง และการขยายตัวของเมือง",
     },
   },

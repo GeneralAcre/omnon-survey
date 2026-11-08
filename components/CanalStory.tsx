@@ -138,7 +138,7 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
             </p>
             <p>
               {L({
-                en: "What the river left is a quiet world on the edge of Bangkok: temple piers, orchards, wooden houses on stilts and a way of life still tied to the water — now pressed by new roads, housing estates and floods.",
+                en: "What the river left is a quiet world on the edge of Bangkok: temple piers, orchards, wooden houses on stilts and a way of life that still follows the water. Today it is under pressure from new roads, housing estates and floods.",
                 th: "สิ่งที่แม่น้ำทิ้งไว้คือโลกอันเงียบสงบริมขอบกรุงเทพฯ ท่าน้ำวัด สวนผลไม้ เรือนไม้ใต้ถุนสูง และวิถีชีวิตที่ยังผูกพันกับสายน้ำ ซึ่งวันนี้กำลังถูกกดดันจากถนนใหม่ หมู่บ้านจัดสรร และน้ำท่วม",
               })}
             </p>
@@ -298,15 +298,17 @@ function SurveySoFar({ records }: { records: SurveyRecord[] }) {
         className="mt-8 h-auto w-full lg:mt-0"
       >
         {/* Not yet documented: a faint dot in its zone's colour. */}
-        <g fillOpacity={0.55}>
-          {DOTS.map((d) => (
-            <circle data-b key={d.key} cx={d.x} cy={d.y} r={2.6} fill={groupColor(d.zone).bg} />
-          ))}
+        {/* On phones the map is a third the size, so the dots grow by stroke (see globals.css). */}
+        <g opacity={0.55}>
+          {DOTS.map((d) => {
+            const c = groupColor(d.zone).bg;
+            return <circle data-b key={d.key} cx={d.x} cy={d.y} r={2.6} fill={c} stroke={c} strokeWidth={0} />;
+          })}
         </g>
         {lit.map((d) => {
           const c = groupColor(d.zone).bg;
           return (
-            <g key={d.key}>
+            <g key={d.key} data-grow style={{ transformOrigin: `${d.x}px ${d.y}px` }}>
               <circle data-halo cx={d.x} cy={d.y} r={6} fill="none" stroke="var(--foreground)" strokeWidth={1.5} opacity={0} />
               <circle data-lit cx={d.x} cy={d.y} r={7} fill={c} stroke="var(--foreground)" strokeWidth={2} />
             </g>
@@ -315,9 +317,9 @@ function SurveySoFar({ records }: { records: SurveyRecord[] }) {
         {ZONE_MID.map((z) => {
           const g = groupColor(z.id);
           return (
-            <g key={z.id} transform={`translate(${z.x} ${z.y})`}>
-              <circle r={13} fill={g.bg} stroke="var(--card)" strokeWidth={3} />
-              <text textAnchor="middle" dy="0.35em" fontSize={13} fontWeight={700} fill={g.fg}>
+            <g key={z.id} data-grow style={{ transformOrigin: `${z.x}px ${z.y}px` }}>
+              <circle cx={z.x} cy={z.y} r={13} fill={g.bg} stroke="var(--card)" strokeWidth={3} />
+              <text x={z.x} y={z.y} textAnchor="middle" dy="0.35em" fontSize={13} fontWeight={700} fill={g.fg}>
                 {z.id}
               </text>
             </g>

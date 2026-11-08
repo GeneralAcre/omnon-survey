@@ -69,6 +69,8 @@ export default function StudyMap({
   const router = useRouter();
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  // The zone picked in the chips, for refits after a resize.
+  const zoneRef = useRef(zone);
   const plotsLayer = useRef<L.LayerGroup | null>(null);
   const buildingsLayer = useRef<L.LayerGroup | null>(null);
   const me = useRef<L.CircleMarker | null>(null);
@@ -125,8 +127,20 @@ export default function StudyMap({
     }
 
     // Zoomed all the way out = the whole study area on screen, no further.
-    m.fitBounds(boundsOf(), { padding: [16, 16] });
-    m.setMinZoom(m.getZoom());
+    // The box can still be settling when the map is built (and phones rotate), so this runs
+    // again whenever its size changes. Previews always show their area in full; the full map
+    // only re-frames if it had no room the first time.
+    let fitted = false;
+    const fit = () => {
+      const size = m.invalidateSize().getSize();
+      if (!size.x || !size.y) return;
+      m.setMinZoom(m.getBoundsZoom(boundsOf(), false, L.point(32, 32)));
+      if (preview || !fitted) m.fitBounds(boundsOf(preview ? zoneRef.current : undefined), { padding: [16, 16], animate: false });
+      fitted = true;
+    };
+    fit();
+    const resize = new ResizeObserver(fit);
+    resize.observe(box);
     plotsLayer.current = L.layerGroup().addTo(m);
     buildingsLayer.current = L.layerGroup();
 
@@ -154,6 +168,7 @@ export default function StudyMap({
 
     map.current = m;
     return () => {
+      resize.disconnect();
       m.remove();
       map.current = null;
     };
@@ -163,6 +178,7 @@ export default function StudyMap({
 
   // Fly to the zone picked in the filter chips.
   useEffect(() => {
+    zoneRef.current = zone;
     const m = map.current;
     // A hidden map has no size to fit into, and Leaflet would throw on the NaN zoom.
     if (!m || !m.getSize().x || !m.getSize().y) return;

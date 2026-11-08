@@ -189,7 +189,7 @@ export default function RecordList() {
             // Label first for <dl> order; shown under (or after) the number.
             <div key={s.label} className="flex min-w-0 flex-col-reverse justify-between rounded-2xl border border-border bg-card px-3 py-2.5 lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2 lg:px-5 lg:py-3">
               <dt className="truncate text-[11px] text-muted-foreground sm:text-xs lg:text-sm">{s.label}</dt>
-              <dd className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-3xl">{records ? s.n.toLocaleString() : "–"}</dd>
+              <dd className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-3xl">{records ? s.n.toLocaleString() : "…"}</dd>
             </div>
           ))}
         </dl>
@@ -401,7 +401,7 @@ function ExportSheet({ open, onClose, records }: { open: boolean; onClose: () =>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold">{t("part")} {n + 1}/{parts.length}</span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {plot(p[0])}–{plot(p.at(-1)!)} · {p.reduce((c, r) => c + allPhotos(r).length, 0)} {t("photos")}
+                        {plot(p[0])} {L({ en: "to", th: "ถึง" })} {plot(p.at(-1)!)} · {p.reduce((c, r) => c + allPhotos(r).length, 0)} {t("photos")}
                       </span>
                     </span>
                   </a>

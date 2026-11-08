@@ -49,14 +49,14 @@ export default function BuildingDetail({ record, stacked = false, children }: { 
 
           <div className="space-y-3 px-4 pt-4 lg:px-0">
             <div className="grid grid-cols-2 gap-2">
-              <Info label={t("stepType")} value={typeLabel(record, lang) || "—"} />
-              <Info label={t("stepFunction")} value={functionLabel(record, lang) || "—"} />
-              <Info label={t("buildYear")} value={record.buildYear || "—"} />
-              <Info label={t("buildAge")} value={record.buildAge ? `${record.buildAge} ${t("yearsOld")}` : "—"} />
-              <Info label={t("floors")} value={record.floors ? `${record.floors} ${t("floorsUnit")}` : "—"} />
-              <Info label={t("occupancy")} value={occupancyLabel(record, lang) || "—"} />
-              <Info label={t("jacked")} value={jackedLabel(record, lang) || "—"} />
-              <Info label={t("floodLine")} value={floodLinesLabel(record, "\n") || "—"} />
+              <Info label={t("stepType")} value={typeLabel(record, lang) || t("notSet")} />
+              <Info label={t("stepFunction")} value={functionLabel(record, lang) || t("notSet")} />
+              <Info label={t("buildYear")} value={record.buildYear || t("notSet")} />
+              <Info label={t("buildAge")} value={record.buildAge ? `${record.buildAge} ${t("yearsOld")}` : t("notSet")} />
+              <Info label={t("floors")} value={record.floors ? `${record.floors} ${t("floorsUnit")}` : t("notSet")} />
+              <Info label={t("occupancy")} value={occupancyLabel(record, lang) || t("notSet")} />
+              <Info label={t("jacked")} value={jackedLabel(record, lang) || t("notSet")} />
+              <Info label={t("floodLine")} value={floodLinesLabel(record, "\n") || t("notSet")} />
             </div>
 
             {record.mapLink && (

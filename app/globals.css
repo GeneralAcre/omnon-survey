@@ -255,3 +255,13 @@
   transform-box: fill-box;
   transform-origin: center;
 }
+
+/* The survey's building map (CanalStory) shrinks to a third on phones; keep its marks readable. */
+@media (max-width: 639px) {
+  [data-field] [data-b] {
+    stroke-width: 9px;
+  }
+  [data-field] [data-grow] {
+    scale: 2.4;
+  }
+}

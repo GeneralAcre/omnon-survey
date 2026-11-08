@@ -33,7 +33,7 @@ export const instant = false;
 
 export const metadata: Metadata = {
   title: "Om Non Survey",
-  description: "Field survey for the Khlong Om Non Workshop — XAUAT × Chulalongkorn University.",
+  description: "Field survey for the Khlong Om Non Workshop by XAUAT and Chulalongkorn University.",
   appleWebApp: { capable: true, title: "Om Non Survey", statusBarStyle: "default" },
 };
 

@@ -26,6 +26,24 @@ export function useAnime(root: RefObject<HTMLElement | null>, setup: (scope: Sco
 export const onView = (target: Element) => onScroll({ target, enter: "bottom-=80 top", sync: "play" });
 
 /**
+ * Numbers marked `data-count-to` (and optional `data-decimals`) count up from zero when they come into view.
+ * The server-rendered text already holds the final number, so it reads right without JS or motion.
+ */
+export function countUps(root: Element | null) {
+  for (const el of utils.$("[data-count-to]").filter((e) => e.closest("[data-scope]") === root)) {
+    const to = Number(el.dataset.countTo);
+    const decimals = Number(el.dataset.decimals ?? 0);
+    const text = el.firstChild ?? el;
+    const write = (v: number) => {
+      text.textContent = v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    };
+    const n = { v: 0 };
+    write(0);
+    animate(n, { v: to, duration: 2000, ease: "out(4)", onUpdate: () => write(n.v), onComplete: () => write(to), autoplay: onView(el) });
+  }
+}
+
+/**
  * The scroll reveals used across the page:
  * - `data-reveal`: the element rises in on its own.
  * - `data-stagger`: its children rise in one after another.

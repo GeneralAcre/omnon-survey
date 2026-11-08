@@ -14,6 +14,7 @@ import { useRecords } from "./data";
 import { onView, scrollReveals, useAnime } from "./motion";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
+import CanalStory from "./CanalStory";
 import Timeline from "./Timeline";
 import chula from "@/public/Chula.webp";
 import omnon from "@/public/omnon.jpg";
@@ -152,6 +153,11 @@ export default function Landing() {
           <Timeline className="-mx-5 px-2 sm:-mx-8 sm:px-5" />
         </div>
       </section>
+
+      {/* The canal for visitors: map, numbers, what to see, and live survey progress. */}
+      <div className="mt-16 sm:mt-24">
+        <CanalStory records={records} />
+      </div>
 
       {/* What the workshop is. */}
       <section className={cn(wrap, "grid gap-8 py-16 sm:py-24 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>

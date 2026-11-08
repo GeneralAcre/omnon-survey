@@ -87,17 +87,6 @@ function CanalMap() {
   );
 }
 
-// --- Facts, each from a published source (Wikipedia, Matichon, Bangkok Biz News, JS100). ---
-
-const FACTS: { value: number; decimals?: number; prefix?: string; unit: Label; label: Label }[] = [
-  { value: 17.5, decimals: 1, unit: { en: "km", th: "กม." }, label: { en: "of the old Chao Phraya, now a canal", th: "ของแม่น้ำเจ้าพระยาสายเดิมที่กลายเป็นคลอง" } },
-  { value: 29, unit: { en: "temples", th: "วัด" }, label: { en: "counted along its banks", th: "ที่นับได้ริมสองฝั่งคลอง" } },
-  { value: new Date().getFullYear() - 1636, unit: { en: "years", th: "ปี" }, label: { en: "since the 1636 shortcut moved the river", th: "นับจากการขุดคลองลัดเมื่อ พ.ศ. 2179" } },
-  { value: 600, prefix: "~", unit: { en: "years", th: "ปี" }, label: { en: "age of the prang at Wat Prang Luang", th: "อายุพระปรางค์วัดปรางค์หลวง" } },
-  { value: 21, unit: { en: "m", th: "ม." }, label: { en: "height of that prang", th: "ความสูงของพระปรางค์องค์นั้น" } },
-  { value: 3, unit: { en: "districts", th: "อำเภอ" }, label: { en: "Mueang Nonthaburi, Bang Yai, Bang Kruai", th: "เมืองนนทบุรี บางใหญ่ บางกรวย" } },
-];
-
 const fmt = (n: number, decimals = 0) => n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
 // The story of the canal, told for visitors: a map, the numbers, and what to go and see.
@@ -147,26 +136,6 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
         <div data-reveal className="mx-auto w-full max-w-md lg:max-w-lg">
           <CanalMap />
         </div>
-      </div>
-
-      {/* The numbers. */}
-      <div className={cn(wrap, "mt-16 sm:mt-24")}>
-        <ul data-stagger className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          {FACTS.map((f) => (
-            <li key={f.label.en} className="rounded-3xl bg-background p-5 sm:p-8">
-              <p className="flex items-baseline gap-2">
-                <span className="font-display text-5xl leading-none text-brand tabular-nums sm:text-7xl">
-                  {f.prefix}
-                  <span data-count-to={f.value} data-decimals={f.decimals ?? 0}>
-                    {fmt(f.value, f.decimals)}
-                  </span>
-                </span>
-                <span className="text-sm font-semibold text-muted-foreground sm:text-base">{L(f.unit)}</span>
-              </p>
-              <p className="mt-3 text-sm leading-snug text-foreground/80">{L(f.label)}</p>
-            </li>
-          ))}
-        </ul>
       </div>
 
       {records && <SurveySoFar records={records} />}

@@ -1,11 +1,11 @@
 "use client";
 
-import { animate, stagger, svg, utils } from "animejs";
+import { animate, stagger, utils } from "animejs";
 import { useRef } from "react";
 import type { Label } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
-import { onView, useAnime } from "./motion";
+import { drawIn, onView, useAnime } from "./motion";
 
 const TIMELINE: { when: Label; who?: Label; title: Label; body: Label }[] = [
   {
@@ -69,17 +69,17 @@ function StageMap({ stage }: { stage: number }) {
   return (
     <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true" className="aspect-square w-full bg-card">
       {stage < 2 ? (
-        <path d={OLD_COURSE} strokeWidth={5} />
+        <path data-draw d={OLD_COURSE} strokeWidth={5} />
       ) : (
         <>
-          <path d={NEW_COURSE} strokeWidth={5} />
-          <path d={OLD_COURSE} strokeWidth={1.5} />
+          <path data-draw d={NEW_COURSE} strokeWidth={5} />
+          <path data-draw d={OLD_COURSE} strokeWidth={1.5} />
         </>
       )}
       {stage === 1 && <path d="M62 18V82" strokeWidth={1.5} strokeDasharray="3 3" />}
       {stage >= 3 && <rect x={68} y={9} width={7} height={7} fill="currentColor" stroke="none" />}
       {stage >= 4 && ORCHARDS.map((p) => <circle key={`${p.x}-${p.y}`} cx={p.x} cy={p.y} r={1.5} fill="currentColor" stroke="none" />)}
-      {stage === 5 && <path d="M0 86L100 80M84 0L88 100" strokeWidth={1} />}
+      {stage === 5 && <path data-draw d="M0 86L100 80M84 0L88 100" strokeWidth={1} />}
     </svg>
   );
 }
@@ -94,7 +94,7 @@ export default function Timeline({ className }: { className?: string }) {
     // Each stage rises in, then its canal courses draw themselves and the fort and orchards pop up.
     utils.set(stages, { opacity: 0, y: 40 });
     animate(stages, { opacity: 1, y: 0, duration: 900, delay: stagger(120), ease: "out(3)", autoplay: onView(list) });
-    animate(svg.createDrawable("svg path:not([stroke-dasharray])"), {
+    const undraw = drawIn("[data-draw]", {
       draw: ["0 0", "0 1"],
       duration: 1600,
       delay: stagger(110, { start: 250 }),
@@ -105,6 +105,7 @@ export default function Timeline({ className }: { className?: string }) {
     animate("svg circle, svg rect", { scale: 1, duration: 700, delay: stagger(25, { start: 1200 }), ease: "outBack(2)", autoplay: onView(list) });
     // The date pills settle with a little bounce.
     animate("[data-when]", { scale: [0.6, 1], duration: 900, delay: stagger(120, { start: 300 }), ease: "outElastic(1, .6)", autoplay: onView(list) });
+    return undraw;
   });
   return (
     <div ref={root} data-scope data-timeline className="text-brand">

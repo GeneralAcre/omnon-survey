@@ -7,7 +7,7 @@ import { GROUPS, allPhotos, type Label, type SurveyRecord } from "@/lib/schema";
 import { STUDY_PLOTS, plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
-import { countUps, onView, scrollReveals, useAnime } from "./motion";
+import { countUps, drawIn, onView, scrollReveals, useAnime } from "./motion";
 
 const wrap = "mx-auto w-full max-w-[96rem] px-5 sm:px-8";
 
@@ -53,7 +53,7 @@ function CanalMap() {
       <path data-draw d={CANAL} stroke="var(--brand)" strokeWidth={7} strokeLinecap="round" fill="none" />
       <path data-track d={CANAL} stroke="none" fill="none" />
       {TEMPLES.map((p, i) => (
-        <rect data-temple key={i} x={p.x - 3} y={p.y - 3} width={6} height={6} transform={`rotate(45 ${p.x} ${p.y})`} fill="#D0935A" />
+        <path data-temple key={i} d={`M${p.x} ${p.y - 4}l4 4-4 4-4-4z`} fill="#D0935A" />
       ))}
       {/* The fort at the mouth, 1665. */}
       <rect data-temple x={344} y={58} width={14} height={14} fill="var(--foreground)" />
@@ -161,7 +161,7 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
   useAnime(root, () => {
     const [map] = utils.$("[data-canal-map]");
     // The rivers draw themselves, then the temples appear along the banks.
-    animate(svg.createDrawable("[data-draw]"), { draw: ["0 0", "0 1"], duration: 2200, delay: stagger(500), ease: "inOut(3)", autoplay: onView(map) });
+    const undraw = drawIn("[data-draw]", { draw: ["0 0", "0 1"], duration: 2200, delay: stagger(500), ease: "inOut(3)", autoplay: onView(map) });
     utils.set("[data-temple]", { opacity: 0, scale: 0 });
     animate("[data-temple]", { opacity: 1, scale: 1, duration: 600, delay: stagger(45, { start: 1400 }), ease: "outBack(3)", autoplay: onView(map) });
     // The boat rides the bend while the map crosses the screen.
@@ -174,6 +174,7 @@ export default function CanalStory({ records }: { records?: SurveyRecord[] | nul
     animate("[data-marquee]", { x: ["0%", "-50%"], duration: 30000, ease: "linear", loop: true });
     countUps(root.current);
     scrollReveals(root.current);
+    return undraw;
   });
 
   return (
@@ -305,11 +306,12 @@ function SurveySoFar({ records }: { records: SurveyRecord[] }) {
   const root = useRef<HTMLDivElement>(null);
   useAnime(root, () => {
     const [ring] = utils.$("[data-ring]");
-    animate(svg.createDrawable("[data-ring]"), { draw: ["0 0", `0 ${pct}`], duration: 2000, ease: "out(3)", autoplay: onView(ring) });
+    const undraw = drawIn("[data-ring]", { draw: ["0 0", `0 ${pct}`], duration: 2000, ease: "out(3)", autoplay: onView(ring) });
     utils.set("[data-bar]", { scaleX: 0 });
     animate("[data-bar]", { scaleX: 1, duration: 1400, delay: stagger(150, { start: 300 }), ease: "out(4)", autoplay: onView(ring) });
     countUps(root.current);
     scrollReveals(root.current);
+    return undraw;
   });
 
   const small: { value: number; label: Label }[] = [

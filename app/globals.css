@@ -250,7 +250,8 @@
     opacity: 0;
   }
 }
-[data-timeline] svg :is(circle, rect) {
+[data-timeline] svg :is(circle, rect),
+[data-temple] {
   transform-box: fill-box;
   transform-origin: center;
 }

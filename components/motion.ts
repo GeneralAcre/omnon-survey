@@ -1,6 +1,6 @@
 "use client";
 
-import { animate, createScope, onScroll, stagger, utils, type Scope } from "animejs";
+import { animate, createScope, onScroll, stagger, svg, utils, type Scope } from "animejs";
 import { useEffect, type RefObject } from "react";
 
 /**
@@ -20,6 +20,27 @@ export function useAnime(root: RefObject<HTMLElement | null>, setup: (scope: Sco
     // The setup runs once per mount; it reads the DOM, not props.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+}
+
+const DRAW_ATTRS = ["pathLength", "stroke-dasharray", "stroke-dashoffset", "draw"];
+
+/**
+ * Lines that draw themselves in. createDrawable hides them straight away and leaves its attributes behind,
+ * so the returned cleanup puts the elements back exactly as React rendered them (needed when effects re-run).
+ */
+export function drawIn(selector: string, params: Parameters<typeof animate>[1]) {
+  const els = utils.$(selector);
+  const before = els.map((el) => [el.getAttribute("style"), ...DRAW_ATTRS.map((a) => el.getAttribute(a))]);
+  animate(svg.createDrawable(els), params);
+  return () =>
+    els.forEach((el, i) => {
+      [null, ...DRAW_ATTRS].forEach((a, j) => {
+        const name = a ?? "style";
+        const v = before[i][j];
+        if (v === null) el.removeAttribute(name);
+        else el.setAttribute(name, v);
+      });
+    });
 }
 
 // Plays once when the element's top comes 80px above the bottom of the screen, and never pauses.

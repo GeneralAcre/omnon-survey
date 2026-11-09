@@ -60,10 +60,10 @@ export default function Landing() {
       </nav>
 
       {/* 1. The hook. */}
-      <section className="relative isolate min-h-[34rem] overflow-hidden bg-foreground text-background sm:min-h-[40rem] lg:min-h-[min(82svh,54rem)]">
+      <section className="relative isolate min-h-[calc(100svh-4rem)] overflow-hidden bg-foreground text-background">
         <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-foreground via-foreground/20 to-foreground/10" />
-        <div className={cn(wrap, "flex min-h-[34rem] flex-col justify-end pt-16 pb-10 sm:min-h-[40rem] sm:pb-14 lg:min-h-[min(82svh,54rem)] lg:pb-12")}>
+        <div className={cn(wrap, "flex min-h-[calc(100svh-4rem)] flex-col justify-end pt-16 pb-10 sm:pb-14 lg:pb-12")}>
           {/* Wide screens: the title along the bottom left, the main action across from it. */}
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
             <h1 className="font-display text-6xl leading-[0.95] sm:text-8xl lg:text-[9rem]">

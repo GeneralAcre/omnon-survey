@@ -105,8 +105,7 @@ export default function Landing() {
             <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
             {records && (
               <div className="mt-5">
-                <p className="text-sm text-muted-foreground">{L({ en: "Documented so far", th: "บันทึกแล้ว" })}</p>
-                <StatLine buildings={stats.total} className="mt-1 text-base" />
+                <StatLine buildings={stats.total} className="text-base" />
               </div>
             )}
             <ol className="mt-6 space-y-2">

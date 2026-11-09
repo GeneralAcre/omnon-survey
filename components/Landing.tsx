@@ -106,7 +106,7 @@ export default function Landing() {
             {records && (
               <div className="mt-5">
                 <p className="text-sm text-muted-foreground">{L({ en: "Documented so far", th: "บันทึกแล้ว" })}</p>
-                <StatLine t={stats.total} className="mt-1 text-base" />
+                <StatLine buildings={stats.total} className="mt-1 text-base" />
               </div>
             )}
             <ol className="mt-6 space-y-2">
@@ -123,7 +123,7 @@ export default function Landing() {
                     </span>
                     <span className="min-w-0">
                       <span className="block font-semibold">{L(g.label)}</span>
-                      {records && <StatLine t={stats.zone[g.id]} />}
+                      {records && <StatLine buildings={stats.zone[g.id]} />}
                     </span>
                   </button>
                 </li>

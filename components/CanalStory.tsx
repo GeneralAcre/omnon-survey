@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { GROUPS, allPhotos, type Label, type SurveyRecord } from "@/lib/schema";
+import { GROUPS, type SurveyRecord } from "@/lib/schema";
 import { STUDY_PLOTS, plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
@@ -161,12 +161,9 @@ export function ThenPhotos() {
   );
 }
 
-// --- Live numbers from the survey itself, overall and per zone. ---
+// --- Live numbers from the survey itself: buildings documented, overall and per zone. ---
 
 const ALL = STUDY_PLOTS.flatMap((p) => p.buildings.map(([code]) => ({ key: `${p.key}|${code}`, zone: p.zone })));
-
-type Tally = { buildings: number; photos: number; floods: number; jacked: number };
-const empty = (): Tally => ({ buildings: 0, photos: 0, floods: 0, jacked: 0 });
 
 export function surveyStats(records: SurveyRecord[]) {
   const lit = new Set<string>();
@@ -177,44 +174,23 @@ export function surveyStats(records: SurveyRecord[]) {
       for (const c of codes) lit.add(`${plot.key}|${c}`);
     }
   }
-  const total = empty();
-  const zone: Record<string, Tally> = Object.fromEntries(GROUPS.map((g) => [g.id, empty()]));
+  let total = 0;
+  const zone: Record<string, number> = Object.fromEntries(GROUPS.map((g) => [g.id, 0]));
   for (const b of ALL) {
     if (!lit.has(b.key)) continue;
-    total.buildings++;
-    if (zone[b.zone]) zone[b.zone].buildings++;
-  }
-  for (const r of records) {
-    const add = (t: Tally) => {
-      t.photos += allPhotos(r).length;
-      // Older records were saved before flood lines existed.
-      t.floods += r.floodLines?.length ?? 0;
-      if (r.jacked === "yes") t.jacked++;
-    };
-    add(total);
-    if (zone[r.group]) add(zone[r.group]);
+    total++;
+    zone[b.zone] = (zone[b.zone] ?? 0) + 1;
   }
   return { total, zone };
 }
 
-// "263 buildings · 210 photos · 30 jacked up", leaving out what is still zero.
-export function StatLine({ t, className }: { t: Tally; className?: string }) {
+// "263 buildings".
+export function StatLine({ buildings, className }: { buildings: number; className?: string }) {
   const { L } = useT();
-  const parts: { value: number; label: Label }[] = [
-    { value: t.buildings, label: { en: t.buildings === 1 ? "building" : "buildings", th: "อาคาร" } },
-    { value: t.photos, label: { en: t.photos === 1 ? "photo" : "photos", th: "ภาพ" } },
-    { value: t.floods, label: { en: t.floods === 1 ? "flood line" : "flood lines", th: "ระดับน้ำท่วม" } },
-    { value: t.jacked, label: { en: "jacked up", th: "บ้านดีด" } },
-  ];
   return (
-    <span className={cn("flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground", className)}>
-      {parts
-        .filter((p) => p.value > 0)
-        .map((p) => (
-          <span key={p.label.en}>
-            <span className="font-semibold text-foreground tabular-nums">{fmt(p.value)}</span> {L(p.label)}
-          </span>
-        ))}
+    <span className={cn("block text-sm text-muted-foreground", className)}>
+      <span className="font-semibold text-foreground tabular-nums">{fmt(buildings)}</span>{" "}
+      {L({ en: buildings === 1 ? "building" : "buildings", th: "อาคาร" })}
     </span>
   );
 }

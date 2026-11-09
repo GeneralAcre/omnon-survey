@@ -12,11 +12,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { GROUPS, allPhotos, functionLabel, groupColor, groupOf, typeLabel, type SurveyRecord } from "@/lib/schema";
 import { zipParts } from "@/lib/naming";
-import { plotOf } from "@/lib/study-area";
 import { setUser, useT, useUser } from "./app-state";
 import { useRecords } from "./data";
 import { photoUrl, retryImage } from "./images";
-import { IconBack, IconDownload, IconPlus, IconSearch, IconUser } from "./Icons";
+import { IconBack, IconDownload, IconPlus, IconSearch } from "./Icons";
 import AreaHero from "./AreaHero";
 import BuildingPanel, { type MapPick } from "./BuildingPanel";
 import { BOX_PAGE, BuildingBox, SeeMore, boxCols, boxGrid } from "./BuildingBox";
@@ -98,10 +97,6 @@ export default function RecordList() {
   }, [records, filter, query, user.name]);
 
   const count = (f: Filter) => (records ?? []).filter((r) => (f === "all" ? true : f === "mine" ? isMine(r) : r.group === f)).length;
-  const photoCount = visible.reduce((n, r) => n + allPhotos(r).length, 0);
-  // On the map: matched to a plot of the study area, or pinned by GPS.
-  const onMap = (r: SurveyRecord) => r.lat != null || plotOf(r).length > 0;
-  const placeCount = visible.filter(onMap).length;
 
   // The chip row scrolls sideways if "Zone 1…3" don't all fit.
   const chips: { id: Filter; label: string; name: string; group?: string }[] = [
@@ -110,10 +105,10 @@ export default function RecordList() {
     { id: "mine", label: t("mine"), name: t("mine") },
   ];
 
-  const views: { id: View; label: string; n: number }[] = [
-    { id: "list", label: t("viewList"), n: visible.length },
-    { id: "photos", label: t("viewPhotos"), n: photoCount },
-    ...(wide ? [] : [{ id: "map" as View, label: t("viewMap"), n: placeCount }]),
+  const views: { id: View; label: string }[] = [
+    { id: "list", label: t("viewList") },
+    { id: "photos", label: t("viewPhotos") },
+    ...(wide ? [] : [{ id: "map" as View, label: t("viewMap") }]),
   ];
   const zone = GROUPS.some((g) => g.id === filter) ? filter : undefined;
 
@@ -122,30 +117,14 @@ export default function RecordList() {
   const pickedRecord = mapPick?.recordId ? records?.find((r) => r.id === mapPick.recordId) : undefined;
   const panel = wide && mapPick && (!mapPick.recordId || pickedRecord) ? mapPick : null;
 
-  // Whole-survey totals, whatever the filter, for the headline numbers.
   const all = records ?? [];
-  const stats = [
-    { label: t("records"), n: all.length },
-    { label: t("viewPhotos"), n: all.reduce((n, r) => n + allPhotos(r).length, 0) },
-    { label: t("statMapped"), n: all.filter(onMap).length },
-    { label: t("statSurveyors"), n: new Set(all.flatMap((r) => [r.createdBy.name, ...allPhotos(r).map((p) => p.by)])).size },
-  ];
 
-  // Who is signed in, with the way back to the sign-in screen in plain sight.
+  // Who is signed in; tapping it goes back to the sign-in screen.
   const surveyor = (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card py-2 pr-2 pl-2.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-        {user.name.slice(0, 1).toUpperCase()}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[11px] text-muted-foreground">{t("surveyingAs")}</p>
-        <p className="truncate text-sm font-semibold">{user.name}</p>
-      </div>
-      <Button variant="secondary" onClick={() => setUser(null)} className="h-9 shrink-0 gap-1.5 rounded-full px-3">
-        <IconUser className="size-4" />
-        {t("switchUser")}
-      </Button>
-    </div>
+    <Button variant="secondary" onClick={() => setUser(null)} title={t("switchUser")} aria-label={`${user.name}, ${t("switchUser")}`} className="h-9 max-w-40 shrink-0 gap-2 rounded-full px-1 sm:pr-3">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{user.name.slice(0, 1).toUpperCase()}</span>
+      <span className="hidden truncate text-xs font-semibold sm:inline">{user.name}</span>
+    </Button>
   );
 
   return (
@@ -165,28 +144,13 @@ export default function RecordList() {
               <IconDownload className="size-4" />
               <span className="hidden sm:inline">{t("export")}</span>
             </Button>
+            {surveyor}
             <LangToggle />
           </div>
         </nav>
 
-        {/* The page heading is for screen readers only; the numbers below say what this is. */}
         <h1 className="sr-only">{t("records")}</h1>
-        <div className="mt-2 hidden justify-end lg:flex">
-          <div className="w-[24rem]">{surveyor}</div>
-        </div>
-
-        {/* Phones: tiles over the surveyor and a map preview. Wide screens: one slim strip of numbers. */}
-        <dl className="mt-2 grid grid-cols-4 gap-2 sm:mt-3 lg:mt-5 lg:gap-3">
-          {stats.map((s) => (
-            // Label first for <dl> order; shown under (or after) the number.
-            <div key={s.label} className="flex min-w-0 flex-col-reverse justify-between rounded-2xl border border-border bg-card px-3 py-2.5 lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2 lg:px-5 lg:py-3">
-              <dt className="truncate text-[11px] text-muted-foreground sm:text-xs lg:text-sm">{s.label}</dt>
-              <dd className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-3xl">{records ? s.n.toLocaleString() : "…"}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-3 grid grid-cols-1 gap-3 lg:hidden">
-          {surveyor}
+        <div className="mt-2 lg:hidden">
           {/* Not mounted on wide screens: Leaflet can't fit a map into a hidden, zero-size box. */}
           {!wide && <AreaHero records={all} onOpen={openMap} />}
         </div>
@@ -209,10 +173,9 @@ export default function RecordList() {
                   <ToggleGroupItem
                     key={v.id}
                     value={v.id}
-                    className="group/view h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary"
+                    className="h-auto min-h-11 rounded-xl px-1 py-2 font-semibold text-muted-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary"
                   >
                     {v.label}
-                    <span className="font-normal text-muted-foreground/70 group-aria-pressed/view:text-primary-foreground/60">{records ? v.n : ""}</span>
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>

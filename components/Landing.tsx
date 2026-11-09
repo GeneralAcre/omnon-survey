@@ -156,9 +156,6 @@ export default function Landing() {
                 th: "Fluid Heritage เป็นเวิร์กช็อปร่วมระหว่าง Xi'an University of Architecture and Technology และคณะสถาปัตยกรรมศาสตร์ จุฬาลงกรณ์มหาวิทยาลัย เป็นการศึกษาภาคสนามทางสถาปัตยกรรมของภูมิทัศน์วัฒนธรรมยาว 17.5 กม. ที่หล่อหลอมจากสายน้ำ การตั้งถิ่นฐาน และวิถีชีวิตประจำวัน",
               })}
             </p>
-            <Link href="/about" className="mt-6 inline-flex items-center gap-1.5 text-[15px] font-semibold text-brand hover:underline">
-              {L({ en: "Read the workshop brief", th: "อ่านโจทย์เวิร์กช็อป" })} <IconNext className="size-4" />
-            </Link>
           </div>
         </div>
         <div className={cn(wrap, "mt-16 flex flex-col items-center gap-8 sm:mt-20")}>

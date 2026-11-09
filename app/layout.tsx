@@ -49,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   const r2 = r2Origin();
   if (r2) preconnect(r2);
   return (
-    <html lang="en" className={cn("h-full antialiased", inter.variable, anton.variable, kanit.variable)}>
+    <html lang="th" className={cn("h-full antialiased", inter.variable, anton.variable, kanit.variable)}>
       <body className="flex min-h-full flex-col">
         <Shell>{children}</Shell>
         <Toaster position="top-center" />

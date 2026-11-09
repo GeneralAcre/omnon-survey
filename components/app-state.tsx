@@ -46,7 +46,8 @@ function createStore<T>(key: string, parse: (raw: string | null) => T, serverVal
   };
 }
 
-const langStore = createStore<Lang>("omnon.lang", (raw) => (raw === '"th"' ? "th" : "en"), "en");
+// Thai unless the visitor has picked English.
+const langStore = createStore<Lang>("omnon.lang", (raw) => (raw === '"en"' ? "en" : "th"), "th");
 
 // `undefined` = not yet read on the client (avoids flashing the sign-in screen).
 const userStore = createStore<Person | null | undefined>(
@@ -127,15 +128,12 @@ const DICT = {
   openMap: { en: "Open the map", th: "เปิดแผนที่" },
   zone: { en: "Zone", th: "โซน" },
   live: { en: "Live", th: "สด" },
-  statMapped: { en: "On the map", th: "ปักหมุดแล้ว" },
-  statSurveyors: { en: "Surveyors", th: "ผู้สำรวจ" },
   openSurvey: { en: "Open the survey", th: "เปิดการสำรวจ" },
   justAdded: { en: "just added a building", th: "เพิ่งเพิ่มอาคาร" },
   notTaken: { en: "not taken", th: "ไม่ได้ถ่าย" },
   photos: { en: "photos", th: "ภาพ" },
   takeAnother: { en: "Take another", th: "ถ่ายเพิ่ม" },
   switchUser: { en: "Switch surveyor", th: "เปลี่ยนผู้สำรวจ" },
-  surveyingAs: { en: "Surveying as", th: "กำลังสำรวจในชื่อ" },
   // wizard
   stepPlot: { en: "Plot", th: "แปลง" },
   stepType: { en: "Building type", th: "ประเภทอาคาร" },

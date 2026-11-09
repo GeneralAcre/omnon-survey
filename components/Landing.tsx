@@ -191,12 +191,6 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <div className="border-t border-background/15">
-          <div className={cn(wrap, "flex flex-col gap-2 py-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] text-sm text-background/60 sm:flex-row sm:items-center sm:justify-between")}>
-            <span className="font-display text-2xl leading-none text-background">omnon</span>
-            <span>Fluid Heritage · XAUAT × Chulalongkorn University</span>
-          </div>
-        </div>
       </footer>
     </main>
   );

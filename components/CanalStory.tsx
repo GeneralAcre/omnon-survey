@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { GROUPS, allPhotos, groupColor, type Label, type SurveyRecord } from "@/lib/schema";
+import { GROUPS, allPhotos, type Label, type SurveyRecord } from "@/lib/schema";
 import { STUDY_PLOTS, plotOf } from "@/lib/study-area";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
@@ -161,25 +161,9 @@ export function ThenPhotos() {
   );
 }
 
-// --- Live numbers from the survey itself: every building in the study area as a dot where it stands. ---
+// --- Live numbers from the survey itself: how many buildings in the study area are documented. ---
 
-const MID_LAT = (13.81536 + 13.831909) / 2;
-const ALL = STUDY_PLOTS.flatMap((p) => p.buildings.map(([code, lat, lng]) => ({ key: `${p.key}|${code}`, zone: p.zone, lat, lng })));
-const LNGS = ALL.map((b) => b.lng);
-const LATS = ALL.map((b) => b.lat);
-const [MIN_LNG, MAX_LAT] = [Math.min(...LNGS), Math.max(...LATS)];
-const KX = Math.cos((MID_LAT * Math.PI) / 180);
-const SCALE = 1000 / ((Math.max(...LNGS) - MIN_LNG) * KX);
-const PAD = 16;
-const DOTS = ALL.map((b) => ({ ...b, x: PAD + (b.lng - MIN_LNG) * KX * SCALE, y: PAD + (MAX_LAT - b.lat) * SCALE }));
-const VIEW_W = 1000 + PAD * 2;
-const VIEW_H = Math.ceil(Math.max(...DOTS.map((d) => d.y)) + PAD);
-const ZONE_TOTAL = Object.fromEntries(GROUPS.map((g) => [g.id, DOTS.filter((d) => d.zone === g.id).length]));
-// Where each zone's number sits: the middle of its buildings.
-const ZONE_MID = GROUPS.map((g) => {
-  const ds = DOTS.filter((d) => d.zone === g.id);
-  return { id: g.id, x: ds.reduce((n, d) => n + d.x, 0) / ds.length, y: ds.reduce((n, d) => n + d.y, 0) / ds.length };
-});
+const ALL = STUDY_PLOTS.flatMap((p) => p.buildings.map(([code]) => ({ key: `${p.key}|${code}`, zone: p.zone })));
 
 function surveyStats(records: SurveyRecord[]) {
   const lit = new Set<string>();
@@ -191,10 +175,9 @@ function surveyStats(records: SurveyRecord[]) {
     }
   }
   const zone: Record<string, number> = {};
-  for (const d of DOTS) if (lit.has(d.key)) zone[d.zone] = (zone[d.zone] ?? 0) + 1;
+  for (const b of ALL) if (lit.has(b.key)) zone[b.zone] = (zone[b.zone] ?? 0) + 1;
   return {
-    lit,
-    buildings: DOTS.filter((d) => lit.has(d.key)).length,
+    buildings: ALL.filter((b) => lit.has(b.key)).length,
     zone,
     photos: records.reduce((n, r) => n + allPhotos(r).length, 0),
     // Older records were saved before flood lines existed.
@@ -203,95 +186,40 @@ function surveyStats(records: SurveyRecord[]) {
   };
 }
 
-// Mounted once records arrive, so the lit buildings and counters start from real numbers.
+// Mounted once records arrive, so the counters start from real numbers.
 export function SurveySoFar({ records }: { records: SurveyRecord[] }) {
   const { L } = useT();
   const s = surveyStats(records);
-  const pct = DOTS.length ? (s.buildings / DOTS.length) * 100 : 0;
   const extras: { value: number; label: Label }[] = [
     { value: s.photos, label: { en: s.photos === 1 ? "photo" : "photos", th: "ภาพถ่าย" } },
     { value: s.floods, label: { en: s.floods === 1 ? "flood line" : "flood lines", th: "ระดับน้ำท่วม" } },
     { value: s.jacked, label: { en: s.jacked === 1 ? "house jacked up" : "houses jacked up", th: "บ้านที่ดีดสูง" } },
   ];
-  const lit = DOTS.filter((d) => s.lit.has(d.key));
 
   return (
-    <div className={cn(wrap, "relative")}>
-      {/* Wide screens: the words sit in the open ground below the canal's bend. */}
-      <div className="grid gap-8 lg:absolute lg:bottom-0 lg:left-8 lg:w-[44%] lg:gap-6">
-        <div>
-          <p className="font-display text-4xl leading-[1.05] sm:text-5xl xl:text-6xl">
-            <span className="text-brand">
-              {fmt(s.buildings)}
-            </span>{" "}
-            {L({ en: `of ${fmt(DOTS.length)} buildings along the canal documented so far.`, th: `จาก ${fmt(DOTS.length)} อาคารริมคลอง ได้รับการบันทึกแล้ว` })}
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            {L({ en: "Every dot is a building in the study area, where it stands.", th: "ทุกจุดคืออาคารหนึ่งหลังในพื้นที่ศึกษา ตามตำแหน่งจริง" })} {pct > 0 && pct < 1 ? "<1" : Math.round(pct)}
-            {L({ en: "% done.", th: "% เสร็จแล้ว" })}
-          </p>
-        </div>
+    <div className={wrap}>
+      <div className="grid max-w-3xl gap-8">
+        <p className="font-display text-4xl leading-[1.05] sm:text-5xl xl:text-6xl">
+          <span className="text-brand">{fmt(s.buildings)}</span>{" "}
+          {L({ en: s.buildings === 1 ? "building along the canal documented." : "buildings along the canal documented.", th: "อาคารริมคลองได้รับการบันทึกแล้ว" })}
+        </p>
         <dl className="grid gap-3 text-sm">
           {GROUPS.map((g) => (
             <div key={g.id} className="flex items-baseline gap-3 border-b border-foreground/10 pb-3">
               <span className="size-2.5 shrink-0 translate-y-[-1px] rounded-full" style={{ background: g.color }} />
-              <dt className="flex-1">
-                <span className="font-semibold">{L(g.label)}</span>
-              </dt>
-              <dd className="tabular-nums">
-                <span className="font-semibold">{fmt(s.zone[g.id] ?? 0)}</span>
-                <span className="text-muted-foreground"> / {fmt(ZONE_TOTAL[g.id])}</span>
-              </dd>
+              <dt className="flex-1 font-semibold">{L(g.label)}</dt>
+              <dd className="font-semibold tabular-nums">{fmt(s.zone[g.id] ?? 0)}</dd>
             </div>
           ))}
-          <div className="flex gap-6 pt-1 text-muted-foreground">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 pt-1 text-muted-foreground">
             {extras.map((x) => (
               <span key={x.label.en}>
-                <span className="font-semibold text-foreground tabular-nums">
-                  {fmt(x.value)}
-                </span>{" "}
-                {L(x.label)}
+                <span className="font-semibold text-foreground tabular-nums">{fmt(x.value)}</span> {L(x.label)}
               </span>
             ))}
           </div>
         </dl>
       </div>
-
-      <svg
-        data-field
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-        role="img"
-        aria-label={L({ en: `Map of ${DOTS.length} buildings; ${s.buildings} documented`, th: `แผนที่อาคาร ${DOTS.length} หลัง บันทึกแล้ว ${s.buildings} หลัง` })}
-        className="mt-8 h-auto w-full lg:mt-0"
-      >
-        {/* Not yet documented: a faint dot in its zone's colour. */}
-        {/* On phones the map is a third the size, so the dots grow by stroke (see globals.css). */}
-        <g opacity={0.55}>
-          {DOTS.map((d) => {
-            const c = groupColor(d.zone).bg;
-            return <circle data-b key={d.key} cx={d.x} cy={d.y} r={2.6} fill={c} stroke={c} strokeWidth={0} />;
-          })}
-        </g>
-        {lit.map((d) => {
-          const c = groupColor(d.zone).bg;
-          return (
-            <g key={d.key} data-grow style={{ transformOrigin: `${d.x}px ${d.y}px` }}>
-              <circle cx={d.x} cy={d.y} r={7} fill={c} stroke="var(--foreground)" strokeWidth={2} />
-            </g>
-          );
-        })}
-        {ZONE_MID.map((z) => {
-          const g = groupColor(z.id);
-          return (
-            <g key={z.id} data-grow style={{ transformOrigin: `${z.x}px ${z.y}px` }}>
-              <circle cx={z.x} cy={z.y} r={13} fill={g.bg} stroke="var(--card)" strokeWidth={3} />
-              <text x={z.x} y={z.y} textAnchor="middle" dy="0.35em" fontSize={13} fontWeight={700} fill={g.fg}>
-                {z.id}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
     </div>
   );
 }

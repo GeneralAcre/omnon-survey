@@ -47,9 +47,9 @@ function CanalMap() {
   return (
     <svg viewBox="0 0 400 520" role="img" aria-label={L({ en: "Schematic map of Khlong Om Non and the Chao Phraya", th: "แผนผังคลองอ้อมนนท์และแม่น้ำเจ้าพระยา" })} className="h-auto w-full">
       {/* Today's river, straight through the 1636 shortcut. */}
-      <path d="M330 0V520" stroke="#D4BC9A" strokeWidth={22} strokeLinecap="round" fill="none" />
+      <path d="M330 0V520" stroke="var(--water)" strokeOpacity={0.45} strokeWidth={22} strokeLinecap="round" fill="none" />
       {/* The old bend: Khlong Om Non. */}
-      <path d={CANAL} stroke="var(--brand)" strokeWidth={7} strokeLinecap="round" fill="none" />
+      <path d={CANAL} stroke="var(--water)" strokeWidth={7} strokeLinecap="round" fill="none" />
       {TEMPLES.map((p, i) => (
         <path key={i} d={`M${p.x} ${p.y - 4}l4 4-4 4-4-4z`} fill="#D0935A" />
       ))}

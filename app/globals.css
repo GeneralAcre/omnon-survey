@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /* 60-30-10: cream for the page (60), espresso for text and the dark bands (30),
-   caramel for actions and highlights (10). The zone colours (sand, caramel, clay) are kept for zone data. */
+   caramel for actions and highlights (10). Canal teal is only for water (rivers, canals, floods),
+   never for actions. The zone colours (sand, caramel, clay) are kept for zone data. */
 :root {
   color-scheme: light;
   --background: #faf6f0;
@@ -30,6 +31,7 @@
   /* App-specific: accent text and icons on cream (caramel deepened to stay readable), and the "done" colour. */
   --brand: #9a5a2e;
   --ok: #7d5245;
+  --water: #4f8582;
 }
 
 /* Photo viewers stay black so pictures read true (see FullscreenDialog). */
@@ -55,6 +57,7 @@
   --ring: #d0935a;
   --brand: #d0935a;
   --ok: #d4bc9a;
+  --water: #7fb3ae;
 }
 
 @theme inline {
@@ -78,6 +81,7 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-ok: var(--ok);
+  --color-water: var(--water);
   --font-sans: var(--font-inter), var(--font-kanit), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-heading: var(--font-sans);
   /* Keep Tailwind's default radius steps; the app's rounded-2xl/3xl cards depend on them. */

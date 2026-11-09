@@ -64,7 +64,7 @@ const ORCHARDS = [38, 48, 58].flatMap((y) => [20, 30, 40, 50].map((x) => ({ x, y
 // A schematic of the canal at one TIMELINE stage (by index), not a survey drawing.
 function StageMap({ stage }: { stage: number }) {
   return (
-    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true" className="aspect-square w-full rounded-2xl bg-card text-brand">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true" className="aspect-square w-full rounded-2xl bg-card text-water">
       {stage < 2 ? (
         <path d={OLD_COURSE} strokeWidth={5} />
       ) : (
@@ -74,9 +74,9 @@ function StageMap({ stage }: { stage: number }) {
         </>
       )}
       {stage === 1 && <path d="M62 18V82" strokeWidth={1.5} strokeDasharray="3 3" />}
-      {stage >= 3 && <rect x={68} y={9} width={7} height={7} fill="currentColor" stroke="none" />}
-      {stage >= 4 && ORCHARDS.map((p) => <circle key={`${p.x}-${p.y}`} cx={p.x} cy={p.y} r={1.5} fill="currentColor" stroke="none" />)}
-      {stage === 5 && <path d="M0 86L100 80M84 0L88 100" strokeWidth={1} />}
+      {stage >= 3 && <rect x={68} y={9} width={7} height={7} fill="var(--brand)" stroke="none" />}
+      {stage >= 4 && ORCHARDS.map((p) => <circle key={`${p.x}-${p.y}`} cx={p.x} cy={p.y} r={1.5} fill="var(--brand)" stroke="none" />)}
+      {stage === 5 && <path d="M0 86L100 80M84 0L88 100" stroke="var(--brand)" strokeWidth={1} />}
     </svg>
   );
 }

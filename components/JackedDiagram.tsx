@@ -14,8 +14,8 @@ export default function JackedDiagram() {
           </marker>
         </defs>
         {/* Floodwater, same height in both pictures */}
-        <rect x="0" y="104" width="320" height="34" fill="var(--brand)" opacity="0.3" />
-        <line x1="0" y1="104" x2="320" y2="104" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="5 4" />
+        <rect x="0" y="104" width="320" height="34" fill="var(--water)" opacity="0.3" />
+        <line x1="0" y1="104" x2="320" y2="104" stroke="var(--water)" strokeWidth="1.5" strokeDasharray="5 4" />
         <line x1="0" y1="138" x2="320" y2="138" stroke="currentColor" strokeWidth="2" />
         <line x1="160" y1="8" x2="160" y2="138" stroke="currentColor" strokeOpacity="0.2" />
 

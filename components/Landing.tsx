@@ -3,12 +3,12 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GROUPS, allPhotos, type SurveyRecord } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
 import { BOX_PAGE, BuildingBox, SeeMore, box, boxGrid, boxPad } from "./BuildingBox";
-import { StoryIntro, SurveySoFar, ThenPhotos } from "./CanalStory";
+import { StatLine, StoryIntro, ThenPhotos, surveyStats } from "./CanalStory";
 import { useRecords } from "./data";
 import { IconNext, IconPlus } from "./Icons";
 import { LangToggle } from "./Shell";
@@ -46,6 +46,7 @@ export default function Landing() {
   const [zone, setZone] = useState<string>();
   // Newest first (records arrive sorted by last update).
   const recent = all.filter((r) => allPhotos(r).length > 0);
+  const stats = useMemo(() => surveyStats(records ?? []), [records]);
 
   return (
     <main className="flex-1">
@@ -101,22 +102,29 @@ export default function Landing() {
       <section id="zones" className={cn(section, "scroll-mt-20 bg-card")}>
         <div className={cn(wrap, "grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-14")}>
           <div className="lg:order-2">
-            <div>
-              <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
-            </div>
-            <ol className="mt-8 space-y-3">
+            <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
+            {records && (
+              <div className="mt-5">
+                <p className="text-sm text-muted-foreground">{L({ en: "Documented so far", th: "บันทึกแล้ว" })}</p>
+                <StatLine t={stats.total} className="mt-1 text-base" />
+              </div>
+            )}
+            <ol className="mt-6 space-y-2">
               {GROUPS.map((g) => (
                 <li key={g.id}>
                   <button
                     type="button"
                     onClick={() => setZone(zone === g.id ? undefined : g.id)}
                     aria-pressed={zone === g.id}
-                    className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background p-4 text-left transition hover:border-border aria-pressed:border-primary"
+                    className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background px-4 py-3 text-left transition hover:border-border aria-pressed:border-primary"
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
                       {g.id}
                     </span>
-                    <span className="font-semibold">{L(g.label)}</span>
+                    <span className="min-w-0">
+                      <span className="block font-semibold">{L(g.label)}</span>
+                      {records && <StatLine t={stats.zone[g.id]} />}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -128,11 +136,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 6. The survey's progress, then its latest finds. */}
-      <section className={section}>
-        {records && <SurveySoFar records={records} />}
-        {recent.length > 0 && <Recent recent={recent} />}
-      </section>
+      {/* 6. The survey's latest finds. */}
+      {recent.length > 0 && (
+        <section className={section}>
+          <Recent recent={recent} />
+        </section>
+      )}
 
       {/* 7. Who is behind it. */}
       <section className={cn(section, "border-t border-border")}>

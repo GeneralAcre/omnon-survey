@@ -161,11 +161,14 @@ export function ThenPhotos() {
   );
 }
 
-// --- Live numbers from the survey itself: how many buildings in the study area are documented. ---
+// --- Live numbers from the survey itself, overall and per zone. ---
 
 const ALL = STUDY_PLOTS.flatMap((p) => p.buildings.map(([code]) => ({ key: `${p.key}|${code}`, zone: p.zone })));
 
-function surveyStats(records: SurveyRecord[]) {
+type Tally = { buildings: number; photos: number; floods: number; jacked: number };
+const empty = (): Tally => ({ buildings: 0, photos: 0, floods: 0, jacked: 0 });
+
+export function surveyStats(records: SurveyRecord[]) {
   const lit = new Set<string>();
   for (const r of records) {
     for (const { plot, building } of plotOf(r)) {
@@ -174,52 +177,44 @@ function surveyStats(records: SurveyRecord[]) {
       for (const c of codes) lit.add(`${plot.key}|${c}`);
     }
   }
-  const zone: Record<string, number> = {};
-  for (const b of ALL) if (lit.has(b.key)) zone[b.zone] = (zone[b.zone] ?? 0) + 1;
-  return {
-    buildings: ALL.filter((b) => lit.has(b.key)).length,
-    zone,
-    photos: records.reduce((n, r) => n + allPhotos(r).length, 0),
-    // Older records were saved before flood lines existed.
-    floods: records.reduce((n, r) => n + (r.floodLines?.length ?? 0), 0),
-    jacked: records.filter((r) => r.jacked === "yes").length,
-  };
+  const total = empty();
+  const zone: Record<string, Tally> = Object.fromEntries(GROUPS.map((g) => [g.id, empty()]));
+  for (const b of ALL) {
+    if (!lit.has(b.key)) continue;
+    total.buildings++;
+    if (zone[b.zone]) zone[b.zone].buildings++;
+  }
+  for (const r of records) {
+    const add = (t: Tally) => {
+      t.photos += allPhotos(r).length;
+      // Older records were saved before flood lines existed.
+      t.floods += r.floodLines?.length ?? 0;
+      if (r.jacked === "yes") t.jacked++;
+    };
+    add(total);
+    if (zone[r.group]) add(zone[r.group]);
+  }
+  return { total, zone };
 }
 
-// Mounted once records arrive, so the counters start from real numbers.
-export function SurveySoFar({ records }: { records: SurveyRecord[] }) {
+// "263 buildings · 210 photos · 30 jacked up", leaving out what is still zero.
+export function StatLine({ t, className }: { t: Tally; className?: string }) {
   const { L } = useT();
-  const s = surveyStats(records);
-  const extras: { value: number; label: Label }[] = [
-    { value: s.photos, label: { en: s.photos === 1 ? "photo" : "photos", th: "ภาพถ่าย" } },
-    { value: s.floods, label: { en: s.floods === 1 ? "flood line" : "flood lines", th: "ระดับน้ำท่วม" } },
-    { value: s.jacked, label: { en: s.jacked === 1 ? "house jacked up" : "houses jacked up", th: "บ้านที่ดีดสูง" } },
+  const parts: { value: number; label: Label }[] = [
+    { value: t.buildings, label: { en: t.buildings === 1 ? "building" : "buildings", th: "อาคาร" } },
+    { value: t.photos, label: { en: t.photos === 1 ? "photo" : "photos", th: "ภาพ" } },
+    { value: t.floods, label: { en: t.floods === 1 ? "flood line" : "flood lines", th: "ระดับน้ำท่วม" } },
+    { value: t.jacked, label: { en: "jacked up", th: "บ้านดีด" } },
   ];
-
   return (
-    <div className={wrap}>
-      <div className="grid max-w-3xl gap-8">
-        <p className="font-display text-4xl leading-[1.05] sm:text-5xl xl:text-6xl">
-          <span className="text-brand">{fmt(s.buildings)}</span>{" "}
-          {L({ en: s.buildings === 1 ? "building along the canal documented." : "buildings along the canal documented.", th: "อาคารริมคลองได้รับการบันทึกแล้ว" })}
-        </p>
-        <dl className="grid gap-3 text-sm">
-          {GROUPS.map((g) => (
-            <div key={g.id} className="flex items-baseline gap-3 border-b border-foreground/10 pb-3">
-              <span className="size-2.5 shrink-0 translate-y-[-1px] rounded-full" style={{ background: g.color }} />
-              <dt className="flex-1 font-semibold">{L(g.label)}</dt>
-              <dd className="font-semibold tabular-nums">{fmt(s.zone[g.id] ?? 0)}</dd>
-            </div>
-          ))}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 pt-1 text-muted-foreground">
-            {extras.map((x) => (
-              <span key={x.label.en}>
-                <span className="font-semibold text-foreground tabular-nums">{fmt(x.value)}</span> {L(x.label)}
-              </span>
-            ))}
-          </div>
-        </dl>
-      </div>
-    </div>
+    <span className={cn("flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground", className)}>
+      {parts
+        .filter((p) => p.value > 0)
+        .map((p) => (
+          <span key={p.label.en}>
+            <span className="font-semibold text-foreground tabular-nums">{fmt(p.value)}</span> {L(p.label)}
+          </span>
+        ))}
+    </span>
   );
 }

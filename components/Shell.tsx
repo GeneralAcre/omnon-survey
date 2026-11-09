@@ -97,7 +97,7 @@ export function SignIn({ onDone }: { onDone?: () => void }) {
       </div>
       <div aria-hidden="true" className="mt-4 h-44 rounded-3xl bg-[url(/omnon.jpg)] bg-cover bg-[center_60%] sm:h-56 lg:hidden" />
       <div className="mt-7 lg:mt-0">
-        <h1 className="font-display text-5xl leading-none">{t("welcome")}</h1>
+        <h1 className="font-display text-4xl leading-none">{t("welcome")}</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{t("welcomeSub")}</p>
       </div>
 

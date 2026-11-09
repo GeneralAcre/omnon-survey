@@ -66,7 +66,7 @@ export default function Landing() {
         <div className={cn(wrap, "flex min-h-[34rem] flex-col justify-end pt-16 pb-10 sm:min-h-[40rem] sm:pb-14 lg:min-h-[min(82svh,54rem)] lg:pb-12")}>
           {/* Wide screens: the title along the bottom left, the main action across from it. */}
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-            <h1 className="font-display text-7xl leading-[0.95] sm:text-8xl lg:text-[11rem]">
+            <h1 className="font-display text-6xl leading-[0.95] sm:text-8xl lg:text-[9rem]">
               Fluid Heritage
             </h1>
             <Link href="/new" className={cn(cta, "mt-8 h-14 w-full px-7 text-base shadow-[0_10px_30px_rgba(0,0,0,0.3)] sm:w-auto lg:mt-0 lg:mb-5")}>
@@ -86,11 +86,11 @@ export default function Landing() {
       {/* 4. How it happened, step by step. */}
       <section className={section}>
         <div className={cn(wrap, "grid gap-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-end md:gap-14")}>
-          <p className="font-display text-8xl leading-[0.85] text-brand tabular-nums sm:text-[10rem]">
+          <p className="font-display text-7xl leading-[0.85] text-brand tabular-nums sm:text-[9rem]">
             1636
           </p>
           <div>
-            <h2 className="font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
+            <h2 className="font-display text-3xl leading-[1.05] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
           </div>
         </div>
         <div className={cn(wrap, "mt-12 sm:mt-16")}>
@@ -102,7 +102,7 @@ export default function Landing() {
       <section id="zones" className={cn(section, "scroll-mt-20 bg-card")}>
         <div className={cn(wrap, "grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-14")}>
           <div className="lg:order-2">
-            <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
+            <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
             {records && (
               <div className="mt-5">
                 <p className="text-sm text-muted-foreground">{L({ en: "Documented so far", th: "บันทึกแล้ว" })}</p>
@@ -147,7 +147,7 @@ export default function Landing() {
       <section className={cn(section, "border-t border-border")}>
         <div className={cn(wrap, "grid gap-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
           <div>
-            <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">
+            <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl">
               {THEMES.map((theme) => (
                 <span key={theme.en} className="block">
                   {L(theme)}
@@ -176,7 +176,7 @@ export default function Landing() {
       <footer className="bg-foreground text-background">
         <div className={cn(wrap, "py-20 sm:py-28")}>
           <div className="max-w-3xl">
-            <h2 className="font-display text-5xl leading-[1.02] sm:text-7xl">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
+            <h2 className="font-display text-4xl leading-[1.05] sm:text-6xl">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-background/75 sm:text-lg">
               {L({
                 en: "Add its photos and flood lines. Every record helps show how people along Khlong Om Non live with the water.",
@@ -206,7 +206,7 @@ function Recent({ recent }: { recent: SurveyRecord[] }) {
     <div className={cn(wrap, "mt-20 sm:mt-28")}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
+          <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
         </div>
         <Link href="/survey" className={cn(ghost, "h-11 border-border text-sm hover:bg-card")}>
           {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />
@@ -221,7 +221,7 @@ function Recent({ recent }: { recent: SurveyRecord[] }) {
         {/* The one coloured box in the grid. */}
         <li>
           <Link href="/new" className={cn(box, boxPad, "h-full justify-between bg-primary text-primary-foreground transition hover:brightness-105")}>
-            <span className="font-display text-3xl leading-none sm:text-5xl">{t("addBuilding")}</span>
+            <span className="font-display text-2xl leading-none sm:text-4xl">{t("addBuilding")}</span>
             <IconPlus className="size-7 sm:size-9" />
           </Link>
         </li>

@@ -94,7 +94,7 @@ export function StoryIntro() {
     <section id="discover" className="scroll-mt-16 overflow-hidden py-20 sm:py-28">
       <div className={cn(wrap, "grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center lg:gap-16")}>
         <div>
-          <h2 className="font-display text-5xl leading-[1.02] sm:text-7xl">
+          <h2 className="font-display text-4xl leading-[1.05] sm:text-6xl">
             {L({ en: "Take the long way round", th: "ล่องตามทางอ้อม" })}
           </h2>
           <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-foreground/85 sm:text-base">
@@ -138,7 +138,7 @@ export function ThenPhotos() {
             <Image src={boatsFar} alt={L({ en: "A line of boats travelling the canal past riverside houses, archival photograph", th: "ขบวนเรือล่องผ่านบ้านริมคลอง ภาพถ่ายในอดีต" })} fill sizes="(min-width: 768px) 42vw, 100vw" placeholder="blur" className="object-cover" />
           </div>
           <figcaption className="mt-5 px-1">
-            <p className="font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
+            <p className="font-display text-3xl leading-[1.05] sm:text-4xl">{L({ en: "When the canal was the road", th: "เมื่อคลองคือถนน" })}</p>
             <p className="mt-3 text-[15px] leading-relaxed text-background/75">
               {L({
                 en: "Before the roads arrived, boats carried people, fruit and goods along Khlong Om Non, between temple piers, orchards and the houses that faced the water.",

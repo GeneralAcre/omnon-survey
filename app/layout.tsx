@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Inter, Kanit } from "next/font/google";
+import { Inter, Kanit, Space_Grotesk } from "next/font/google";
 import { preconnect } from "react-dom";
 import Shell from "@/components/Shell";
 import { Toaster } from "@/components/ui/sonner";
@@ -13,13 +13,13 @@ const inter = Inter({
 });
 
 // Headlines (see font-display in globals.css).
-const anton = Anton({
-  variable: "--font-anton",
+const grotesk = Space_Grotesk({
+  variable: "--font-grotesk",
   subsets: ["latin"],
-  weight: "400",
+  weight: "500",
 });
 
-// Inter and Anton have no Thai glyphs, so Thai text falls through to Kanit.
+// Inter and Space Grotesk have no Thai glyphs, so Thai text falls through to Kanit.
 const kanit = Kanit({
   variable: "--font-kanit",
   subsets: ["thai"],
@@ -49,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   const r2 = r2Origin();
   if (r2) preconnect(r2);
   return (
-    <html lang="th" className={cn("h-full antialiased", inter.variable, anton.variable, kanit.variable)}>
+    <html lang="th" className={cn("h-full antialiased", inter.variable, grotesk.variable, kanit.variable)}>
       <body className="flex min-h-full flex-col">
         <Shell>{children}</Shell>
         <Toaster position="top-center" />

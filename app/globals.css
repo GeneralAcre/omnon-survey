@@ -225,12 +225,10 @@
   display: none;
 }
 
-/* Big headlines: heavy, condensed capitals. Anton has one weight, so 700 only picks
-   Kanit's bold for Thai; font-synthesis stops the browser thickening Anton. */
+/* Big headlines: a medium grotesk in sentence case, close to PP Supply Sans. Thai falls
+   through to Kanit at the same weight. */
 @utility font-display {
-  font-family: var(--font-anton), var(--font-kanit), system-ui, sans-serif;
-  font-weight: 700;
-  font-synthesis: none;
-  text-transform: uppercase;
-  letter-spacing: 0;
+  font-family: var(--font-grotesk), var(--font-kanit), system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }

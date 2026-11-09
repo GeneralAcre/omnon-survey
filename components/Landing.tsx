@@ -116,10 +116,7 @@ export default function Landing() {
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
                       {g.id}
                     </span>
-                    <span>
-                      <span className="block font-semibold">{L(g.label)}</span>
-                      <span className="block text-sm text-muted-foreground">{L(g.zone)}</span>
-                    </span>
+                    <span className="font-semibold">{L(g.label)}</span>
                   </button>
                 </li>
               ))}

@@ -3,8 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { animate, createTimeline, onScroll, splitText, stagger, utils } from "animejs";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { GROUPS, allPhotos, type SurveyRecord } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
@@ -12,7 +11,6 @@ import { BOX_PAGE, BuildingBox, SeeMore, box, boxGrid, boxPad } from "./Building
 import { StoryIntro, SurveySoFar, ThenPhotos } from "./CanalStory";
 import { useRecords } from "./data";
 import { IconNext, IconPlus } from "./Icons";
-import { onView, scrollReveals, useAnime } from "./motion";
 import { LangToggle } from "./Shell";
 import Timeline from "./Timeline";
 import chula from "@/public/Chula.webp";
@@ -49,42 +47,8 @@ export default function Landing() {
   // Newest first (records arrive sorted by last update).
   const recent = all.filter((r) => allPhotos(r).length > 0);
 
-  const root = useRef<HTMLElement>(null);
-  useAnime(root, () => {
-    // The hero: photo settles in, title rises letter by letter, then the button springs up.
-    const title = splitText("[data-hero-title]", { chars: { wrap: "clip" } });
-    createTimeline({ defaults: { ease: "out(4)" } })
-      .add("[data-hero-img]", { opacity: [0, 1], scale: [1.18, 1], duration: 2600, ease: "out(3)" }, 0)
-      .add("[data-hero-title]", { opacity: [0, 1], duration: 1 }, 300)
-      .add(title.chars, { y: ["110%", "0%"], rotate: [6, 0], duration: 1200, delay: stagger(45) }, 300)
-      .add("[data-hero-cta]", { opacity: [0, 1], y: [24, 0], scale: [0.9, 1], duration: 1000, ease: "outElastic(1, .6)" }, 1000);
-
-    // Slow parallax on the photo while the hero scrolls away.
-    const [hero] = utils.$("[data-hero]");
-    animate("[data-hero-img]", { y: ["0%", "16%"], ease: "linear", autoplay: onScroll({ target: hero, enter: "top top", leave: "top bottom", sync: true }) });
-
-    // 1636 counts up from 1500 when it comes into view.
-    const [year] = utils.$("[data-count]");
-    const n = { v: 1500 };
-    animate(n, {
-      v: 1636,
-      duration: 2000,
-      ease: "out(4)",
-      onUpdate: () => {
-        year.textContent = String(Math.round(n.v));
-      },
-      autoplay: onView(year),
-    });
-
-    scrollReveals(root.current);
-    return () => {
-      title.revert();
-      year.textContent = "1636";
-    };
-  });
-
   return (
-    <main ref={root} data-scope className="flex-1">
+    <main className="flex-1">
       <nav className="sticky top-0 z-30 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className={cn(wrap, "flex h-16 items-center justify-between gap-3")}>
           <Link href="/" className="font-display text-3xl leading-none">
@@ -95,16 +59,16 @@ export default function Landing() {
       </nav>
 
       {/* 1. The hook. */}
-      <section data-hero className="relative isolate min-h-[34rem] overflow-hidden bg-foreground text-background sm:min-h-[40rem] lg:min-h-[min(82svh,54rem)]">
-        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" data-intro data-hero-img className="-z-20 object-cover object-[center_60%] grayscale" />
+      <section className="relative isolate min-h-[34rem] overflow-hidden bg-foreground text-background sm:min-h-[40rem] lg:min-h-[min(82svh,54rem)]">
+        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-foreground via-foreground/20 to-foreground/10" />
         <div className={cn(wrap, "flex min-h-[34rem] flex-col justify-end pt-16 pb-10 sm:min-h-[40rem] sm:pb-14 lg:min-h-[min(82svh,54rem)] lg:pb-12")}>
           {/* Wide screens: the title along the bottom left, the main action across from it. */}
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-            <h1 data-intro data-hero-title className="font-display text-7xl leading-[0.95] sm:text-8xl lg:text-[11rem]">
+            <h1 className="font-display text-7xl leading-[0.95] sm:text-8xl lg:text-[11rem]">
               Fluid Heritage
             </h1>
-            <Link href="/new" data-intro data-hero-cta className={cn(cta, "mt-8 h-14 w-full px-7 text-base shadow-[0_10px_30px_rgba(0,0,0,0.3)] sm:w-auto lg:mt-0 lg:mb-5")}>
+            <Link href="/new" className={cn(cta, "mt-8 h-14 w-full px-7 text-base shadow-[0_10px_30px_rgba(0,0,0,0.3)] sm:w-auto lg:mt-0 lg:mb-5")}>
               <IconPlus className="size-5" />
               {t("addBuilding")}
             </Link>
@@ -112,7 +76,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 2. The story, beside a map that draws itself. */}
+      {/* 2. The story, beside a map of the canal. */}
       <StoryIntro />
 
       {/* 3. Its past, in the dark band of photographs. */}
@@ -121,10 +85,10 @@ export default function Landing() {
       {/* 4. How it happened, step by step. */}
       <section className={section}>
         <div className={cn(wrap, "grid gap-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-end md:gap-14")}>
-          <p data-count className="font-display text-8xl leading-[0.85] text-brand tabular-nums sm:text-[10rem]">
+          <p className="font-display text-8xl leading-[0.85] text-brand tabular-nums sm:text-[10rem]">
             1636
           </p>
-          <div data-reveal>
+          <div>
             <h2 className="font-display text-4xl leading-[1.02] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
           </div>
         </div>
@@ -137,25 +101,19 @@ export default function Landing() {
       <section id="zones" className={cn(section, "scroll-mt-20 bg-card")}>
         <div className={cn(wrap, "grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-14")}>
           <div className="lg:order-2">
-            <div data-reveal>
+            <div>
               <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Three zones along the canal", th: "สามโซนริมคลอง" })}</h2>
             </div>
-            <ol data-stagger className="mt-8 space-y-3">
+            <ol className="mt-8 space-y-3">
               {GROUPS.map((g) => (
                 <li key={g.id}>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      setZone(zone === g.id ? undefined : g.id);
-                      const badge = e.currentTarget.querySelector("[data-badge]");
-                      if (badge && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                        animate(badge, { scale: [0.7, 1], rotate: [-20, 0], duration: 900, ease: "outElastic(1, .5)" });
-                      }
-                    }}
+                    onClick={() => setZone(zone === g.id ? undefined : g.id)}
                     aria-pressed={zone === g.id}
                     className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background p-4 text-left transition hover:border-border aria-pressed:border-primary"
                   >
-                    <span data-badge className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold" style={{ background: g.color, color: g.ink }}>
                       {g.id}
                     </span>
                     <span>
@@ -167,7 +125,7 @@ export default function Landing() {
               ))}
             </ol>
           </div>
-          <div data-reveal className="lg:order-1">
+          <div className="lg:order-1">
             <StudyMap records={all} zone={zone} preview className="aspect-[4/3] lg:aspect-[3/2]" />
           </div>
         </div>
@@ -183,7 +141,7 @@ export default function Landing() {
       <section className={cn(section, "border-t border-border")}>
         <div className={cn(wrap, "grid gap-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14")}>
           <div>
-            <h2 data-stagger className="font-display text-5xl leading-[1.02] sm:text-6xl">
+            <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">
               {THEMES.map((theme) => (
                 <span key={theme.en} className="block">
                   {L(theme)}
@@ -191,7 +149,7 @@ export default function Landing() {
               ))}
             </h2>
           </div>
-          <div data-reveal className="md:self-end">
+          <div className="md:self-end">
             <p className="text-[15px] leading-relaxed text-muted-foreground sm:text-lg">
               {L({
                 en: "Fluid Heritage is a joint workshop between Xi'an University of Architecture and Technology and the Faculty of Architecture, Chulalongkorn University. It is an architectural field study of a 17.5 km cultural landscape shaped by water, settlement and everyday life.",
@@ -204,7 +162,7 @@ export default function Landing() {
           </div>
         </div>
         <div className={cn(wrap, "mt-16 flex flex-col items-center gap-8 sm:mt-20")}>
-          <div data-stagger className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-48">
+          <div className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-48">
             <Image src={xian} alt="Xi'an University of Architecture and Technology" className="h-28 w-auto sm:h-40 lg:h-52" />
             <Image src={chula} alt="Chulalongkorn University" className="h-28 w-auto sm:h-40 lg:h-52" />
           </div>
@@ -214,7 +172,7 @@ export default function Landing() {
       {/* 8. An invitation to take part, closing the page in the dark band. */}
       <footer className="bg-foreground text-background">
         <div className={cn(wrap, "py-20 sm:py-28")}>
-          <div data-reveal className="max-w-3xl">
+          <div className="max-w-3xl">
             <h2 className="font-display text-5xl leading-[1.02] sm:text-7xl">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-background/75 sm:text-lg">
               {L({
@@ -244,23 +202,20 @@ export default function Landing() {
   );
 }
 
-// Records arrive after the page mounts, so this grid gets its own reveal once it exists.
 function Recent({ recent }: { recent: SurveyRecord[] }) {
   const { t, L } = useT();
   const [limit, setLimit] = useState(BOX_PAGE);
-  const root = useRef<HTMLDivElement>(null);
-  useAnime(root, () => scrollReveals(root.current));
   return (
-    <div ref={root} data-scope className={cn(wrap, "mt-20 sm:mt-28")}>
+    <div className={cn(wrap, "mt-20 sm:mt-28")}>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div data-reveal>
+        <div>
           <h2 className="font-display text-5xl leading-[1.02] sm:text-6xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
         </div>
         <Link href="/survey" className={cn(ghost, "h-11 border-border text-sm hover:bg-card")}>
           {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />
         </Link>
       </div>
-      <ul data-stagger className={cn(boxGrid, "mt-10 grid-cols-2 lg:grid-cols-4")}>
+      <ul className={cn(boxGrid, "mt-10 grid-cols-2 lg:grid-cols-4")}>
         {recent.slice(0, limit - 1).map((r) => (
           <li key={r.id}>
             <BuildingBox r={r} />

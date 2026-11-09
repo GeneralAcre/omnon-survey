@@ -18,7 +18,7 @@ import { photoUrl, retryImage } from "./images";
 import { IconBack, IconDownload, IconPlus, IconSearch } from "./Icons";
 import AreaHero from "./AreaHero";
 import BuildingPanel, { type MapPick } from "./BuildingPanel";
-import { BOX_PAGE, BuildingBox, SeeMore, boxCols, boxGrid } from "./BuildingBox";
+import { BuildingBox, boxCols, boxGrid } from "./BuildingBox";
 import { GroupBadge } from "./GroupBadge";
 import PhotoFeed from "./PhotoFeed";
 import { LangToggle } from "./Shell";
@@ -69,7 +69,6 @@ export default function RecordList() {
   // Wide screens keep the map beside the list, so there is no map tab.
   const view: View = wide && picked === "map" ? "list" : picked;
   const [query, setQuery] = useState("");
-  const [limit, setLimit] = useState(BOX_PAGE);
   const [exporting, setExporting] = useState(false);
   // The place tapped on the map beside the list (wide screens only).
   const [mapPick, setMapPick] = useState<MapPick | null>(null);
@@ -233,13 +232,12 @@ export default function RecordList() {
               <>
                 {visible.length === 0 && <p className="py-16 text-center text-muted-foreground">{records.length === 0 ? t("empty") : t("noMatch")}</p>}
                 <ul className={cn(boxGrid, boxCols, "mt-1")}>
-                  {visible.slice(0, limit).map((r) => (
+                  {visible.map((r) => (
                     <li key={r.id}>
                       <BuildingBox r={r} highlight={fresh.has(r.id)} />
                     </li>
                   ))}
                 </ul>
-                {visible.length > limit && <SeeMore onClick={() => setLimit((n) => n + BOX_PAGE)} />}
               </>
             )}
             {records && view === "photos" && <PhotoFeed records={visible} />}

@@ -5,14 +5,13 @@ import { SHOTS, groupColor, type SurveyRecord } from "@/lib/schema";
 import { photoFileName } from "@/lib/naming";
 import { cn } from "@/lib/utils";
 import { useT } from "./app-state";
-import { BOX_PAGE, SeeMore, box, boxCols, boxGrid } from "./BuildingBox";
+import { box, boxCols, boxGrid } from "./BuildingBox";
 import { photoUrl, retryImage } from "./images";
 import Lightbox, { type LightboxItem } from "./Lightbox";
 
 // Every photo from every visible building, newest first.
 export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
   const { t, L } = useT();
-  const [limit, setLimit] = useState(BOX_PAGE);
   const [open, setOpen] = useState<number | null>(null);
 
   const items: (LightboxItem & { plotNo: string })[] = useMemo(
@@ -39,7 +38,7 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
   return (
     <>
       <div className={cn(boxGrid, boxCols)}>
-        {items.slice(0, limit).map((p, i) => {
+        {items.map((p, i) => {
           const c = groupColor(p.group);
           return (
             <button key={p.file} onClick={() => setOpen(i)} className={cn(box, "relative overflow-hidden bg-card")}>
@@ -57,7 +56,6 @@ export default function PhotoFeed({ records }: { records: SurveyRecord[] }) {
           );
         })}
       </div>
-      {items.length > limit && <SeeMore onClick={() => setLimit((n) => n + BOX_PAGE)} />}
       {open !== null && <Lightbox items={items} index={open} onClose={() => setOpen(null)} />}
     </>
   );

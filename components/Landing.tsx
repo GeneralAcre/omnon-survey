@@ -55,12 +55,7 @@ export default function Landing() {
           <Link href="/" className="font-display text-3xl leading-none">
             omnon
           </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/survey" className="inline-flex h-11 items-center rounded-full px-4 text-[15px] font-semibold transition hover:bg-card">
-              {L({ en: "Buildings", th: "อาคาร" })}
-            </Link>
-            <LangToggle />
-          </div>
+          <LangToggle />
         </div>
       </nav>
 

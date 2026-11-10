@@ -174,8 +174,8 @@ export default function Landing() {
       {/* 8. An invitation to take part, closing the page in the dark band. */}
       <footer className="bg-foreground text-background">
         <div className={cn(wrap, "py-20 sm:py-28")}>
-          <div className="max-w-3xl">
-            <h2 className="font-display text-4xl leading-[1.05] sm:text-6xl">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
+          <div>
+            <h2 className="font-display text-4xl leading-[1.05] sm:text-6xl lg:whitespace-nowrap">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-background/75 sm:text-lg">
               {L({
                 en: "Add its photos and flood lines. Every record helps show how people along Khlong Om Non live with the water.",

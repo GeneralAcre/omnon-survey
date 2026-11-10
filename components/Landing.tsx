@@ -55,20 +55,33 @@ export default function Landing() {
           <Link href="/" className="font-display text-3xl leading-none">
             omnon
           </Link>
-          <LangToggle />
+          <div className="flex items-center gap-2">
+            <Link href="/survey" className="inline-flex h-11 items-center rounded-full px-4 text-[15px] font-semibold transition hover:bg-card">
+              {L({ en: "Buildings", th: "อาคาร" })}
+            </Link>
+            <LangToggle />
+          </div>
         </div>
       </nav>
 
       {/* 1. The hook. */}
       <section className="relative isolate min-h-[calc(100svh-4rem)] overflow-hidden bg-foreground text-background">
-        <Image src={omnon} alt="The canal landscape of Khlong Om Non" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
+        <Image src={omnon} alt="" fill priority sizes="100vw" placeholder="blur" className="-z-20 object-cover object-[center_60%] grayscale" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-foreground via-foreground/20 to-foreground/10" />
         <div className={cn(wrap, "flex min-h-[calc(100svh-4rem)] flex-col justify-end pt-16 pb-10 sm:pb-14 lg:pb-12")}>
           {/* Wide screens: the title along the bottom left, the main action across from it. */}
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-8">
-            <h1 className="font-display text-6xl leading-[0.95] sm:text-8xl lg:text-[9rem]">
-              Fluid Heritage
-            </h1>
+            <div>
+              <h1 className="font-display text-6xl leading-[0.95] sm:text-8xl lg:text-[9rem]">
+                Fluid Heritage
+              </h1>
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-background/85 sm:text-lg">
+                {L({
+                  en: "A field survey of the houses along Khlong Om Non, and how they live with the water.",
+                  th: "การสำรวจภาคสนามบ้านเรือนริมคลองอ้อมนนท์ และวิถีการอยู่ร่วมกับสายน้ำ",
+                })}
+              </p>
+            </div>
             <Link href="/new" className={cn(cta, "mt-8 h-14 w-full px-7 text-base shadow-[0_10px_30px_rgba(0,0,0,0.3)] sm:w-auto lg:mt-0 lg:mb-5")}>
               <IconPlus className="size-5" />
               {t("addBuilding")}
@@ -90,7 +103,13 @@ export default function Landing() {
             1636
           </p>
           <div>
-            <h2 className="font-display text-3xl leading-[1.05] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
+            <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl">{L({ en: "A river that became a canal", th: "แม่น้ำที่กลายเป็นคลอง" })}</h2>
+            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:text-lg">
+              {L({
+                en: "In 1636 a shortcut was dug across the river's bend. The current took the new channel, and the old loop was left behind as Khlong Om Non.",
+                th: "ในปี พ.ศ. 2179 มีการขุดคลองลัดตัดคุ้งแม่น้ำ กระแสน้ำเปลี่ยนไปไหลทางใหม่ ทางน้ำเดิมจึงกลายเป็นคลองอ้อมนนท์",
+              })}
+            </p>
           </div>
         </div>
         <div className={cn(wrap, "mt-12 sm:mt-16")}>
@@ -108,12 +127,21 @@ export default function Landing() {
                 <StatLine buildings={stats.total} className="text-base" />
               </div>
             )}
-            <ol className="mt-6 space-y-2">
+            <p className="mt-6 text-sm text-muted-foreground">
+              {L({ en: "Pick a zone to show it on the map.", th: "เลือกโซนเพื่อดูบนแผนที่" })}
+            </p>
+            <ol className="mt-3 space-y-2">
               {GROUPS.map((g) => (
                 <li key={g.id}>
                   <button
                     type="button"
-                    onClick={() => setZone(zone === g.id ? undefined : g.id)}
+                    onClick={() => {
+                      setZone(zone === g.id ? undefined : g.id);
+                      // On narrow screens the map sits below the list, so bring it into view.
+                      if (!window.matchMedia("(min-width: 1024px)").matches) {
+                        document.getElementById("zones-map")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }
+                    }}
                     aria-pressed={zone === g.id}
                     className="flex w-full items-center gap-4 rounded-2xl border-2 border-transparent bg-background px-4 py-3 text-left transition hover:border-border aria-pressed:border-primary"
                   >
@@ -129,7 +157,7 @@ export default function Landing() {
               ))}
             </ol>
           </div>
-          <div className="lg:order-1">
+          <div id="zones-map" className="lg:order-1">
             <StudyMap records={all} zone={zone} preview className="aspect-[4/3] lg:aspect-[3/2]" />
           </div>
         </div>
@@ -165,8 +193,8 @@ export default function Landing() {
         </div>
         <div className={cn(wrap, "mt-16 flex flex-col items-center gap-8 sm:mt-20")}>
           <div className="flex items-center justify-center gap-16 sm:gap-32 lg:gap-48">
-            <Image src={xian} alt="Xi'an University of Architecture and Technology" className="h-28 w-auto sm:h-40 lg:h-52" />
-            <Image src={chula} alt="Chulalongkorn University" className="h-28 w-auto sm:h-40 lg:h-52" />
+            <Image src={xian} alt="Xi'an University of Architecture and Technology" className="h-24 w-auto sm:h-28 lg:h-32" />
+            <Image src={chula} alt="Chulalongkorn University" className="h-24 w-auto sm:h-28 lg:h-32" />
           </div>
         </div>
       </section>
@@ -175,7 +203,7 @@ export default function Landing() {
       <footer className="bg-foreground text-background">
         <div className={cn(wrap, "py-20 sm:py-28")}>
           <div>
-            <h2 className="font-display text-4xl leading-[1.05] sm:text-6xl lg:whitespace-nowrap">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
+            <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl lg:whitespace-nowrap">{L({ en: "Know a house on the canal?", th: "รู้จักบ้านริมคลองหลังไหนไหม" })}</h2>
             <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-background/75 sm:text-lg">
               {L({
                 en: "Add its photos and flood lines. Every record helps show how people along Khlong Om Non live with the water.",
@@ -202,12 +230,12 @@ function Recent({ recent }: { recent: SurveyRecord[] }) {
   const { t, L } = useT();
   const [limit, setLimit] = useState(BOX_PAGE);
   return (
-    <div className={cn(wrap, "mt-20 sm:mt-28")}>
+    <div className={wrap}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-4xl leading-[1.05] sm:text-5xl">{L({ en: "Recently documented", th: "บันทึกล่าสุด" })}</h2>
         </div>
-        <Link href="/survey" className={cn(ghost, "h-11 border-border text-sm hover:bg-card")}>
+        <Link href="/survey" className={cn(ghost, "border-border hover:bg-card")}>
           {L({ en: "See all buildings", th: "ดูอาคารทั้งหมด" })} <IconNext className="size-4" />
         </Link>
       </div>
